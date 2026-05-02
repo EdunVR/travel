@@ -360,7 +360,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between">
             <!-- Logo -->
-            <a href="/hm" class="flex items-center gap-2 z-content">
+            <a href="/" class="flex items-center gap-2 z-content">
                 <img src="{{ url('WEB_HMTour/wp-content/uploads/2023/04/Logo-HM_UMRAH-3.png') }}"
                      alt="HM Tour and Travel"
                      class="h-12 w-auto object-contain"
@@ -1045,7 +1045,7 @@
 </section>
 
 <!-- ===== HM TEAM SECTION ===== -->
-<section id="hm-team" class="section-white py-20">
+<!-- <section id="hm-team" class="section-white py-20">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
             <div class="inline-flex items-center gap-2 bg-green-pale border border-green-200 rounded-full px-4 py-2 mb-4">
@@ -1056,17 +1056,17 @@
             <p class="text-gray-600 max-w-2xl mx-auto">
                 Tim profesional dan berpengalaman siap melayani perjalanan ibadah Anda
             </p>
-        </div>
+        </div> -->
 
         <!-- Team Image -->
-        <div class="max-w-5xl mx-auto">
+        <!-- <div class="max-w-5xl mx-auto">
             <img src="{{ asset('img/hm_team.png') }}" 
                  alt="HM Team" 
                  class="w-full h-auto rounded-2xl shadow-lg border border-green-100"
                  onerror="this.src='{{ url('WEB_HMTour/wp-content/uploads/2023/04/Logo-HM_UMRAH-3.png') }}'; this.classList.add('p-20', 'bg-green-50')">
         </div>
     </div>
-</section>
+</section> -->
 
 <!-- ===== SEJARAH HM SECTION ===== -->
 <section id="sejarah" class="section-pale py-20">

@@ -5,6 +5,9 @@
 
     RewriteEngine On
 
+    # kode dibawah ini untuk mengatasi masalah akses ke folder storage, saat di hostinger
+    # RewriteRule ^storage/(.*)$ public/storage/$1 [L]
+
     # Handle root URL properly - prevent method conflicts
     RewriteCond %{REQUEST_METHOD} !^(GET|HEAD)$ [NC]
     RewriteCond %{REQUEST_URI} ^/$
