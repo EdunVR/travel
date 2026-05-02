@@ -1,0 +1,1119 @@
+/**
+ * POS (Point of Sales) Alpine.js Component
+ * Handles all POS functionality including customer type pricing
+ */
+
+// Register Alpine.js component
+document.addEventListener('alpine:init', () => {
+  Alpine.data('posApp', () => ({
+    state: {
+      outlet: window.posInitialOutlet || 1, // Will be set from blade template
+      cashier: 'Kasir-01',
+      customerId: '',
+      customerTypeId: null,
+      note: '',
+      discountRp: 0,
+      discountPct: 0,
+      tax10: false,
+      isBon: false,
+      dueDate: '',
+      transactionDate: '',
+    },
+    products: [],
+    customers: [],
+    customerTypePrices: {},
+    categories: [],
+    cart: [],
+    holds: [],
+    total: { subtotal: 0, discount: 0, tax: 0, grand: 0 },
+    pay: { method: 'cash', tendered: 0, change: 0 },
+    ui: { search:'', barcode:'', cat:'all', holdOpen:false, customerSearch:'', customerDropdown:false },
+    nowStr: '',
+    placeholder: 'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><rect width="100%" height="100%" fill="#f1f5f9"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#94a3b8" font-family="Arial" font-size="28">No Image</text></svg>'),
+    HOLDS_STORAGE: 'pos.holds',
+    showCoaModal: false,
+    coaLoading: false,
+    books: [],
+    accounts: [],
+    accountsByType: {
+      asset: [],
+      liability: [],
+      equity: [],
+      revenue: [],
+      expense: []
+    },
+    coaForm: {
+      accounting_book_id: '',
+      akun_kas: '',
+      akun_bank: '',
+      akun_piutang_usaha: '',
+      akun_pendapatan_penjualan: '',
+      akun_hpp: '',
+      akun_persediaan: '',
+      akun_ppn: ''
+    },
+    showPrintModal: false,
+    lastSaleId: null,
+    csrfToken: window.posCSRFToken || '',
+    printPreviewUrl: '',
+    showHistoryModal: false,
+    historyLoading: false,
+    historyData: [],
+    historyFilter: {
+      status: 'all',
+      sort_by: 'newest',
+      start_date: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split('T')[0],
+      end_date: new Date().toISOString().split('T')[0],
+      search: ''
+    },
+    // Modal untuk notifikasi stock habis
+    showStockOutModal: false,
+    stockOutProduct: null,
+
+    async init() {
+      console.log('🚀 [POS] Initializing POS app...');
+      console.log('🏪 [POS] Initial outlet from window:', this.state.outlet);
+      console.log('🏪 [POS] Outlet type:', typeof this.state.outlet);
+      
+      // Validasi outlet ID dari server dengan OutletHelper
+      if (!this.state.outlet || this.state.outlet === '' || this.state.outlet === null || this.state.outlet === 'null') {
+        console.error('❌ [POS] Invalid outlet ID from server:', this.state.outlet);
+        console.log('🔧 [POS] Setting default outlet using OutletHelper');
+        
+        // Get outlets from dropdown options
+        const outletOptions = Array.from(document.querySelectorAll('select[x-model="state.outlet"] option')).map(option => ({
+          id_outlet: parseInt(option.value),
+          nama_outlet: option.textContent
+        })).filter(outlet => !isNaN(outlet.id_outlet));
+        
+        if (window.OutletHelper && outletOptions.length > 0) {
+          const defaultOutletId = window.OutletHelper.getFirstOutletId(outletOptions);
+          if (defaultOutletId) {
+            this.state.outlet = parseInt(defaultOutletId);
+            console.log('🔧 [POS] OutletHelper set outlet to:', this.state.outlet);
+          }
+        } else if (outletOptions.length > 0) {
+          this.state.outlet = outletOptions[0].id_outlet;
+          console.log('🔧 [POS] Fallback to first outlet:', this.state.outlet);
+        } else {
+          console.error('❌ [POS] No outlets available');
+        }
+      }
+      
+      console.log('🏪 [POS] Final outlet for initialization:', this.state.outlet);
+      
+      // Load data sequentially to ensure proper initialization
+      try {
+        console.log('📦 [POS] Loading products for outlet:', this.state.outlet);
+        await this.loadProducts();
+        
+        console.log('👥 [POS] Loading customers...');
+        await this.loadCustomers();
+        
+        console.log('💰 [POS] Loading COA data for outlet:', this.state.outlet);
+        await this.loadCoaData();
+        
+        // Load holds from localStorage
+        this.holds = JSON.parse(localStorage.getItem(this.HOLDS_STORAGE)||'[]');
+        
+        // Start clock
+        this.tick();
+        setInterval(()=>this.tick(), 1000);
+        
+        // Start CSRF token refresh (every 30 minutes)
+        setInterval(() => this.refreshCsrfToken(), 1800000);
+        
+        // Initialize transaction date to today
+        this.state.transactionDate = new Date().toISOString().split('T')[0];
+        
+        // Initial calculation
+        this.recalc();
+        
+        console.log('✅ [POS] Initialization complete. Products loaded:', this.products.length);
+        
+        // Jika masih tidak ada produk, tampilkan informasi debug
+        if (this.products.length === 0) {
+          console.warn('⚠️ [POS] No products loaded! Debug info:');
+          console.warn('- Outlet ID:', this.state.outlet);
+          console.warn('- Products array:', this.products);
+          console.warn('- Categories array:', this.categories);
+        }
+      } catch (error) {
+        console.error('❌ [POS] Initialization failed:', error);
+        alert('Gagal memuat data POS. Silakan refresh halaman.');
+      }
+    },
+
+    async onOutletChange() {
+      console.log('🔄 [POS] Outlet changed to:', this.state.outlet);
+      console.time('⏱️ [POS] Outlet change duration');
+      
+      // Clear products first to show loading state
+      console.log('🗑️ [POS] Clearing products and categories...');
+      this.products = [];
+      this.categories = [];
+      
+      // Clear customers to reload for new outlet
+      console.log('🗑️ [POS] Clearing customers...');
+      this.customers = [];
+      
+      // Clear cart to avoid mixing products from different outlets
+      console.log('🛒 [POS] Clearing cart...');
+      this.clearCart();
+      
+      // Reload products when outlet changes
+      console.log('📦 [POS] Loading products for outlet:', this.state.outlet);
+      await this.loadProducts();
+      
+      // Reload customers for the new outlet
+      console.log('👥 [POS] Loading customers for outlet:', this.state.outlet);
+      await this.loadCustomers();
+      
+      // Reload COA data for the new outlet
+      console.log('💰 [POS] Loading COA data for outlet:', this.state.outlet);
+      await this.loadCoaData();
+      
+      console.timeEnd('⏱️ [POS] Outlet change duration');
+      console.log('✅ [POS] Outlet change complete. Products count:', this.products.length, 'Customers count:', this.customers.length);
+    },
+
+    async loadProducts() {
+      const startTime = performance.now();
+      console.log('📦 [POS] loadProducts() started for outlet:', this.state.outlet);
+      console.log('📦 [POS] Current state:', JSON.stringify(this.state));
+      
+      // Validasi outlet ID
+      if (!this.state.outlet || this.state.outlet === '' || this.state.outlet === null) {
+        console.error('❌ [POS] Invalid outlet ID:', this.state.outlet);
+        alert('Outlet ID tidak valid. Silakan refresh halaman.');
+        return;
+      }
+      
+      try {
+        // Clear products before loading
+        this.products = [];
+        this.categories = [];
+        console.log('🗑️ [POS] Products cleared');
+        
+        const url = window.posProductsRoute + '?outlet_id=' + this.state.outlet;
+        console.log('🌐 [POS] Fetching from:', url);
+        
+        // Add timeout warning
+        const timeoutWarning = setTimeout(() => {
+          console.warn('⚠️ [POS] Request taking longer than 3 seconds...');
+        }, 3000);
+        
+        const fetchStart = performance.now();
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': this.csrfToken,
+            'Cache-Control': 'no-cache'
+          },
+          credentials: 'same-origin'
+        });
+        clearTimeout(timeoutWarning);
+        
+        const fetchDuration = performance.now() - fetchStart;
+        console.log(`⏱️ [POS] Fetch completed in ${fetchDuration.toFixed(2)}ms`);
+        
+        if (fetchDuration > 2000) {
+          console.warn(`⚠️ [POS] Slow response detected: ${fetchDuration.toFixed(2)}ms`);
+        }
+        
+        console.log('📡 [POS] Response status:', response.status);
+        console.log('📡 [POS] Response headers:', Object.fromEntries(response.headers.entries()));
+        
+        // Check if response is OK
+        if (!response.ok) {
+          console.error('❌ [POS] Failed to load products: HTTP ' + response.status);
+          const errorText = await response.text();
+          console.error('❌ [POS] Error response:', errorText);
+          
+          // Handle 401 Unauthorized - be more conservative
+          if (response.status === 401) {
+            console.error('❌ [POS] 401 Response details:', {
+              status: response.status,
+              statusText: response.statusText,
+              url: response.url,
+              contentType: response.headers.get('content-type')
+            });
+            
+            // Only redirect if we're sure it's an authentication issue
+            let shouldRedirect = false;
+            
+            try {
+              const errorData = JSON.parse(errorText);
+              // Check for specific authentication error messages
+              if (errorData.message && 
+                  (errorData.message.includes('Unauthenticated') || 
+                   errorData.message.includes('Please login again'))) {
+                shouldRedirect = true;
+              }
+            } catch (e) {
+              // If response is HTML and contains login form, it's likely a redirect to login
+              if (errorText.includes('<form') && 
+                  errorText.includes('login') && 
+                  errorText.includes('password')) {
+                shouldRedirect = true;
+              }
+            }
+            
+            if (shouldRedirect) {
+              console.error('❌ [POS] Confirmed authentication failure - redirecting');
+              alert('Sesi Anda telah berakhir. Silakan login kembali.');
+              window.location.href = window.posLoginRoute || '/login';
+              return;
+            } else {
+              console.warn('⚠️ [POS] 401 error but not confirmed authentication issue');
+              // Try to continue without redirecting
+            }
+          }
+          
+          // For non-401 errors or unconfirmed 401s, show generic error
+          console.warn('⚠️ [POS] Request failed, but continuing...');
+          alert('Gagal memuat produk. Coba refresh halaman jika masalah berlanjut.');
+          return;
+        }
+        
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        console.log('📄 [POS] Content-Type:', contentType);
+        
+        if (!contentType || !contentType.includes('application/json')) {
+          console.error('❌ [POS] Response is not JSON:', contentType);
+          const text = await response.text();
+          console.error('📄 [POS] Response body:', text.substring(0, 500));
+          alert('Terjadi kesalahan. Silakan login ulang.');
+          return;
+        }
+        
+        const parseStart = performance.now();
+        const result = await response.json();
+        const parseDuration = performance.now() - parseStart;
+        console.log(`⏱️ [POS] JSON parsed in ${parseDuration.toFixed(2)}ms`);
+        console.log('📦 [POS] API Response:', result);
+        
+        if(result.success) {
+          const productsData = result.data || [];
+          console.log('✅ [POS] Products received:', productsData.length);
+          console.log('📦 [POS] Sample product:', productsData[0]);
+          console.log('📦 [POS] API outlet_id confirmation:', result.outlet_id);
+          
+          // Store original prices before any customer type modifications
+          this.products = productsData.map(product => ({
+            ...product,
+            original_price: product.price, // Store original price
+            has_discount: false,
+            discount_info: null
+          }));
+          
+          this.categories = [...new Set(this.products.map(p=>p.category))];
+          console.log('📂 [POS] Categories:', this.categories);
+          
+          // Generate barcodes after products are loaded
+          if (productsData.length > 0) {
+            console.log('🔢 [POS] Scheduling barcode generation...');
+            this.$nextTick(() => {
+              console.log('🔢 [POS] Generating barcodes...');
+              this.generateBarcodes();
+              console.log('✅ [POS] Barcodes generated');
+            });
+          }
+          
+          const totalDuration = performance.now() - startTime;
+          console.log(`✅ [POS] loadProducts() completed in ${totalDuration.toFixed(2)}ms`);
+          
+          // Jika tidak ada produk, tampilkan peringatan
+          if (productsData.length === 0) {
+            console.warn('⚠️ [POS] No products found for outlet:', this.state.outlet);
+          }
+        } else {
+          console.error('❌ [POS] Load products failed:', result.message);
+          alert('Gagal memuat produk: ' + (result.message || 'Unknown error'));
+        }
+      } catch(e) {
+        const totalDuration = performance.now() - startTime;
+        console.error(`❌ [POS] Failed to load products after ${totalDuration.toFixed(2)}ms:`, e);
+        console.error('❌ [POS] Error stack:', e.stack);
+        alert('Terjadi kesalahan saat memuat produk: ' + e.message);
+      }
+    },
+
+    async loadCustomers() {
+      const startTime = performance.now();
+      console.log('👥 [POS] loadCustomers() started for outlet:', this.state.outlet);
+      
+      try {
+        // Add cache-busting parameter and outlet filter
+        const timestamp = Date.now();
+        const url = `${window.posCustomersRoute}?outlet_id=${this.state.outlet}&_t=${timestamp}`;
+        
+        console.log('🌐 [POS] Fetching customers from:', url);
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': this.csrfToken,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          },
+          credentials: 'same-origin',
+          cache: 'no-cache'
+        });
+        
+        const result = await response.json();
+        if(result.success) {
+          this.customers = result.data;
+          console.log('✅ [POS] Customers loaded (fresh from server):', this.customers.length, 'customers');
+          console.log('👥 [POS] Outlet filter applied:', result.outlet_id);
+          console.log('👥 [POS] Response timestamp:', result.timestamp || 'not provided');
+        } else {
+          console.error('❌ [POS] Failed to load customers:', result.message);
+          this.customers = [];
+        }
+        
+        const totalDuration = performance.now() - startTime;
+        console.log(`✅ [POS] loadCustomers() completed in ${totalDuration.toFixed(2)}ms`);
+        
+      } catch(e) {
+        const totalDuration = performance.now() - startTime;
+        console.error(`❌ [POS] Failed to load customers after ${totalDuration.toFixed(2)}ms:`, e);
+        this.customers = [];
+      }
+    },
+
+    async loadCoaData() {
+      const startTime = performance.now();
+      console.log('💰 [POS] loadCoaData() started for outlet:', this.state.outlet);
+      
+      try {
+        const headers = {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': this.csrfToken,
+          'Cache-Control': 'no-cache'
+        };
+        
+        // Load accounting books
+        console.log('📚 [POS] Fetching accounting books...');
+        const booksStart = performance.now();
+        const booksRes = await fetch(window.posAccountingBooksRoute + '?outlet_id=' + this.state.outlet, { 
+          headers,
+          credentials: 'same-origin'
+        });
+        const booksDuration = performance.now() - booksStart;
+        console.log(`⏱️ [POS] Books fetch: ${booksDuration.toFixed(2)}ms`);
+        
+        const booksData = await booksRes.json();
+        if (booksData.success) {
+          this.books = booksData.data || [];
+          console.log('✅ [POS] Books loaded:', this.books.length);
+        }
+        
+        // Load chart of accounts
+        console.log('📊 [POS] Fetching chart of accounts...');
+        const accStart = performance.now();
+        const accRes = await fetch(window.posChartOfAccountsRoute + '?outlet_id=' + this.state.outlet, { 
+          headers,
+          credentials: 'same-origin'
+        });
+        const accDuration = performance.now() - accStart;
+        console.log(`⏱️ [POS] Accounts fetch: ${accDuration.toFixed(2)}ms`);
+        
+        const accData = await accRes.json();
+        if (accData.success) {
+          const allAccounts = accData.data || [];
+          this.accounts = allAccounts;
+          console.log('✅ [POS] Accounts loaded:', allAccounts.length);
+          
+          // Filter leaf accounts only (accounts without children)
+          const leafAccounts = allAccounts.filter(account => {
+            return !allAccounts.some(child => child.parent_code === account.code);
+          });
+          
+          // Group by account type
+          this.accountsByType = {
+            asset: leafAccounts.filter(a => a.type === 'asset'),
+            liability: leafAccounts.filter(a => a.type === 'liability'),
+            equity: leafAccounts.filter(a => a.type === 'equity'),
+            revenue: leafAccounts.filter(a => a.type === 'revenue'),
+            expense: leafAccounts.filter(a => a.type === 'expense')
+          };
+        }
+        
+        // Load COA settings
+        console.log('⚙️ [POS] Fetching COA settings...');
+        const settingsStart = performance.now();
+        const settingsRes = await fetch(window.posCoaSettingsRoute + '?outlet_id=' + this.state.outlet, { 
+          headers,
+          credentials: 'same-origin'
+        });
+        const settingsDuration = performance.now() - settingsStart;
+        console.log(`⏱️ [POS] Settings fetch: ${settingsDuration.toFixed(2)}ms`);
+        
+        const settingsData = await settingsRes.json();
+        if (settingsRes.status === 401) {
+          console.error('❌ [POS] COA Settings 401 response');
+          console.error('❌ [POS] COA Response details:', {
+            status: settingsRes.status,
+            statusText: settingsRes.statusText,
+            url: settingsRes.url
+          });
+          
+          // Be more conservative - don't redirect unless we're sure
+          console.warn('⚠️ [POS] COA 401 error - not redirecting, continuing...');
+        }
+        
+        if (settingsData.success && settingsData.data) {
+          this.coaForm = settingsData.data;
+          console.log('✅ [POS] COA settings loaded');
+        }
+        
+        const totalDuration = performance.now() - startTime;
+        console.log(`✅ [POS] loadCoaData() completed in ${totalDuration.toFixed(2)}ms`);
+      } catch(e) {
+        const totalDuration = performance.now() - startTime;
+        console.error(`❌ [POS] Failed to load COA data after ${totalDuration.toFixed(2)}ms:`, e);
+        console.error('❌ [POS] Error stack:', e.stack);
+      }
+    },
+
+    async saveCoaSettings() {
+      this.coaLoading = true;
+      try {
+        const response = await fetch(window.posCoaSettingsUpdateRoute + '?outlet_id=' + this.state.outlet, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': this.csrfToken
+          },
+          body: JSON.stringify(this.coaForm)
+        });
+
+        const result = await response.json();
+        
+        if(result.success) {
+          alert('✅ Setting COA POS berhasil disimpan');
+          this.showCoaModal = false;
+        } else {
+          alert('❌ Gagal menyimpan: ' + (result.message || 'Unknown error'));
+        }
+      } catch(e) {
+        console.error(e);
+        alert('❌ Terjadi kesalahan saat menyimpan');
+      } finally {
+        this.coaLoading = false;
+      }
+    },
+
+    async refreshCsrfToken() {
+      try {
+        console.log('🔄 [POS] Refreshing CSRF token...');
+        const response = await fetch(window.posDashboardRoute || '/admin/dashboard', {
+          method: 'HEAD',
+          credentials: 'same-origin'
+        });
+        
+        if (response.ok) {
+          // Get new CSRF token from meta tag if it exists
+          const metaToken = document.querySelector('meta[name="csrf-token"]');
+          if (metaToken) {
+            this.csrfToken = metaToken.getAttribute('content');
+            console.log('✅ [POS] CSRF token refreshed');
+          }
+        } else {
+          console.warn('⚠️ [POS] Failed to refresh CSRF token');
+        }
+      } catch (e) {
+        console.error('❌ [POS] Error refreshing CSRF token:', e);
+      }
+    },
+
+    async loadHistory() {
+      this.historyLoading = true;
+      try {
+        const params = new URLSearchParams({
+          outlet_id: this.state.outlet,
+          status: this.historyFilter.status,
+          sort_by: this.historyFilter.sort_by,
+          start_date: this.historyFilter.start_date,
+          end_date: this.historyFilter.end_date,
+          search: this.historyFilter.search
+        });
+
+        const response = await fetch(`${window.posHistoryRoute}?${params}`, {
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          this.historyData = data.data || [];
+        } else {
+          console.error('Failed to load history:', data.message);
+          this.historyData = [];
+        }
+      } catch(e) {
+        console.error('Error loading history:', e);
+        this.historyData = [];
+      } finally {
+        this.historyLoading = false;
+      }
+    },
+
+    printHistoryItem(id) {
+      const url = window.posPrintRoute.replace(':id', id) + '?type=besar';
+      window.open(url, '_blank');
+    },
+
+    formatDateTime(dateStr) {
+      return window.DateHelper.formatDateTime(dateStr);
+    },
+
+    formatDate(dateStr) {
+      return window.DateHelper.formatDate(dateStr);
+    },
+
+    formatDateDDMMYYYY(dateStr) {
+      if (!dateStr) return "";
+      const date = new Date(dateStr);
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    },
+
+    getCurrentDateDDMMYYYY() {
+      const today = new Date();
+      const day = String(today.getDate()).padStart(2, "0");
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const year = today.getFullYear();
+      return `${day}/${month}/${year}`;
+    },
+
+
+    getMinDueDate() {
+      // Tanggal minimal: 2 tahun ke belakang dari hari ini
+      const minDate = new Date();
+      minDate.setFullYear(minDate.getFullYear() - 2);
+      return minDate.toISOString().split('T')[0];
+    },
+
+    getMaxDueDate() {
+      // Tanggal maksimal: 5 tahun ke depan dari hari ini
+      const maxDate = new Date();
+      maxDate.setFullYear(maxDate.getFullYear() + 5);
+      return maxDate.toISOString().split('T')[0];
+    },
+
+    filteredCustomers() {
+      const q = this.ui.customerSearch.trim().toLowerCase();
+      if(!q) return this.customers;
+      return this.customers.filter(c => 
+        c.name.toLowerCase().includes(q) || 
+        (c.telepon && c.telepon.includes(q))
+      );
+    },
+
+    searchCustomer() {
+      this.ui.customerDropdown = true;
+    },
+
+    async selectCustomer(customer) {
+      console.log('🧑‍💼 [POS] Selecting customer:', customer);
+      
+      if(customer) {
+        this.state.customerId = customer.id;
+        this.state.customerTypeId = customer.id_tipe;
+        this.ui.customerSearch = customer.name;
+        
+        console.log('🧑‍💼 [POS] Customer type ID:', customer.id_tipe);
+        
+        // Clear existing customer type prices first to force refresh
+        this.customerTypePrices = {};
+        console.log('💰 [POS] Cleared existing customer type prices');
+        
+        // Load customer type prices if customer has type
+        if(customer.id_tipe) {
+          console.log('💰 [POS] Loading customer type prices for type:', customer.id_tipe);
+          await this.loadCustomerTypePrices(customer.id_tipe);
+          // Force update product prices in grid and recalculate cart
+          await this.$nextTick(); // Wait for DOM update
+          this.updateProductPrices();
+          this.applyCustomerTypePrices();
+        } else {
+          // Reset to normal prices
+          console.log('💰 [POS] Resetting to normal prices');
+          this.updateProductPrices();
+          this.applyCustomerTypePrices();
+        }
+      } else {
+        console.log('🧑‍💼 [POS] Clearing customer selection');
+        this.state.customerId = '';
+        this.state.customerTypeId = null;
+        this.ui.customerSearch = '';
+        this.customerTypePrices = {};
+        this.updateProductPrices();
+        this.applyCustomerTypePrices();
+      }
+      this.ui.customerDropdown = false;
+    },
+
+    async loadCustomerTypePrices(idTipe) {
+      try {
+        console.log('💰 [POS] Loading customer type prices for type:', idTipe, 'outlet:', this.state.outlet);
+        
+        // Add cache-busting parameter to force fresh data
+        const timestamp = Date.now();
+        const url = `${window.posCustomerTypePricesRoute}?id_tipe=${idTipe}&outlet_id=${this.state.outlet}&_t=${timestamp}`;
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': this.csrfToken,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          },
+          credentials: 'same-origin',
+          cache: 'no-cache' // Force no cache
+        });
+        
+        const result = await response.json();
+        if(result.success) {
+          // Convert array to object keyed by id_produk
+          this.customerTypePrices = result.data;
+          console.log('💰 [POS] Customer type prices loaded (fresh from server):', this.customerTypePrices);
+          console.log('💰 [POS] Response timestamp:', result.timestamp || 'not provided');
+        } else {
+          console.error('💰 [POS] Failed to load customer type prices:', result.message);
+        }
+      } catch(e) {
+        console.error('💰 [POS] Failed to load customer type prices:', e);
+      }
+    },
+
+    updateProductPrices() {
+      console.log('🔄 [POS] Updating product prices in grid');
+      
+      // Update prices in products array for grid display
+      this.products = this.products.map(product => {
+        const typePrice = this.customerTypePrices[product.id_produk];
+        if(typePrice) {
+          console.log('💰 [POS] Updating price for product:', product.name, 'from', product.price, 'to', typePrice.harga_final);
+          return {
+            ...product,
+            price: typePrice.harga_final,
+            original_price: typePrice.harga_normal,
+            has_discount: true,
+            discount_info: typePrice.harga_khusus > 0 
+              ? `Harga Khusus: ${this.idr(typePrice.harga_khusus)}`
+              : `Diskon ${typePrice.diskon}%`
+          };
+        } else {
+          // Reset to original price if no customer type price
+          return {
+            ...product,
+            price: product.original_price || product.price,
+            has_discount: false,
+            discount_info: null
+          };
+        }
+      });
+      
+      console.log('✅ [POS] Product prices updated in grid');
+    },
+
+    applyCustomerTypePrices() {
+      console.log('🛒 [POS] Applying customer type prices to cart');
+      console.log('🛒 [POS] Current cart items:', this.cart.length);
+      console.log('🛒 [POS] Available customer type prices:', Object.keys(this.customerTypePrices).length);
+      
+      // Update cart prices based on customer type
+      this.cart = this.cart.map(item => {
+        const typePrice = this.customerTypePrices[item.id_produk];
+        if(typePrice) {
+          console.log('💰 [POS] Updating cart item price:', item.name, 'from', item.price, 'to', typePrice.harga_final);
+          return {
+            ...item,
+            price: typePrice.harga_final,
+            original_price: typePrice.harga_normal,
+            has_discount: true,
+            discount_info: typePrice.harga_khusus > 0 
+              ? `Harga Khusus: ${this.idr(typePrice.harga_khusus)}`
+              : `Diskon ${typePrice.diskon}%`
+          };
+        } else {
+          // Reset to normal price
+          const product = this.products.find(p => p.id_produk === item.id_produk);
+          if(product) {
+            const originalPrice = product.original_price || product.price;
+            console.log('💰 [POS] Resetting cart item to normal price:', item.name, 'to', originalPrice);
+            return {
+              ...item,
+              price: originalPrice,
+              original_price: originalPrice,
+              has_discount: false,
+              discount_info: null
+            };
+          }
+        }
+        return item;
+      });
+      
+      console.log('✅ [POS] Cart prices updated, recalculating totals');
+      this.recalc();
+    },
+
+    selectedCustomer() {
+      return this.customers.find(c => c.id == this.state.customerId);
+    },
+
+    generateBarcodes() {
+      setTimeout(() => {
+        document.querySelectorAll('.barcode').forEach(svg => {
+          const code = svg.getAttribute('data-code');
+          if(code && !svg.innerHTML) {
+            try {
+              if (typeof JsBarcode !== 'undefined') {
+                JsBarcode(svg, code, {
+                  format: 'CODE128',
+                  width: 1,
+                  height: 30,
+                  displayValue: false,
+                  margin: 0
+                });
+              }
+            } catch(e) {
+              console.error('Barcode error:', e);
+            }
+          }
+        });
+      }, 100);
+    },
+
+    tick() {
+      this.nowStr = new Date().toLocaleString('id-ID', {
+        weekday:'long', day:'2-digit', month:'long', year:'numeric',
+        hour:'2-digit', minute:'2-digit', second:'2-digit'
+      });
+    },
+
+    filteredProducts() {
+      const q = this.ui.search.trim().toLowerCase();
+      return this.products.filter(p=>{
+        const byCat = this.ui.cat==='all' || p.category===this.ui.cat;
+        const byQ   = !q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
+        // Tampilkan semua produk termasuk yang stock 0
+        return byCat && byQ;
+      });
+    },
+
+    addItem(p) {
+      // Cek jika stock 0, tampilkan modal notifikasi
+      if (p.stock <= 0) { 
+        this.showStockModal(p);
+        return; 
+      }
+      
+      console.log('➕ [POS] Adding item to cart:', p.name, 'price:', p.price);
+      
+      const ix = this.cart.findIndex(x=>x.sku===p.sku);
+      if(ix>=0){
+        if (this.cart[ix].qty + 1 > p.stock) { alert('Qty melebihi stok.'); return; }
+        this.cart[ix].qty++;
+        console.log('➕ [POS] Increased quantity for existing item:', p.name, 'new qty:', this.cart[ix].qty);
+      } else {
+        // Check if customer has type discount - use current price from product (already updated by updateProductPrices)
+        let finalPrice = p.price; // This should already be the discounted price if customer type is selected
+        let hasDiscount = p.has_discount || false;
+        let discountInfo = p.discount_info || null;
+        let originalPrice = p.original_price || p.price;
+        
+        // Double check with customerTypePrices for accuracy
+        const typePrice = this.customerTypePrices[p.id_produk];
+        if(typePrice) {
+          finalPrice = typePrice.harga_final;
+          originalPrice = typePrice.harga_normal;
+          hasDiscount = true;
+          discountInfo = typePrice.harga_khusus > 0 
+            ? `Harga Khusus: ${this.idr(typePrice.harga_khusus)}`
+            : `Diskon ${typePrice.diskon}%`;
+          console.log('💰 [POS] Applied customer type price:', finalPrice, 'for product:', p.name);
+        }
+        
+        console.log('➕ [POS] Adding new item to cart:', {
+          name: p.name,
+          finalPrice: finalPrice,
+          originalPrice: originalPrice,
+          hasDiscount: hasDiscount
+        });
+        
+        this.cart.push({ 
+          id_produk: p.id_produk,
+          sku: p.sku, 
+          name: p.name, 
+          price: finalPrice,
+          original_price: originalPrice,
+          has_discount: hasDiscount,
+          discount_info: discountInfo,
+          qty: 1,
+          satuan: p.satuan,
+          tipe: 'produk'
+        });
+      }
+      this.recalc();
+    },
+
+    quickAdd() {
+      const q = this.ui.search.trim().toLowerCase();
+      if(!q) return;
+      const p = this.products.find(x=> x.sku.toLowerCase()===q || x.name.toLowerCase().includes(q));
+      if(p) this.addItem(p);
+      this.ui.search='';
+    },
+
+    scanAdd() {
+      const s = (this.ui.barcode||'').trim().toLowerCase();
+      if(!s) return;
+      const p = this.products.find(x=>x.sku.toLowerCase()===s);
+      if(p) this.addItem(p);
+      this.ui.barcode='';
+    },
+
+    incQty(i) {
+      const p = this.products.find(x=>x.sku===this.cart[i].sku);
+      if (p && this.cart[i].qty + 1 > p.stock) { alert('Qty melebihi stok.'); return; }
+      this.cart[i].qty++; this.recalc();
+    },
+
+    decQty(i) { 
+      if(this.cart[i].qty>1) { 
+        this.cart[i].qty--; 
+        this.recalc(); 
+      } 
+    },
+
+    removeItem(i) { 
+      this.cart.splice(i,1); 
+      this.recalc(); 
+    },
+
+    clearCart() {
+      if(!confirm('Kosongkan keranjang?')) return;
+      console.log('🗑️ [POS] Clearing cart and resetting customer');
+      this.cart = []; 
+      this.state.customerId = '';
+      this.state.customerTypeId = null;
+      this.ui.customerSearch = '';
+      this.customerTypePrices = {};
+      this.state.discountRp=0; 
+      this.state.discountPct=0; 
+      this.state.tax10=false; 
+      this.state.isBon=false; 
+      this.state.dueDate='';
+      this.state.transactionDate = new Date().toISOString().split('T')[0];
+      this.pay.tendered=0; 
+      this.pay.change=0; 
+      
+      // Reset product prices to original
+      this.updateProductPrices();
+      
+      this.recalc();
+    },
+
+    toggleBonForm() {
+      if (this.state.isBon) {
+        // Set default due date to 30 days from today
+        const defaultDueDate = new Date();
+        defaultDueDate.setDate(defaultDueDate.getDate() + 30);
+        this.state.dueDate = defaultDueDate.toISOString().split('T')[0];
+      } else {
+        this.state.dueDate = '';
+      }
+    },
+
+    recalc() {
+      // Don't override prices if customer type discount is applied
+      // Only update price if product doesn't have customer type discount
+      this.cart = this.cart.map(c=>{
+        if(c.has_discount) {
+          // Keep the discounted price
+          return c;
+        }
+        const p = this.products.find(x=>x.sku===c.sku);
+        return {...c, price: p ? p.price : c.price};
+      });
+      const sub = this.cart.reduce((a,b)=> a + b.price*b.qty, 0);
+      let disc = Number(this.state.discountRp)||0;
+      if(this.state.discountPct>0) disc += sub * (this.state.discountPct/100);
+      if(disc>sub) disc=sub;
+
+      let tax = 0;
+      const afterDisc = sub - disc;
+      if(this.state.tax10) tax = afterDisc*0.10;
+
+      const grand = Math.max(0, Math.round(afterDisc + tax));
+      this.total = { subtotal: sub, discount: Math.round(disc), tax: Math.round(tax), grand };
+      this.calcChange();
+    },
+
+    calcChange() {
+      this.pay.change = Math.max(0, (Number(this.pay.tendered)||0) - this.total.grand);
+    },
+
+    holdOrder() {
+      const h = {
+        id: 'H'+Date.now(),
+        items: JSON.parse(JSON.stringify(this.cart)),
+        note: this.state.note,
+        total: this.total.grand,
+        time: new Date().toLocaleString('id-ID')
+      };
+      this.holds.unshift(h);
+      localStorage.setItem(this.HOLDS_STORAGE, JSON.stringify(this.holds));
+      this.clearCart();
+      alert('Order ditahan.');
+    },
+
+    openHolds() { 
+      this.ui.holdOpen = true; 
+    },
+
+    resumeHold(i) {
+      const h = this.holds.splice(i,1)[0];
+      localStorage.setItem(this.HOLDS_STORAGE, JSON.stringify(this.holds));
+      this.cart = h.items; 
+      this.state.note = h.note||''; 
+      this.recalc();
+      this.ui.holdOpen = false;
+    },
+
+    removeHold(i) {
+      if(!confirm('Hapus order ditahan?')) return;
+      this.holds.splice(i,1);
+      localStorage.setItem(this.HOLDS_STORAGE, JSON.stringify(this.holds));
+    },
+
+    async submitSale() {
+      if(this.cart.length === 0) {
+        alert('Keranjang masih kosong');
+        return;
+      }
+
+      if(!this.state.isBon && this.pay.tendered < this.total.grand) {
+        alert('Jumlah bayar kurang dari total');
+        return;
+      }
+
+      // Validasi tanggal jatuh tempo untuk transaksi bon
+      if(this.state.isBon && !this.state.dueDate) {
+        alert('Tanggal jatuh tempo harus diisi untuk transaksi bon');
+        return;
+      }
+
+      const payload = {
+        tanggal: this.state.transactionDate + ' ' + new Date().toTimeString().slice(0,8),
+        id_outlet: this.state.outlet,
+        id_member: this.state.customerId || null,
+        items: this.cart.map(c => ({
+          id_produk: c.id_produk,
+          nama_produk: c.name,
+          sku: c.sku,
+          kuantitas: c.qty,
+          satuan: c.satuan,
+          harga: c.price,
+          subtotal: c.price * c.qty,
+          tipe: c.tipe || 'produk'
+        })),
+        subtotal: this.total.subtotal,
+        diskon_nominal: this.state.discountRp,
+        diskon_persen: this.state.discountPct,
+        ppn: this.total.tax,
+        total: this.total.grand,
+        jenis_pembayaran: this.pay.method,
+        jumlah_bayar: this.state.isBon ? 0 : this.pay.tendered,
+        is_bon: this.state.isBon,
+        due_date: this.state.isBon ? this.state.dueDate : null,
+        catatan: this.state.note
+      };
+
+      try {
+        const response = await fetch(window.posStoreRoute, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': this.csrfToken
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        
+        if(result.success) {
+          // Show print modal
+          this.lastSaleId = result.data.id;
+          this.printPreviewUrl = window.posPrintRoute.replace(':id', result.data.id) + '?type=besar';
+          this.showPrintModal = true;
+          
+          await this.loadProducts();
+          this.clearCart();
+        } else {
+          alert('❌ Gagal menyimpan transaksi: ' + (result.message || 'Unknown error'));
+        }
+      } catch(e) {
+        console.error('Submit error:', e);
+        alert('❌ Terjadi kesalahan saat menyimpan transaksi');
+      }
+    },
+
+    printNota(type) {
+      // Add autoprint parameter to trigger print dialog
+      const url = window.posPrintRoute.replace(':id', this.lastSaleId) + '?type=' + type + '&autoprint=1';
+      window.open(url, '_blank');
+    },
+
+    updatePreview(type) {
+      // Preview without autoprint
+      this.printPreviewUrl = window.posPrintRoute.replace(':id', this.lastSaleId) + '?type=' + type;
+    },
+
+    closePrintModal() {
+      this.showPrintModal = false;
+      this.lastSaleId = null;
+      this.printPreviewUrl = '';
+    },
+
+    showStockModal(product) {
+      this.stockOutProduct = product;
+      this.showStockOutModal = true;
+    },
+
+    closeStockModal() {
+      this.showStockOutModal = false;
+      this.stockOutProduct = null;
+    },
+
+    idr(n) { 
+      return (Number(n)||0).toLocaleString('id-ID',{style:'currency',currency:'IDR'}).replace(/\u00A0/g,' '); 
+    },
+  }));
+});
+
+// Wait for Alpine.js to be ready
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🏔️ [POS] POS JavaScript loaded and ready');
+});
+
+console.log('✅ [POS] POS JavaScript file loaded successfully');

@@ -1,0 +1,64 @@
+# Database Migration Order
+
+## CRITICAL: Migrations must be run in this exact order
+
+## Phase 1: Master Data Tables
+2026_02_21_000001_create_flights_table.php
+2026_02_21_000002_create_hotels_table.php
+2026_02_21_000003_create_hotel_room_types_table.php
+
+## Phase 2: Package and HPP Tables
+2026_02_21_000004_create_travel_packages_table.php
+2026_02_21_000005_create_hpp_calculations_table.php
+2026_02_21_000006_add_catalog_fields_to_travel_packages_table.php
+
+## Phase 3: Jamaah and Member Extension
+2026_02_21_000007_add_jamaah_fields_to_member_table.php
+
+## Phase 4: Keberangkatan and Bookings
+2026_02_21_000012_create_keberangkatan_table.php
+2026_02_21_000013_create_jamaah_bookings_table.php
+2026_02_21_000014_create_jamaah_payments_table.php
+2026_02_21_000015_create_jamaah_documents_table.php
+
+## Phase 5: Workflow System
+2026_02_21_000008_create_workflow_stages_table.php
+2026_02_21_000009_create_workflow_history_table.php
+2026_02_21_000011_create_workflow_tasks_table.php
+
+## Phase 6: Team Management
+2026_02_21_000010_create_teams_table.php
+2026_02_21_000023_create_team_members_table.php
+
+## Phase 7: Flight and Hotel Bookings
+2026_02_21_000016_create_flight_bookings_table.php
+2026_02_21_000017_create_hotel_bookings_table.php
+2026_02_21_000018_create_hotel_room_assignments_table.php
+
+## Phase 8: Design and Logistics
+2026_02_21_000019_create_design_materials_table.php
+2026_02_21_000024_create_equipment_checklists_table.php
+
+## Phase 9: Communication and Notifications
+2026_02_21_000020_create_customer_communications_table.php
+2026_02_21_000021_create_notifications_table.php
+
+## Phase 10: Audit System
+2026_02_21_000022_create_audit_logs_table.php
+
+## Command to Run All Migrations
+
+php artisan migrate
+
+## Command to Run Specific Migration
+
+php artisan migrate --path=/database/migrations/2026_02_21_000001_create_flights_table.php
+
+## Rollback Order (Reverse)
+
+php artisan migrate:rollback --step=1
+
+## Fresh Migration (Development Only - DESTROYS ALL DATA)
+
+php artisan migrate:fresh
+php artisan migrate:fresh --seed

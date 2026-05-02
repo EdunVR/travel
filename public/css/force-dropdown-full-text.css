@@ -1,0 +1,278 @@
+/**
+ * FORCE DROPDOWN FULL TEXT DISPLAY
+ * 
+ * CSS dengan prioritas tertinggi untuk memaksa semua dropdown
+ * menampilkan text lengkap tanpa terpotong
+ */
+
+/* ========================================
+   CRITICAL: Maximum Priority Rules
+   ======================================== */
+
+/* Force ALL select elements */
+select,
+select *,
+select option,
+select optgroup {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+}
+
+/* Specific option styling */
+option {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    padding: 10px 12px !important;
+    min-height: 2.5em !important;
+    line-height: 1.5 !important;
+    display: block !important;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    font-size: 13px !important;
+}
+
+/* Override any parent truncation */
+* select,
+*:not(select) > select,
+div select,
+form select,
+section select,
+article select,
+main select,
+aside select,
+header select,
+footer select,
+nav select {
+    white-space: normal !important;
+    text-overflow: clip !important;
+    overflow: visible !important;
+}
+
+/* Override any parent truncation for options */
+* select option,
+*:not(select) > select option,
+div select option,
+form select option,
+section select option,
+article select option,
+main select option,
+aside select option,
+header select option,
+footer select option,
+nav select option {
+    white-space: normal !important;
+    text-overflow: clip !important;
+    overflow: visible !important;
+    word-wrap: break-word !important;
+}
+
+/* Remove Tailwind truncate class effect */
+.truncate select,
+.truncate option,
+select.truncate,
+option.truncate,
+.text-ellipsis select,
+.text-ellipsis option,
+select.text-ellipsis,
+option.text-ellipsis {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
+/* Ensure proper sizing */
+select {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+    font-size: 13px !important;
+    min-width: 180px !important;
+}
+
+/* Make selected text smaller to fit */
+select:not([multiple]) {
+    font-size: 12px !important;
+    padding: 8px 32px 8px 12px !important;
+}
+
+/* Alpine.js x-model selects */
+[x-model] select,
+select[x-model],
+[x-model] select option,
+select[x-model] option {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    word-wrap: break-word !important;
+}
+
+/* Tailwind utility classes */
+select.rounded,
+select.rounded-sm,
+select.rounded-md,
+select.rounded-lg,
+select.rounded-xl,
+select.rounded-2xl,
+select.rounded-full {
+    white-space: normal !important;
+}
+
+select.border,
+select.border-slate-200,
+select.border-slate-300,
+select.border-gray-200,
+select.border-gray-300 {
+    white-space: normal !important;
+}
+
+/* Height classes */
+select.h-8,
+select.h-9,
+select.h-10,
+select.h-11,
+select.h-12 {
+    white-space: normal !important;
+}
+
+/* Width classes */
+select.w-full,
+select.w-auto,
+select.w-1\/2,
+select.w-1\/3,
+select.w-2\/3,
+select.w-1\/4,
+select.w-3\/4 {
+    white-space: normal !important;
+    max-width: 100% !important;
+}
+
+/* Padding classes */
+select.px-2,
+select.px-3,
+select.px-4,
+select.py-1,
+select.py-2,
+select.py-3 {
+    white-space: normal !important;
+}
+
+/* ========================================
+   Browser-Specific Fixes
+   ======================================== */
+
+/* Chrome, Safari, Edge */
+select::-webkit-scrollbar {
+    width: 8px;
+}
+
+select::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+select::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+/* Firefox */
+@-moz-document url-prefix() {
+    select,
+    select option {
+        white-space: normal !important;
+        word-wrap: break-word !important;
+    }
+}
+
+/* ========================================
+   Responsive Adjustments
+   ======================================== */
+
+/* CRITICAL: Selected text should use ellipsis, but options should wrap */
+select:not([multiple]) {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: 11px !important;
+    padding: 8px 32px 8px 10px !important;
+    line-height: 1.4 !important;
+}
+
+/* But dropdown options should wrap */
+select option {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    font-size: 12px !important;
+}
+
+@media (max-width: 1024px) {
+    select option {
+        font-size: 14px !important;
+        padding: 12px !important;
+    }
+    
+    select:not([multiple]) {
+        font-size: 12px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    select option {
+        font-size: 13px !important;
+        padding: 10px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    select option {
+        font-size: 12px !important;
+        padding: 8px !important;
+    }
+}
+
+/* ========================================
+   Print Styles
+   ======================================== */
+
+@media print {
+    select,
+    select option {
+        white-space: normal !important;
+        overflow: visible !important;
+    }
+}
+
+/* ========================================
+   Accessibility
+   ======================================== */
+
+select:focus,
+select:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    select option {
+        border: 1px solid currentColor;
+    }
+}
+
+/* ========================================
+   Debug Helper (Remove in production)
+   ======================================== */
+
+/* Uncomment to see which selects are affected */
+/*
+select {
+    border: 2px solid red !important;
+}
+
+select option {
+    background: yellow !important;
+}
+*/

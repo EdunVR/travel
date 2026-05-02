@@ -1,0 +1,166 @@
+╔══════════════════════════════════════════════════════════════════╗
+║     QUICK DEPLOY - SAFE VERSION (FILE ASLI TIDAK BERUBAH!)      ║
+╚══════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────┐
+│ KEUNGGULAN SCRIPT INI                                            │
+└──────────────────────────────────────────────────────────────────┘
+
+✓ File asli aplikasi TIDAK BERUBAH
+✓ Semua file deployment di folder terpisah: HOSTINGER_UPLOAD
+✓ Aman dijalankan berkali-kali
+✓ Include README dan instruksi lengkap
+✓ Otomatis verifikasi file penting
+
+┌──────────────────────────────────────────────────────────────────┐
+│ STEP 1: JALANKAN SCRIPT                                          │
+└──────────────────────────────────────────────────────────────────┘
+
+Double-click: deploy-to-hostinger.bat
+
+Script akan:
+→ Membuat folder HOSTINGER_UPLOAD
+→ Copy semua file Laravel
+→ Membuat .env dari .env.hostinger
+→ Verifikasi file penting
+→ Membuka folder HOSTINGER_UPLOAD
+
+┌──────────────────────────────────────────────────────────────────┐
+│ STEP 2: EDIT .env                                                │
+└──────────────────────────────────────────────────────────────────┘
+
+File: HOSTINGER_UPLOAD\laravel_app\.env
+
+Cari: DB_PASSWORD=GANTI_DENGAN_PASSWORD_DATABASE_HOSTINGER
+Ganti: DB_PASSWORD=password_anda_yang_benar
+
+SAVE!
+
+┌──────────────────────────────────────────────────────────────────┐
+│ STEP 3: COMPRESS & UPLOAD                                        │
+└──────────────────────────────────────────────────────────────────┘
+
+1. Compress: HOSTINGER_UPLOAD\laravel_app → laravel_app.zip
+2. Login Hostinger File Manager
+3. Navigate: /home/u127727849/domains/hmtourtravel.com/
+4. Hapus folder laravel_app lama (jika ada)
+5. Upload laravel_app.zip
+6. Extract ZIP
+7. Hapus ZIP file
+
+┌──────────────────────────────────────────────────────────────────┐
+│ STEP 4: SETUP VIA SSH                                            │
+└──────────────────────────────────────────────────────────────────┘
+
+ssh u127727849@hmtourtravel.com
+cd /home/u127727849/domains/hmtourtravel.com/laravel_app
+
+# Permission
+chmod -R 775 storage bootstrap/cache
+chown -R u127727849:u127727849 storage bootstrap/cache
+
+# Artisan
+/opt/alt/php82/usr/bin/php artisan config:clear
+/opt/alt/php82/usr/bin/php artisan cache:clear
+/opt/alt/php82/usr/bin/php artisan route:clear
+/opt/alt/php82/usr/bin/php artisan migrate --force
+/opt/alt/php82/usr/bin/php artisan db:seed --class=TravelPermissionSeeder --force
+/opt/alt/php82/usr/bin/php artisan storage:link
+
+┌──────────────────────────────────────────────────────────────────┐
+│ STEP 5: TEST                                                     │
+└──────────────────────────────────────────────────────────────────┘
+
+Akses: https://hmtourtravel.com
+
+Cek:
+✓ Website loading
+✓ Bisa login
+✓ Menu travel muncul
+✓ Database terkoneksi
+
+┌──────────────────────────────────────────────────────────────────┐
+│ STRUKTUR FOLDER                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+HOSTINGER_UPLOAD/
+├── laravel_app/              ← Upload folder ini
+│   ├── app/
+│   ├── routes/
+│   │   ├── web.php
+│   │   ├── api.php          ← Include!
+│   │   ├── console.php
+│   │   └── channels.php
+│   ├── storage/
+│   ├── vendor/
+│   ├── .env                  ← EDIT PASSWORD!
+│   └── README_UPLOAD.txt
+│
+├── public_html/              ← Upload jika berubah
+│   ├── index.php
+│   ├── .htaccess
+│   └── README_UPLOAD.txt
+│
+└── README_DEPLOYMENT.txt     ← Baca ini!
+
+┌──────────────────────────────────────────────────────────────────┐
+│ PENTING!                                                         │
+└──────────────────────────────────────────────────────────────────┘
+
+⚠️  File .env di ROOT FOLDER tetap untuk LOCALHOST
+⚠️  File .env di HOSTINGER_UPLOAD untuk SERVER
+⚠️  JANGAN upload .env dari root folder ke server!
+⚠️  WAJIB edit DB_PASSWORD sebelum upload!
+
+┌──────────────────────────────────────────────────────────────────┐
+│ JIKA ERROR                                                       │
+└──────────────────────────────────────────────────────────────────┘
+
+Error 500:
+→ Upload: public_html/debug-error.php
+→ Akses: https://hmtourtravel.com/debug-error.php
+
+Database Error:
+→ Cek password di HOSTINGER_UPLOAD\laravel_app\.env
+→ Reset password di Hostinger Control Panel
+→ Update .env dan clear cache
+
+File Missing:
+→ Jalankan script lagi
+→ Atau copy manual dari folder asli
+
+┌──────────────────────────────────────────────────────────────────┐
+│ RE-DEPLOYMENT                                                    │
+└──────────────────────────────────────────────────────────────────┘
+
+Jika ada perubahan code:
+1. Jalankan deploy-to-hostinger.bat lagi
+2. Edit .env
+3. Compress dan upload ulang
+4. Set permission dan run artisan
+5. Test website
+
+Script akan membuat folder HOSTINGER_UPLOAD baru setiap kali.
+
+┌──────────────────────────────────────────────────────────────────┐
+│ FILE PANDUAN                                                     │
+└──────────────────────────────────────────────────────────────────┘
+
+→ CARA_PAKAI_DEPLOY_SCRIPT.md - Panduan lengkap script
+→ HOSTINGER_UPLOAD\README_DEPLOYMENT.txt - Panduan deployment
+→ TROUBLESHOOTING_DEPLOYMENT.md - Troubleshooting lengkap
+
+┌──────────────────────────────────────────────────────────────────┐
+│ INFO SERVER                                                      │
+└──────────────────────────────────────────────────────────────────┘
+
+Domain: hmtourtravel.com
+Path: /home/u127727849/domains/hmtourtravel.com/
+Database: u127727849_morra
+DB User: u127727849_morra
+SSH: u127727849@hmtourtravel.com
+PHP: 8.2 atau 8.3
+
+╔══════════════════════════════════════════════════════════════════╗
+║              FILE ASLI AMAN - TIDAK AKAN BERUBAH! ✓              ║
+╚══════════════════════════════════════════════════════════════════╝

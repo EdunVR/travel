@@ -1,0 +1,309 @@
+/**
+ * Travel Management System - Validation Styling
+ * Consistent validation error and warning display
+ */
+
+/* Field validation states */
+.is-invalid {
+    border-color: #dc3545 !important;
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23dc3545' viewBox='0 0 12 12'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.is-invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.invalid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #dc3545;
+}
+
+.invalid-feedback.d-block {
+    display: block !important;
+}
+
+/* Warning state for soft validations */
+.border-warning {
+    border-color: #ffc107 !important;
+}
+
+.text-warning {
+    color: #856404 !important;
+}
+
+.text-warning i {
+    color: #ffc107;
+}
+
+/* Validation alerts */
+.alert.validation-error,
+.alert.validation-warning,
+.alert.validation-summary {
+    margin-bottom: 1rem;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert-heading {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.alert ul {
+    padding-left: 1.5rem;
+    margin-bottom: 0;
+}
+
+.alert ul li {
+    margin-bottom: 0.25rem;
+}
+
+/* Modal validation styling */
+.modal-body .alert:first-child {
+    margin-top: 0;
+}
+
+.modal-body .is-invalid {
+    animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Form group with validation */
+.form-group.has-error .form-control {
+    border-color: #dc3545;
+}
+
+.form-group.has-error label {
+    color: #dc3545;
+}
+
+.form-group.has-warning .form-control {
+    border-color: #ffc107;
+}
+
+.form-group.has-warning label {
+    color: #856404;
+}
+
+/* Validation icons */
+.validation-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.validation-icon.error {
+    color: #dc3545;
+}
+
+.validation-icon.warning {
+    color: #ffc107;
+}
+
+.validation-icon.success {
+    color: #28a745;
+}
+
+/* Inline validation messages */
+.field-error {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #dc3545;
+}
+
+.field-warning {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #856404;
+}
+
+.field-success {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #28a745;
+}
+
+/* Validation summary styling */
+.validation-summary {
+    border-left: 4px solid #dc3545;
+}
+
+.validation-summary .alert-heading {
+    display: flex;
+    align-items: center;
+}
+
+.validation-summary ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.validation-summary ul li:before {
+    content: "•";
+    color: #dc3545;
+    font-weight: bold;
+    display: inline-block;
+    width: 1em;
+    margin-left: -1em;
+}
+
+/* Warning summary styling */
+.alert-warning.validation-warning {
+    border-left: 4px solid #ffc107;
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+/* DataTables validation */
+.dataTables_wrapper .is-invalid {
+    border-color: #dc3545;
+}
+
+/* Select2 validation */
+.select2-container--default .select2-selection--single.is-invalid,
+.select2-container--default .select2-selection--multiple.is-invalid {
+    border-color: #dc3545;
+}
+
+/* File input validation */
+.custom-file-input.is-invalid ~ .custom-file-label {
+    border-color: #dc3545;
+}
+
+.custom-file-input.is-invalid ~ .invalid-feedback {
+    display: block;
+}
+
+/* Checkbox and radio validation */
+.form-check-input.is-invalid ~ .form-check-label {
+    color: #dc3545;
+}
+
+.form-check-input.is-invalid {
+    border-color: #dc3545;
+}
+
+/* Validation tooltip */
+.validation-tooltip {
+    position: absolute;
+    z-index: 1070;
+    display: none;
+    max-width: 100%;
+    padding: 0.25rem 0.5rem;
+    margin-top: 0.1rem;
+    font-size: 0.875rem;
+    color: #fff;
+    background-color: rgba(220, 53, 69, 0.9);
+    border-radius: 0.25rem;
+}
+
+.validation-tooltip.show {
+    display: block;
+}
+
+/* Loading state during validation */
+.validating {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.validating:after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    width: 16px;
+    height: 16px;
+    margin-top: -8px;
+    border: 2px solid #007bff;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Success state */
+.is-valid {
+    border-color: #28a745 !important;
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.valid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #28a745;
+}
+
+.valid-feedback.d-block {
+    display: block !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .alert {
+        font-size: 0.875rem;
+    }
+    
+    .alert-heading {
+        font-size: 1rem;
+    }
+    
+    .invalid-feedback,
+    .valid-feedback {
+        font-size: 0.8125rem;
+    }
+}
+
+/* Print styles */
+@media print {
+    .is-invalid,
+    .is-valid {
+        background-image: none !important;
+        border-color: #000 !important;
+    }
+    
+    .invalid-feedback,
+    .valid-feedback,
+    .alert {
+        display: none !important;
+    }
+}

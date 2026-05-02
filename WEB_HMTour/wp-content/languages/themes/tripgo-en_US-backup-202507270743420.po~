@@ -1,0 +1,4594 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Tripgo\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-08-26 09:34+0000\n"
+"PO-Revision-Date: 2025-07-26 07:33+0000\n"
+"Last-Translator: \n"
+"Language-Team: English (United States)\n"
+"Language: en_US\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.8.0; wp-6.8.2; php-8.1.32\n"
+"X-Domain: tripgo"
+
+#: woocommerce/rental/loop/fields/services.php:78
+#, php-format
+msgid " (Adult: %s%s - Baby:%s%s)"
+msgstr "."
+
+#: woocommerce/rental/loop/fields/services.php:80
+#, php-format
+msgid " (Adult: %s%s - Children:%s%s - Baby:%s%s)"
+msgstr "."
+
+#: woocommerce/rental/loop/fields/services.php:76
+#, php-format
+msgid " (Adult: %s%s - Children:%s%s)"
+msgstr "."
+
+#: woocommerce/rental/loop/fields/services.php:70
+#: woocommerce/rental/loop/fields/services.php:74
+#, php-format
+msgid " (Adult: %s%s)"
+msgstr "."
+
+#: template-parts/parts/meta.php:54
+msgid " 0 Comments"
+msgstr ""
+
+#: template-parts/parts/meta.php:55
+msgid " 1 Comment"
+msgstr ""
+
+#: elementor/widgets/icon-box.php:647
+msgid " Button Readmore"
+msgstr ""
+
+#: woocommerce/rental/loop/table_price.php:171
+msgid " to "
+msgstr "ke"
+
+#: elementor/widgets/testimonial.php:96
+msgid ""
+"\"Duis tristique volutpat facilisis. Integer vitae augue tellus. Phasellus "
+"fringilla tortor a maximus laoreet. Morbi a tristique erat. Fusce luctus "
+"urna vitae ornare aliquam.\""
+msgstr ""
+
+#: elementor/widgets/testimonial-3.php:121
+#: elementor/widgets/testimonial-3.php:126
+#: elementor/widgets/testimonial-3.php:131
+#: elementor/widgets/testimonial-2.php:159
+#: elementor/widgets/testimonial-2.php:164
+#: elementor/widgets/testimonial-2.php:169
+msgid ""
+"\"OMG! I cannot believe that I have got a brand new landing page after "
+"getting appmax. It was super easy to edit and publish.I have got a brand new "
+"landing page.\""
+msgstr ""
+
+#: elementor/widgets/testimonial-3.php:107
+#: elementor/widgets/testimonial-2.php:145
+msgid ""
+"\"Sed ullamcorper morbi tincidunt or massa eget egestas purus. Non nisi est "
+"sit amet facilisis magna etiam.\""
+msgstr ""
+
+#. 1: plugin name.
+#: install-resource/class-tgm-plugin-activation.php:3594
+#, php-format
+msgid "%1$s installed and activated successfully."
+msgstr ""
+
+#. 1: plugin name.
+#: install-resource/class-tgm-plugin-activation.php:3602
+#, php-format
+msgid "%1$s installed successfully."
+msgstr ""
+
+#: woocommerce/rental/loop/fields/extra_fields.php:74
+#: woocommerce/rental/loop/fields/extra_fields.php:106
+#: woocommerce/rental/loop/fields/extra_fields.php:132
+#: woocommerce/rental/loop/fields/extra_fields.php:170
+#, php-format
+msgid "%s field is required."
+msgstr "%s kolom wajib diisi"
+
+#: woocommerce/rental/content-item-product-list.php:311
+#: woocommerce/rental/content-item-product.php:171
+#, php-format
+msgid "%s hour"
+msgstr "%s jam"
+
+#: woocommerce/rental/content-item-product-list.php:301
+#: woocommerce/rental/content-item-product.php:161
+#, php-format
+msgid "%s hour %s minute"
+msgstr "%s jam %s menit"
+
+#: woocommerce/rental/content-item-product-list.php:297
+#: woocommerce/rental/content-item-product.php:157
+#, php-format
+msgid "%s hour %s minutes"
+msgstr "%s jam %s menit"
+
+#: woocommerce/rental/content-item-product-list.php:313
+#: woocommerce/rental/content-item-product.php:173
+#, php-format
+msgid "%s hours"
+msgstr "%s jam"
+
+#: woocommerce/rental/content-item-product-list.php:299
+#: woocommerce/rental/content-item-product.php:159
+#, php-format
+msgid "%s hours %s minute"
+msgstr "%s jam %s menit"
+
+#: woocommerce/rental/content-item-product-list.php:295
+#: woocommerce/rental/content-item-product.php:155
+#, php-format
+msgid "%s hours %s minutes"
+msgstr "%s jam %s menit"
+
+#: woocommerce/rental/loop/fields/services.php:50
+#: woocommerce/rental/loop/fields/extra_fields.php:50
+#: woocommerce/rental/loop/fields/extra_fields.php:60
+#, php-format
+msgid "%s is required."
+msgstr "%s diperlukan"
+
+#: woocommerce/rental/content-item-product-list.php:305
+#: woocommerce/rental/content-item-product.php:165
+#, php-format
+msgid "%s minute"
+msgstr "%s menit"
+
+#: woocommerce/rental/content-item-product-list.php:307
+#: woocommerce/rental/content-item-product.php:167
+#, php-format
+msgid "%s minutes"
+msgstr "%s menit"
+
+#: woocommerce/rental/content-item-product-list.php:235
+#: woocommerce/rental/loop/video-gallery.php:112
+#, php-format
+msgid "%s photos"
+msgstr ""
+
+#: woocommerce/rental/content-item-product-list.php:266
+#: woocommerce/rental/loop/location-review.php:64
+#, php-format
+msgid "%s review"
+msgid_plural "%s reviews"
+msgstr[0] ""
+msgstr[1] ""
+
+#: woocommerce/rental/loop/unavailable_time.php:51
+#, php-format
+msgid "%s. %s"
+msgstr ""
+
+#: woocommerce/rental/loop/unavailable_time.php:47
+#, php-format
+msgid "%s. %s to %s"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:83
+msgid ""
+"( If you enter the link, it will redirect to the link instead of Fancybox "
+"popup )"
+msgstr ""
+
+#: woocommerce/rental/loop/request-form.php:115
+msgid "(229) 555-2872"
+msgstr ""
+
+#: elementor/widgets/contact-form.php:88
+msgid "(406) 555-0120-78"
+msgstr ""
+
+#: elementor/widgets/contact-info.php:116
+msgid "+012 (345) 678"
+msgstr ""
+
+#: elementor/widgets/contact-info.php:129
+msgid "+012345678"
+msgstr ""
+
+#: woocommerce/rental/loop/table_price.php:90
+msgid "-"
+msgstr ""
+
+#: elementor/widgets/special-offer-2.php:76
+msgid "-32% OFF"
+msgstr ""
+
+#: woocommerce/rental/loop/fields/services.php:64
+#: woocommerce/rental/loop/fields/resources.php:89
+#: woocommerce/rental/loop/fields/resources.php:109
+#: woocommerce/rental/loop/fields/resources.php:130
+msgid "/per person"
+msgstr "/per orang"
+
+#: woocommerce/rental/loop/fields/services.php:61
+#: woocommerce/rental/loop/fields/resources.php:91
+#: woocommerce/rental/loop/fields/resources.php:111
+#: woocommerce/rental/loop/fields/resources.php:132
+msgid "/total"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:99 elementor/widgets/counter-list.php:62
+#: elementor/widgets/image-gallery.php:57
+msgid "2 Columns"
+msgstr ""
+
+#: elementor/widgets/counter.php:73
+msgid "28"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:100 elementor/widgets/counter-list.php:63
+#: elementor/widgets/gallery-filter.php:54
+#: elementor/widgets/image-gallery.php:58
+msgid "3 Columns"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:101 elementor/widgets/counter-list.php:64
+#: elementor/widgets/gallery-filter.php:55
+#: elementor/widgets/image-gallery.php:59
+msgid "4 Columns"
+msgstr ""
+
+#: elementor/widgets/contact-form.php:97
+msgid "406555012078"
+msgstr ""
+
+#: elementor/widgets/counter-list.php:143
+msgid "5 star clients ratings"
+msgstr ""
+
+#: elementor/widgets/icon-list.php:64 elementor/widgets/icon-list.php:97
+msgid "723+ Destinations"
+msgstr ""
+
+#: elementor/widgets/contact-form.php:179
+#: elementor/widgets/contact-form.php:180
+msgid "7am - 11pm ET | 4am - 8pm PT"
+msgstr ""
+
+#: inc/class-main.php:114
+msgctxt ": on or off"
+msgid "on"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2811
+msgid "Activate"
+msgstr ""
+
+#. %2$s: plugin name in screen reader markup
+#: install-resource/class-tgm-plugin-activation.php:2699
+#, php-format
+msgid "Activate %2$s"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2406
+#: elementor/widgets/tabs.php:532 elementor/widgets/tabs.php:853
+#: elementor/widgets/road-map.php:379 elementor/widgets/menu-canvas.php:290
+#: elementor/widgets/menu-nav.php:165 elementor/widgets/menu-nav.php:295
+#: elementor/widgets/gallery-slide.php:592 elementor/widgets/toggle.php:365
+#: elementor/widgets/toggle.php:549 elementor/widgets/toggle.php:1001
+msgid "Active"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:832 elementor/widgets/toggle.php:763
+#: elementor/widgets/toggle.php:875
+msgid "Active Color"
+msgstr ""
+
+#: elementor/widgets/road-map.php:63
+msgid "Active Date"
+msgstr ""
+
+#: elementor/widgets/toggle.php:125
+msgid "Active Icon"
+msgstr ""
+
+#: elementor/widgets/image-gallery.php:96
+msgid "Add Images"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:213
+#: elementor/widgets/testimonial.php:141
+#: elementor/widgets/testimonial-3.php:151
+#: elementor/widgets/testimonial-2.php:186
+#: elementor/widgets/gallery-slide.php:156
+msgid "Additional Options"
+msgstr "Pilihan Tambahan"
+
+#: woocommerce/rental/loop/request-form.php:122
+msgid "Address *"
+msgstr "Alamat *"
+
+#: woocommerce/rental/loop/request-form.php:129
+msgid "Address is required."
+msgstr "Alamat dibutuhkan."
+
+#: woocommerce/rental/loop/table_price.php:40
+#: woocommerce/rental/loop/table_price.php:123
+#: woocommerce/rental/loop/table_price.php:190
+msgid "Adult Price"
+msgstr "Harga Dewasa"
+
+#: woocommerce/rental/loop/fields/resources.php:80
+msgid "Adult:"
+msgstr "Dewasa:"
+
+#: woocommerce/rental/loop/fields/guests.php:72
+msgid "Adults"
+msgstr "Dewasa"
+
+#: woocommerce/rental/loop/fields/guests.php:95
+msgid "Adults is required."
+msgstr "Diperlukan."
+
+#: elementor/widgets/gallery-filter.php:176
+msgid "Adventure Road Tracking"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:184
+msgid "Adventure Train Tracking"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:188
+msgid "Adventure Waterfall"
+msgstr ""
+
+#: inc/class-elementor.php:386 elementor/widgets/contact-info.php:413
+#: elementor/widgets/tabs.php:166 elementor/widgets/tabs.php:196
+#: elementor/widgets/tabs.php:320 elementor/widgets/tabs.php:770
+#: elementor/widgets/counter-list.php:154 elementor/widgets/our-team.php:106
+#: elementor/widgets/share-buttons.php:159 elementor/widgets/icon-box.php:238
+#: elementor/widgets/heading.php:112 elementor/widgets/counter.php:98
+#: elementor/widgets/header-banner.php:311 elementor/widgets/logo.php:79
+#: elementor/widgets/toggle.php:711
+msgid "Alignment"
+msgstr ""
+
+#: elementor/widgets/progress.php:216
+msgid "Alignment List"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:40
+msgid "All categories"
+msgstr "Semua Kategori"
+
+#: install-resource/class-tgm-plugin-activation.php:3595
+msgid "All installations and activations have been completed."
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:3603
+msgid "All installations have been completed."
+msgstr ""
+
+#. 1: dashboard link.
+#: install-resource/class-tgm-plugin-activation.php:401
+#, php-format
+msgid "All plugins installed and activated successfully. %1$s"
+msgstr ""
+
+#: inc/class-customize.php:1711
+msgid "All products"
+msgstr "Semua Produk"
+
+#: elementor/widgets/special-offer-2.php:98
+msgid "An enim nullam tempor sapien gravida donec enim"
+msgstr ""
+
+#. 1: plugin name, 2: error message.
+#: install-resource/class-tgm-plugin-activation.php:3586
+#, php-format
+msgid "An error occurred while installing %1$s: <strong>%2$s</strong>."
+msgstr ""
+
+#: elementor/widgets/road-map.php:105
+msgid "Animation Content"
+msgstr ""
+
+#: elementor/widgets/road-map.php:130
+msgid "Animation Delay"
+msgstr ""
+
+#: elementor/widgets/road-map.php:113
+msgid "Animation Duration"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:52
+msgid "App ID"
+msgstr ""
+
+#: inc/class-customize.php:1345
+msgid "Apply for Product Templates: Default"
+msgstr ""
+
+#: inc/class-customize.php:628 inc/class-customize.php:1156
+msgid "Archive"
+msgstr ""
+
+#: template-parts/parts/breadcrumbs.php:35
+msgid "Archive by date"
+msgstr ""
+
+#: template-parts/parts/breadcrumbs.php:40
+msgid "Archive by month"
+msgstr ""
+
+#: template-parts/parts/breadcrumbs.php:120
+msgid "Archive by tag"
+msgstr ""
+
+#: template-parts/parts/breadcrumbs.php:44
+msgid "Archive by year"
+msgstr ""
+
+#: inc/class-customize.php:1727
+msgid "Archive Layout"
+msgstr ""
+
+#: template-parts/parts/breadcrumbs.php:126
+msgid "Articles posted by"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2567
+msgctxt "as in: \"version nr unknown\""
+msgid "unknown"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:132
+msgid "Ascending"
+msgstr ""
+
+#: elementor/widgets/testimonial-6.php:70
+#: elementor/widgets/testimonial-5.php:87
+#: elementor/widgets/testimonial-4.php:161 elementor/widgets/testimonial.php:83
+#: elementor/widgets/testimonial-3.php:94
+#: elementor/widgets/testimonial-2.php:132
+msgid "Author Image"
+msgstr ""
+
+#: elementor/widgets/testimonial-6.php:81
+#: elementor/widgets/testimonial-6.php:253
+#: elementor/widgets/testimonial-5.php:69
+#: elementor/widgets/testimonial-4.php:95 elementor/widgets/testimonial.php:66
+#: elementor/widgets/testimonial.php:468 elementor/widgets/testimonial-3.php:61
+#: elementor/widgets/testimonial-3.php:517
+#: elementor/widgets/testimonial-2.php:49
+#: elementor/widgets/testimonial-2.php:503
+msgid "Author Name"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:145
+msgid "Auto"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:322
+#: elementor/widgets/testimonial.php:180
+#: elementor/widgets/testimonial-3.php:221
+#: elementor/widgets/testimonial-2.php:252 elementor/widgets/video.php:120
+#: elementor/widgets/gallery-slide.php:232
+msgid "Autoplay"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:336
+#: elementor/widgets/testimonial.php:194
+#: elementor/widgets/testimonial-3.php:235
+#: elementor/widgets/testimonial-2.php:266
+#: elementor/widgets/gallery-slide.php:246
+msgid "Autoplay Speed"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2595
+msgid "Available version:"
+msgstr ""
+
+#: elementor/widgets/icon-list.php:73
+msgid "Available, but the majority have suffered simply"
+msgstr ""
+
+#: woocommerce/rental/loop/fields/ajax-total.php:24
+msgid "Available: "
+msgstr "Tersedia"
+
+#: elementor/widgets/testimonial.php:582
+#: elementor/widgets/testimonial-2.php:423
+msgid "Avatar"
+msgstr ""
+
+#: inc/class-woo.php:155
+msgid "Awaiting product image"
+msgstr ""
+
+#: woocommerce/rental/loop/fields/guests.php:140
+msgid "Babies"
+msgstr "Bayi"
+
+#: woocommerce/rental/loop/table_price.php:42
+#: woocommerce/rental/loop/table_price.php:128
+#: woocommerce/rental/loop/table_price.php:195
+msgid "Baby Price"
+msgstr "Harga Bayi"
+
+#: woocommerce/rental/loop/fields/resources.php:121
+msgid "Baby:"
+msgstr "Bayi:"
+
+#: elementor/widgets/contact-info.php:252 elementor/widgets/tabs.php:441
+#: elementor/widgets/tabs.php:496 elementor/widgets/tabs.php:551
+#: elementor/widgets/blog-grid.php:265 elementor/widgets/road-map.php:365
+#: elementor/widgets/road-map.php:397 elementor/widgets/counter-list.php:191
+#: elementor/widgets/progress.php:194 elementor/widgets/progress.php:274
+#: elementor/widgets/our-team.php:244 elementor/widgets/our-team.php:530
+#: elementor/widgets/icon-list.php:125 elementor/widgets/special-offer.php:242
+#: elementor/widgets/special-offer.php:570
+#: elementor/widgets/testimonial-6.php:239 elementor/widgets/menu-footer.php:80
+#: elementor/widgets/menu-footer.php:178 elementor/widgets/counter.php:134
+#: elementor/widgets/video.php:235 elementor/widgets/video.php:276
+#: elementor/widgets/menu-nav.php:211 elementor/widgets/special-offer-2.php:437
+#: elementor/widgets/special-offer-2.php:468
+#: elementor/widgets/contact-form.php:481 elementor/widgets/toggle.php:321
+#: elementor/widgets/toggle.php:352 elementor/widgets/toggle.php:383
+#: elementor/widgets/toggle.php:516 elementor/widgets/toggle.php:536
+#: elementor/widgets/toggle.php:556 elementor/widgets/toggle.php:968
+#: elementor/widgets/toggle.php:988 elementor/widgets/toggle.php:1008
+#: elementor/widgets/toggle.php:1062
+msgid "Background"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:539
+msgid "Background "
+msgstr ""
+
+#: elementor/widgets/icon-box.php:331
+msgid "Background Border Radius"
+msgstr ""
+
+#: elementor/widgets/tabs.php:295 elementor/widgets/counter-list.php:299
+#: elementor/widgets/special-offer.php:289 elementor/widgets/icon-box.php:167
+#: elementor/widgets/icon-box.php:370 elementor/widgets/icon-box.php:417
+#: elementor/widgets/testimonial-5.php:160
+#: elementor/widgets/testimonial-4.php:385 elementor/widgets/heading.php:182
+#: elementor/widgets/counter.php:242 elementor/widgets/switch-language.php:155
+#: elementor/widgets/gallery-filter.php:510 elementor/widgets/menu-cart.php:146
+#: elementor/widgets/gallery-slide.php:365
+#: elementor/widgets/gallery-slide.php:418
+#: elementor/widgets/gallery-slide.php:474
+msgid "Background Color"
+msgstr ""
+
+#: elementor/widgets/counter-list.php:310 elementor/widgets/icon-box.php:178
+#: elementor/widgets/counter.php:253 elementor/widgets/gallery-filter.php:541
+#: elementor/widgets/gallery-slide.php:485
+msgid "Background Color Hover"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:120
+msgid "Background Cover Color"
+msgstr ""
+
+#: elementor/widgets/video.php:247 elementor/widgets/video.php:288
+msgid "Background Gradient"
+msgstr ""
+
+#: elementor/widgets/counter-list.php:202 elementor/widgets/our-team.php:255
+#: elementor/widgets/counter.php:145
+msgid "Background Hover"
+msgstr ""
+
+#: elementor/widgets/contact-form.php:493
+msgid "Background hover"
+msgstr ""
+
+#: elementor/widgets/menu-nav.php:225
+msgid "Background Item Hover"
+msgstr ""
+
+#: elementor/widgets/tabs.php:464 elementor/widgets/tabs.php:519
+#: elementor/widgets/tabs.php:574
+msgid "Background Mobile"
+msgstr ""
+
+#: elementor/widgets/icon-box.php:297 elementor/widgets/gallery-filter.php:414
+#: elementor/widgets/menu-cart.php:116
+msgid "Background Size"
+msgstr ""
+
+#: elementor/widgets/testimonial-6.php:163
+msgid "Backround"
+msgstr ""
+
+#: elementor/widgets/toggle.php:817
+msgid "Before Icon"
+msgstr ""
+
+#: elementor/widgets/toggle.php:489
+msgid "Before Title Style"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:387
+msgid "Begin activating plugin"
+msgid_plural "Begin activating plugins"
+msgstr[0] ""
+msgstr[1] ""
+
+#: install-resource/class-tgm-plugin-activation.php:377
+msgid "Begin installing plugin"
+msgid_plural "Begin installing plugins"
+msgstr[0] ""
+msgstr[1] ""
+
+#: install-resource/class-tgm-plugin-activation.php:382
+msgid "Begin updating plugin"
+msgid_plural "Begin updating plugins"
+msgstr[0] ""
+msgstr[1] ""
+
+#: elementor/widgets/icon-list.php:100
+msgid "Best Price Gurantee"
+msgstr ""
+
+#: inc/class-elementor.php:209 elementor/widgets/tabs.php:328
+msgid "Block"
+msgstr ""
+
+#: inc/class-customize.php:623 template-parts/parts/breadcrumbs_title.php:13
+#: template-parts/parts/breadcrumbs.php:130
+msgid "Blog"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:16
+msgid "Blog Grid"
+msgstr ""
+
+#: elementor/widgets/progress.php:169
+msgid "Bonus"
+msgstr ""
+
+#: woocommerce/rental/loop/forms.php:80
+msgid "Booking Form"
+msgstr "Form Pemesanan"
+
+#: woocommerce/rental/loop/booking-form.php:71
+msgid "Booking Now"
+msgstr "Pesan Sekarang"
+
+#: inc/class-customize.php:398 elementor/widgets/contact-info.php:288
+#: elementor/widgets/tabs.php:346 elementor/widgets/tabs.php:589
+#: elementor/widgets/tabs.php:715 elementor/widgets/icon-list.php:170
+#: elementor/widgets/testimonial.php:612
+#: elementor/widgets/gallery-filter.php:223
+#: elementor/widgets/gallery-filter.php:298
+#: elementor/widgets/contact-form.php:214
+#: elementor/widgets/contact-form.php:258
+#: elementor/widgets/contact-form.php:530 elementor/widgets/toggle.php:398
+#: elementor/widgets/toggle.php:1107
+msgid "Border"
+msgstr ""
+
+#: inc/class-elementor.php:309 elementor/widgets/tabs.php:284
+#: elementor/widgets/testimonial.php:620 elementor/widgets/toggle.php:211
+msgid "Border Color"
+msgstr ""
+
+#: elementor/widgets/tabs.php:610 elementor/widgets/gallery-filter.php:306
+#: elementor/widgets/toggle.php:418
+msgid "Border Color Active"
+msgstr ""
+
+#: elementor/widgets/testimonial-5.php:191
+#: elementor/widgets/testimonial-4.php:416
+msgid "Border Color Center"
+msgstr ""
+
+#: elementor/widgets/tabs.php:598 elementor/widgets/toggle.php:407
+msgid "Border Color Hover"
+msgstr ""
+
+#: elementor/widgets/testimonial-5.php:107
+msgid "Border Highlight"
+msgstr ""
+
+#: inc/class-elementor.php:278 elementor/widgets/contact-info.php:296
+#: elementor/widgets/tabs.php:354 elementor/widgets/tabs.php:622
+#: elementor/widgets/tabs.php:966 elementor/widgets/blog-grid.php:327
+#: elementor/widgets/blog-grid.php:372 elementor/widgets/road-map.php:270
+#: elementor/widgets/counter-list.php:234 elementor/widgets/progress.php:249
+#: elementor/widgets/our-team.php:301 elementor/widgets/icon-list.php:148
+#: elementor/widgets/icon-box.php:209 elementor/widgets/testimonial-5.php:205
+#: elementor/widgets/testimonial-5.php:480
+#: elementor/widgets/testimonial-4.php:430
+#: elementor/widgets/testimonial-4.php:660
+#: elementor/widgets/testimonial-4.php:843 elementor/widgets/counter.php:177
+#: elementor/widgets/gallery-filter.php:478 elementor/widgets/video.php:376
+#: elementor/widgets/contact-form.php:222
+#: elementor/widgets/contact-form.php:538
+#: elementor/widgets/gallery-slide.php:295
+#: elementor/widgets/gallery-slide.php:578
+#: elementor/widgets/gallery-slide.php:646 elementor/widgets/toggle.php:429
+#: elementor/widgets/toggle.php:1022 elementor/widgets/toggle.php:1116
+msgid "Border Radius"
+msgstr ""
+
+#: elementor/widgets/my-account-button.php:122
+msgid "Border radius"
+msgstr ""
+
+#: elementor/widgets/tabs.php:661
+msgid "Border Radius (first-child)"
+msgstr ""
+
+#: elementor/widgets/tabs.php:673
+msgid "Border Radius (last-child)"
+msgstr ""
+
+#: elementor/widgets/toggle.php:441
+msgid "Border Radius Active"
+msgstr ""
+
+#: inc/class-elementor.php:291 elementor/widgets/tabs.php:264
+#: elementor/widgets/toggle.php:193
+msgid "Border Width"
+msgstr ""
+
+#: elementor/widgets/counter-list.php:226 elementor/widgets/icon-list.php:161
+#: elementor/widgets/counter.php:169 elementor/widgets/video.php:368
+msgid "Box Shadow"
+msgstr ""
+
+#: elementor/widgets/icon-box.php:432
+msgid "Box Shadow "
+msgstr ""
+
+#: inc/class-hook.php:375
+msgid "Boxed"
+msgstr ""
+
+#: inc/class-customize.php:553
+msgid "Boxed Offset (px)"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:209
+msgid "Breadcrumbs Color"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:256
+msgid "Breadcrumbs Color Hover"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:234
+msgid "Breadcrumbs Current Color Opacity"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:223
+msgid "Breadcrumbs Last Child Color"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:268
+msgid "Breadcrumbs Opacity Hover"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:299
+msgid "Breadcrumbs Padding"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:291
+msgid "Breadcrumbs Typography"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:485
+#: elementor/widgets/my-account-button.php:92
+#: elementor/widgets/contact-form.php:110
+#: elementor/widgets/contact-form.php:441
+msgid "Button"
+msgstr ""
+
+#: elementor/widgets/menu-canvas.php:163 elementor/widgets/menu-canvas.php:198
+msgid "Button background"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:312
+msgid "Button Border Radius"
+msgstr ""
+
+#: elementor/widgets/menu-canvas.php:149 elementor/widgets/menu-canvas.php:184
+msgid "Button color"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:262
+msgid "Button Size"
+msgstr ""
+
+#: elementor/widgets/contact-form.php:79
+msgid "Call our product expert"
+msgstr "Hubungi tim kami"
+
+#: elementor/widgets/special-offer.php:89
+msgid "Can use <br> tag for line breaks"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:75 elementor/widgets/gallery-filter.php:124
+#: elementor/widgets/gallery-slide.php:115
+#: elementor/widgets/gallery-slide.php:390
+msgid "Category"
+msgstr "Kategori"
+
+#: inc/class-elementor.php:394 elementor/widgets/contact-info.php:421
+#: elementor/widgets/tabs.php:174 elementor/widgets/tabs.php:204
+#: elementor/widgets/counter-list.php:162 elementor/widgets/progress.php:224
+#: elementor/widgets/our-team.php:114 elementor/widgets/share-buttons.php:167
+#: elementor/widgets/icon-box.php:246 elementor/widgets/heading.php:120
+#: elementor/widgets/counter.php:106 elementor/widgets/header-banner.php:319
+#: elementor/widgets/logo.php:87
+msgid "Center"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:280
+msgid "Center Mode"
+msgstr ""
+
+#: elementor/widgets/our-team.php:98 elementor/widgets/testimonial-6.php:92
+msgid "CEO & Founder"
+msgstr ""
+
+#: elementor/widgets/contact-form.php:133
+#: elementor/widgets/contact-form.php:134
+msgid "chat with us"
+msgstr "Chat kami"
+
+#: woocommerce/rental/loop/fields/dates.php:38
+msgid "Check in"
+msgstr "Berangkat"
+
+#: woocommerce/rental/loop/request-form.php:155
+msgid "Check in *"
+msgstr "Berangkat *"
+
+#: woocommerce/rental/loop/fields/dates.php:39
+msgid "Check out"
+msgstr "Pulang"
+
+#: woocommerce/rental/loop/request-form.php:176
+msgid "Check out *"
+msgstr "Pulang *"
+
+#: woocommerce/rental/loop/request-form.php:167
+#: woocommerce/rental/loop/fields/dates.php:109
+msgid "Check-in is required."
+msgstr "Keberangkatan dibutuhkan."
+
+#: woocommerce/rental/loop/request-form.php:188
+#: woocommerce/rental/loop/fields/dates.php:128
+msgid "Check-out is required."
+msgstr "Kepulangan dibutuhkan."
+
+#: woocommerce/rental/loop/fields/guests.php:106
+msgid "Children"
+msgstr "Anak"
+
+#: elementor/widgets/gallery-slide.php:108
+#: elementor/widgets/gallery-slide.php:129
+msgid "Children Park"
+msgstr ""
+
+#: woocommerce/rental/loop/table_price.php:41
+#: woocommerce/rental/loop/table_price.php:125
+#: woocommerce/rental/loop/table_price.php:192
+msgid "Children Price"
+msgstr "Harga Anak"
+
+#: woocommerce/rental/loop/fields/resources.php:100
+msgid "Children:"
+msgstr "Anak:"
+
+#: elementor/widgets/testimonial-6.php:47
+msgid "Choose Backround Image"
+msgstr ""
+
+#: woocommerce/rental/loop/fields/extra_fields.php:158
+msgid "Choose File"
+msgstr "Pilih File"
+
+#: elementor/widgets/tabs.php:75
+msgid "Choose Icon"
+msgstr "Pilih Icon"
+
+#: elementor/widgets/tabs.php:86 elementor/widgets/road-map.php:75
+#: elementor/widgets/our-team.php:75 elementor/widgets/special-offer.php:75
+#: elementor/widgets/special-offer-2.php:63
+#: elementor/widgets/gallery-slide.php:95
+msgid "Choose Image"
+msgstr "Pilih Gambar"
+
+#: woocommerce/rental/loop/request-form.php:39
+#: woocommerce/rental/loop/fields/dates.php:37
+msgid "Choose time"
+msgstr "Pilih Waktu"
+
+#: elementor/widgets/header-banner.php:168
+msgid "Choose Title Format"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:340
+msgid "Class"
+msgstr ""
+
+#: elementor/widgets/contact-info.php:47 elementor/widgets/contact-form.php:119
+msgid "Class Icon"
+msgstr ""
+
+#: woocommerce/rental/loop/table_price.php:230
+msgid "Close"
+msgstr "Tutup"
+
+#: install-resource/active-plugins.php:71
+msgid "CMB2"
+msgstr ""
+
+#: inc/class-customize.php:238 elementor/widgets/contact-info.php:240
+#: elementor/widgets/contact-info.php:323
+#: elementor/widgets/contact-info.php:370 elementor/widgets/tabs.php:429
+#: elementor/widgets/tabs.php:484 elementor/widgets/tabs.php:539
+#: elementor/widgets/tabs.php:697 elementor/widgets/tabs.php:818
+#: elementor/widgets/tabs.php:839 elementor/widgets/tabs.php:860
+#: elementor/widgets/blog-grid.php:405 elementor/widgets/blog-grid.php:462
+#: elementor/widgets/blog-grid.php:582 elementor/widgets/blog-grid.php:622
+#: elementor/widgets/blog-grid.php:677 elementor/widgets/road-map.php:354
+#: elementor/widgets/road-map.php:386 elementor/widgets/road-map.php:518
+#: elementor/widgets/road-map.php:576 elementor/widgets/counter-list.php:277
+#: elementor/widgets/counter-list.php:353
+#: elementor/widgets/counter-list.php:395
+#: elementor/widgets/counter-list.php:449 elementor/widgets/progress.php:305
+#: elementor/widgets/progress.php:360 elementor/widgets/our-team.php:390
+#: elementor/widgets/our-team.php:457 elementor/widgets/our-team.php:552
+#: elementor/widgets/our-team.php:573 elementor/widgets/icon-list.php:209
+#: elementor/widgets/icon-list.php:240 elementor/widgets/icon-list.php:293
+#: elementor/widgets/special-offer.php:333
+#: elementor/widgets/special-offer.php:388
+#: elementor/widgets/special-offer.php:447
+#: elementor/widgets/special-offer.php:517
+#: elementor/widgets/special-offer.php:559 elementor/widgets/icon-box.php:357
+#: elementor/widgets/icon-box.php:404 elementor/widgets/icon-box.php:466
+#: elementor/widgets/icon-box.php:518 elementor/widgets/icon-box.php:611
+#: elementor/widgets/icon-box.php:687 elementor/widgets/icon-box.php:753
+#: elementor/widgets/testimonial-6.php:205
+#: elementor/widgets/testimonial-6.php:227
+#: elementor/widgets/testimonial-6.php:281
+#: elementor/widgets/testimonial-6.php:323
+#: elementor/widgets/testimonial-6.php:357
+#: elementor/widgets/testimonial-5.php:244
+#: elementor/widgets/testimonial-5.php:324
+#: elementor/widgets/testimonial-5.php:381
+#: elementor/widgets/testimonial-5.php:423
+#: elementor/widgets/testimonial-5.php:523
+#: elementor/widgets/testimonial-5.php:565
+#: elementor/widgets/testimonial-4.php:506
+#: elementor/widgets/testimonial-4.php:562
+#: elementor/widgets/testimonial-4.php:604
+#: elementor/widgets/testimonial-4.php:702
+#: elementor/widgets/testimonial-4.php:743
+#: elementor/widgets/testimonial-4.php:821 elementor/widgets/countdown.php:136
+#: elementor/widgets/countdown.php:190 elementor/widgets/heading.php:158
+#: elementor/widgets/heading.php:250 elementor/widgets/heading.php:308
+#: elementor/widgets/menu-footer.php:100 elementor/widgets/menu-footer.php:120
+#: elementor/widgets/menu-footer.php:198 elementor/widgets/menu-footer.php:218
+#: elementor/widgets/counter.php:220 elementor/widgets/counter.php:296
+#: elementor/widgets/counter.php:338 elementor/widgets/counter.php:392
+#: elementor/widgets/testimonial.php:427
+#: elementor/widgets/switch-language.php:133
+#: elementor/widgets/testimonial-3.php:476
+#: elementor/widgets/testimonial-2.php:463
+#: elementor/widgets/testimonial-2.php:661
+#: elementor/widgets/gallery-filter.php:275
+#: elementor/widgets/gallery-filter.php:499
+#: elementor/widgets/gallery-filter.php:576
+#: elementor/widgets/gallery-filter.php:619 elementor/widgets/menu-cart.php:95
+#: elementor/widgets/menu-cart.php:135 elementor/widgets/video.php:224
+#: elementor/widgets/video.php:265 elementor/widgets/video.php:419
+#: elementor/widgets/special-offer-2.php:240
+#: elementor/widgets/special-offer-2.php:294
+#: elementor/widgets/special-offer-2.php:360
+#: elementor/widgets/special-offer-2.php:426
+#: elementor/widgets/special-offer-2.php:457
+#: elementor/widgets/contact-form.php:308
+#: elementor/widgets/contact-form.php:349
+#: elementor/widgets/contact-form.php:390
+#: elementor/widgets/contact-form.php:457
+#: elementor/widgets/contact-form.php:576
+#: elementor/widgets/contact-form.php:617
+#: elementor/widgets/gallery-slide.php:354
+#: elementor/widgets/gallery-slide.php:406
+#: elementor/widgets/gallery-slide.php:452
+#: elementor/widgets/gallery-slide.php:531
+#: elementor/widgets/gallery-slide.php:599 elementor/widgets/toggle.php:310
+#: elementor/widgets/toggle.php:341 elementor/widgets/toggle.php:372
+#: elementor/widgets/toggle.php:739 elementor/widgets/toggle.php:845
+#: elementor/widgets/toggle.php:1073
+msgid "Color"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:286
+msgid "Color Active"
+msgstr ""
+
+#: elementor/widgets/testimonial.php:484
+#: elementor/widgets/testimonial-3.php:533
+#: elementor/widgets/testimonial-2.php:519
+msgid "Color Author"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:416 elementor/widgets/blog-grid.php:688
+#: elementor/widgets/counter-list.php:288
+#: elementor/widgets/counter-list.php:364
+#: elementor/widgets/counter-list.php:406
+#: elementor/widgets/counter-list.php:460 elementor/widgets/icon-box.php:477
+#: elementor/widgets/icon-box.php:529 elementor/widgets/icon-box.php:698
+#: elementor/widgets/icon-box.php:764 elementor/widgets/counter.php:231
+#: elementor/widgets/counter.php:307 elementor/widgets/counter.php:349
+#: elementor/widgets/counter.php:403 elementor/widgets/gallery-filter.php:530
+#: elementor/widgets/video.php:430 elementor/widgets/gallery-slide.php:463
+msgid "Color Hover"
+msgstr ""
+
+#: elementor/widgets/heading.php:170 elementor/widgets/contact-form.php:469
+msgid "Color hover"
+msgstr ""
+
+#: elementor/widgets/testimonial.php:541
+#: elementor/widgets/testimonial-3.php:591
+#: elementor/widgets/testimonial-2.php:576
+msgid "Color Job"
+msgstr ""
+
+#: elementor/widgets/tabs.php:453 elementor/widgets/tabs.php:508
+#: elementor/widgets/tabs.php:563
+msgid "Color Mobile"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:141
+#: elementor/widgets/image-gallery.php:53
+msgid "Column"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:95
+msgid "Columns"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:214
+msgid "Columns Gap"
+msgstr ""
+
+#: inc/class-hook.php:392
+msgid "Comment"
+msgstr "Komentar"
+
+#: template-parts/parts/meta.php:58
+msgid "Comment off"
+msgstr ""
+
+#: template-parts/parts/meta.php:56
+msgid "Comments"
+msgstr "Komentar"
+
+#: comments.php:55
+msgid "Comments are closed."
+msgstr ""
+
+#. 1: number of comments
+#: comments.php:16
+#, php-format
+msgctxt "comments title"
+msgid "%1$s Comment"
+msgid_plural "%1$s Comments"
+msgstr[0] ""
+msgstr[1] ""
+
+#: comments.php:12
+msgctxt "comments title"
+msgid "One Comment"
+msgstr ""
+
+#: elementor/widgets/contact-form.php:16
+msgid "Contact Form"
+msgstr ""
+
+#: install-resource/active-plugins.php:16
+msgid "Contact Form 7"
+msgstr ""
+
+#: elementor/widgets/contact-info.php:16
+msgid "Contact Info"
+msgstr ""
+
+#: inc/class-customize.php:484
+msgid "Container (px)"
+msgstr ""
+
+#: inc/class-elementor.php:459 elementor/widgets/contact-info.php:39
+#: elementor/widgets/tabs.php:111 elementor/widgets/tabs.php:689
+#: elementor/widgets/blog-grid.php:53 elementor/widgets/blog-grid.php:257
+#: elementor/widgets/counter-list.php:50 elementor/widgets/our-team.php:39
+#: elementor/widgets/icon-list.php:39 elementor/widgets/special-offer.php:43
+#: elementor/widgets/special-offer.php:278 elementor/widgets/icon-box.php:39
+#: elementor/widgets/testimonial-6.php:40
+#: elementor/widgets/testimonial-5.php:40
+#: elementor/widgets/testimonial-5.php:407
+#: elementor/widgets/testimonial-4.php:39
+#: elementor/widgets/testimonial-4.php:588 elementor/widgets/countdown.php:42
+#: elementor/widgets/heading.php:43 elementor/widgets/testimonial.php:43
+#: elementor/widgets/testimonial.php:371
+#: elementor/widgets/switch-language.php:39
+#: elementor/widgets/testimonial-3.php:40
+#: elementor/widgets/testimonial-2.php:39
+#: elementor/widgets/gallery-filter.php:42 elementor/widgets/menu-cart.php:37
+#: elementor/widgets/header-banner.php:92
+#: elementor/widgets/image-gallery.php:46
+#: elementor/widgets/image-gallery.php:130
+#: elementor/widgets/my-account-button.php:39
+#: elementor/widgets/special-offer-2.php:40
+#: elementor/widgets/contact-form.php:39 elementor/widgets/gallery-slide.php:44
+#: elementor/widgets/toggle.php:55 elementor/widgets/toggle.php:1054
+msgid "Content"
+msgstr ""
+
+#: elementor/widgets/road-map.php:246
+msgid "Content Box Background"
+msgstr ""
+
+#: elementor/widgets/special-offer-2.php:174
+msgid "Content Margin"
+msgstr ""
+
+#: inc/class-elementor.php:321 elementor/widgets/menu-nav.php:96
+msgid "Content Padding"
+msgstr ""
+
+#: elementor/widgets/testimonial.php:411
+#: elementor/widgets/testimonial-3.php:460
+#: elementor/widgets/testimonial-2.php:447
+msgid "Content Testimonial"
+msgstr ""
+
+#: elementor/widgets/countdown.php:18
+msgid "Countdown"
+msgstr ""
+
+#: elementor/widgets/counter-list.php:183
+msgid "Counter"
+msgstr ""
+
+#: elementor/widgets/counter-list.php:22
+msgid "Counter List"
+msgstr ""
+
+#: elementor/widgets/icon-box.php:75
+msgid "Culture"
+msgstr ""
+
+#: elementor/widgets/switch-language.php:54
+msgid "Current Language"
+msgstr "Bahasa Sekarang"
+
+#: elementor/widgets/share-buttons.php:98
+msgid "Custom Color"
+msgstr ""
+
+#: inc/class-customize.php:194 inc/class-customize.php:206
+#: inc/class-customize.php:222
+msgid "Custom Font"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:74
+msgid "Custom Icon"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:82
+msgid "Custom Link"
+msgstr ""
+
+#: elementor/widgets/logo.php:52
+msgid "Custom URL"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:118 elementor/widgets/road-map.php:51
+#: elementor/widgets/road-map.php:262 elementor/widgets/contact-form.php:167
+#: elementor/widgets/contact-form.php:567
+msgid "Date"
+msgstr "Tanggal"
+
+#: elementor/widgets/contact-form.php:557
+msgid "Date - Time"
+msgstr "Tgl-Waktu"
+
+#: elementor/widgets/contact-form.php:158
+msgid "Date Time"
+msgstr "Tgl Waktu"
+
+#: woocommerce/rental/content-item-product-list.php:318
+#: woocommerce/rental/content-item-product.php:178
+msgid "day"
+msgstr "hari"
+
+#: elementor/widgets/countdown.php:59
+msgid "Days"
+msgstr "Hari"
+
+#: woocommerce/rental/content-item-product-list.php:320
+#: woocommerce/rental/content-item-product.php:180
+#: woocommerce/rental/loop/table_price.php:93
+#: woocommerce/rental/loop/table_price.php:97
+#: woocommerce/rental/loop/table_price.php:102
+#: woocommerce/rental/loop/table_price.php:206
+#: woocommerce/rental/loop/table_price.php:210
+#: woocommerce/rental/loop/table_price.php:215
+msgid "days"
+msgstr "Hari"
+
+#: inc/class-hook.php:201 inc/class-hook.php:231 inc/class-customize.php:648
+#: inc/class-elementor.php:134
+msgid "Default"
+msgstr ""
+
+#: woocommerce/rental/loop/fields/deposit.php:27
+msgid "Deposit Option"
+msgstr "Pilihan Deposit"
+
+#: woocommerce/rental/loop/fields/ajax-total.php:37
+msgid "Deposit:"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:133
+msgid "Descending"
+msgstr ""
+
+#: elementor/widgets/road-map.php:96 elementor/widgets/road-map.php:534
+#: elementor/widgets/icon-list.php:71 elementor/widgets/icon-list.php:277
+#: elementor/widgets/icon-box.php:102 elementor/widgets/icon-box.php:502
+#: elementor/widgets/heading.php:69 elementor/widgets/heading.php:291
+#: elementor/widgets/gallery-filter.php:143
+#: elementor/widgets/special-offer-2.php:95
+#: elementor/widgets/special-offer-2.php:320
+#: elementor/widgets/contact-form.php:77 elementor/widgets/contact-form.php:332
+#: woocommerce/rental/loop/tabs.php:35
+msgid "Description"
+msgstr ""
+
+#: inc/class-elementor.php:479
+msgid "Description Color Hover"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:603
+msgid "Description_"
+msgstr ""
+
+#: template-parts/footer-default.php:4
+msgid "Design and Develop by Ovatheme"
+msgstr ""
+
+#: elementor/widgets/logo.php:108
+msgid "Desktop Logo"
+msgstr ""
+
+#: elementor/widgets/logo.php:152
+msgid "Desktop Logo Height"
+msgstr ""
+
+#: elementor/widgets/logo.php:132
+msgid "Desktop Logo Width"
+msgstr ""
+
+#: elementor/widgets/testimonial.php:119
+msgid "Developer"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:335
+msgid "Digg"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:427
+msgid "Discount"
+msgstr "Diskon"
+
+#: elementor/widgets/special-offer.php:158
+msgid "Discount Percent"
+msgstr "Diskon Persen"
+
+#: install-resource/class-tgm-plugin-activation.php:402
+msgid "Dismiss this notice"
+msgstr ""
+
+#: inc/class-elementor.php:205
+msgid "Display"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:109
+msgid "Display Background by Feature Image in Post/Page"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:100
+msgid "Display Boxed Content"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:177
+msgid "DIV"
+msgstr ""
+
+#: elementor/widgets/progress.php:82 elementor/widgets/heading.php:102
+msgid "Div"
+msgstr ""
+
+#: elementor/widgets/testimonial.php:331
+#: elementor/widgets/testimonial-3.php:395
+#: elementor/widgets/testimonial-2.php:364
+msgid "Dot Active Color"
+msgstr ""
+
+#: elementor/widgets/testimonial.php:293
+#: elementor/widgets/testimonial-3.php:357
+#: elementor/widgets/testimonial-2.php:326
+msgid "Dot Color"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:769
+#: elementor/widgets/testimonial.php:281
+#: elementor/widgets/testimonial-3.php:345
+#: elementor/widgets/testimonial-2.php:314
+#: elementor/widgets/gallery-slide.php:499
+msgid "Dots"
+msgstr ""
+
+#: elementor/widgets/countdown.php:49
+msgid "Due Date"
+msgstr "Batas Waktu"
+
+#: elementor/widgets/testimonial.php:110 elementor/widgets/testimonial.php:115
+#: elementor/widgets/testimonial.php:120
+msgid ""
+"Duis tristique volutpat facilisis. Integer vitae augue tellus. Phasellus "
+"fringilla tortor a maximus laoreet. Morbi a tristique erat. Fusce luctus "
+"urna vitae ornare aliquam."
+msgstr ""
+
+#: template-parts/parts/comment.php:50
+msgid "Edit"
+msgstr "Ubah"
+
+#: install-resource/active-plugins.php:11
+msgid "Elementor"
+msgstr ""
+
+#: inc/class-hook.php:419 elementor/widgets/contact-info.php:76
+#: elementor/widgets/share-buttons.php:342
+msgid "Email"
+msgstr ""
+
+#: woocommerce/rental/loop/request-form.php:97
+msgid "Email *"
+msgstr ""
+
+#: elementor/widgets/contact-info.php:100
+msgid "Email Adress"
+msgstr "Alamat Email"
+
+#: woocommerce/rental/loop/request-form.php:104
+msgid "Email is required."
+msgstr "Butuh Email"
+
+#: elementor/widgets/contact-info.php:87
+msgid "Email Label"
+msgstr ""
+
+#: elementor/widgets/contact-info.php:89 elementor/widgets/contact-info.php:102
+#: elementor/widgets/contact-info.php:191
+#: elementor/widgets/contact-info.php:192
+msgid "email@company.com"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:93
+msgid "Embed Video Link"
+msgstr ""
+
+#: inc/class-elementor.php:398 elementor/widgets/contact-info.php:425
+#: elementor/widgets/tabs.php:178 elementor/widgets/tabs.php:208
+#: elementor/widgets/tabs.php:778 elementor/widgets/toggle.php:719
+msgid "End"
+msgstr "Berakhir"
+
+#: woocommerce/rental/loop/table_price.php:122
+#: woocommerce/rental/loop/table_price.php:146
+msgid "End Date"
+msgstr "Tgl Berakhir"
+
+#: elementor/widgets/switch-language.php:56
+#: elementor/widgets/switch-language.php:80
+msgid "English"
+msgstr ""
+
+#: woocommerce/rental/loop/forms.php:85
+msgid "Enquiry Form"
+msgstr ""
+
+#: elementor/widgets/progress.php:53
+msgid "Enter your title"
+msgstr "Masukan nama"
+
+#: elementor/widgets/video.php:77
+msgid "Enter your URL"
+msgstr "Masuka URL"
+
+#: elementor/widgets/testimonial-5.php:59
+#: elementor/widgets/testimonial-5.php:228
+#: elementor/widgets/testimonial-4.php:85
+msgid "Evaluate"
+msgstr ""
+
+#: inc/class-customize.php:140
+msgid "Example: 0px, 0.5em"
+msgstr ""
+
+#: inc/class-customize.php:104
+msgid "Example: 16px, 1.2em"
+msgstr ""
+
+#: woocommerce/rental/loop/request-form.php:103
+msgid "example@gmail.com"
+msgstr ""
+
+#: woocommerce/rental/content-item-product-list.php:346
+#: woocommerce/rental/content-item-product.php:236
+#: elementor/widgets/menu-canvas.php:115
+msgid "Explore"
+msgstr "Booking"
+
+#: install-resource/class-tgm-plugin-activation.php:2380
+msgid "External Source"
+msgstr "Sumber External"
+
+#: woocommerce/rental/loop/request-form.php:214
+msgid "Extra Information"
+msgstr "Info Tambahan"
+
+#: woocommerce/rental/loop/fields/resources.php:35
+msgid "Extra Services"
+msgstr "Layanan Tambahan"
+
+#: elementor/widgets/share-buttons.php:326
+msgid "Facebook"
+msgstr ""
+
+#: elementor/widgets/toggle.php:174
+msgid "FAQ Schema"
+msgstr ""
+
+#: elementor/widgets/road-map.php:119
+msgid "Fast"
+msgstr ""
+
+#: elementor/widgets/gallery-slide.php:117
+msgid "Favorite place"
+msgstr ""
+
+#: woocommerce/rental/content-item-product-list.php:205
+#: woocommerce/rental/content-item-product.php:106
+msgid "Featured"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:259
+msgid "Filter"
+msgstr ""
+
+#: inc/class-customize.php:418
+msgid "First Background"
+msgstr ""
+
+#: inc/class-elementor.php:523
+msgid "First child Color"
+msgstr ""
+
+#: inc/class-elementor.php:164
+msgid "Flaticon"
+msgstr ""
+
+#: inc/class-elementor.php:179
+msgid "Flaticon 2"
+msgstr ""
+
+#: inc/class-elementor.php:213 elementor/widgets/tabs.php:324
+msgid "Flex"
+msgstr ""
+
+#: inc/class-elementor.php:390 elementor/widgets/contact-info.php:417
+msgid "Flex start"
+msgstr ""
+
+#: inc/class-elementor.php:97
+msgid "Flip"
+msgstr ""
+
+#: elementor/widgets/heading.php:238
+msgid "Font Family"
+msgstr ""
+
+#: inc/class-customize.php:103 elementor/widgets/contact-info.php:220
+msgid "Font Size"
+msgstr ""
+
+#: inc/class-customize.php:594 inc/class-customize.php:861
+#: inc/class-customize.php:1139 inc/class-customize.php:1765
+#: inc/class-customize.php:1864
+msgid "Footer"
+msgstr ""
+
+#: inc/class-customize.php:608
+msgid "Footer Default"
+msgstr ""
+
+#: woocommerce/rental/loop/fields/extra_fields.php:169
+msgid "Formats: .jpg, .jpeg, .png, .pdf, .doc"
+msgstr ""
+
+#: elementor/widgets/switch-language.php:92
+msgid "France"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:187
+#: elementor/widgets/testimonial-4.php:191
+#: elementor/widgets/testimonial-4.php:195
+#: elementor/widgets/testimonial-4.php:199
+#: elementor/widgets/testimonial.php:109
+#: elementor/widgets/testimonial-3.php:120
+#: elementor/widgets/testimonial-2.php:158
+msgid "Freelance Designer"
+msgstr ""
+
+#: woocommerce/rental/loop/forms.php:60
+msgid "From"
+msgstr "Hanya"
+
+#: woocommerce/rental/loop/table_price.php:93
+#: woocommerce/rental/loop/table_price.php:97
+#: woocommerce/rental/loop/table_price.php:102
+msgid "from"
+msgstr "Dari"
+
+#: woocommerce/rental/loop/fields/deposit.php:39
+msgid "Full Payment"
+msgstr "Bayar Full"
+
+#: elementor/widgets/gallery-filter.php:18
+msgid "Gallery Filter"
+msgstr ""
+
+#: elementor/widgets/image-gallery.php:270
+#: elementor/widgets/gallery-slide.php:21
+msgid "Gallery Slide"
+msgstr ""
+
+#: elementor/widgets/image-gallery.php:137
+msgid "Gap"
+msgstr ""
+
+#: elementor/widgets/tabs.php:233 elementor/widgets/road-map.php:202
+#: elementor/widgets/our-team.php:212 elementor/widgets/icon-box.php:159
+#: elementor/widgets/testimonial-6.php:143
+#: elementor/widgets/testimonial-5.php:152
+#: elementor/widgets/testimonial.php:236
+#: elementor/widgets/testimonial-3.php:277
+#: elementor/widgets/testimonial-2.php:306
+#: elementor/widgets/special-offer-2.php:119
+#: elementor/widgets/contact-form.php:194
+#: elementor/widgets/contact-form.php:248
+msgid "General"
+msgstr ""
+
+#: elementor/widgets/menu-canvas.php:40 elementor/widgets/menu-nav.php:36
+msgid "Global"
+msgstr ""
+
+#: woocommerce/rental/loop/table_price.php:71
+msgid "Global Discount"
+msgstr "Diskon Kwantiti"
+
+#: template-parts/404.php:15
+msgid "Go Home"
+msgstr "Halaman Utama"
+
+#: inc/class-main.php:222
+msgid "Go to top"
+msgstr "Keatas"
+
+#: elementor/widgets/testimonial-5.php:61
+#: elementor/widgets/testimonial-4.php:87
+msgid "Good Experience"
+msgstr "Pengalaman Terbaik"
+
+#: elementor/widgets/testimonial-3.php:130
+#: elementor/widgets/testimonial-2.php:168
+msgid "Governer Of Canada"
+msgstr ""
+
+#: inc/class-customize.php:649
+msgid "Grid"
+msgstr ""
+
+#: woocommerce/rental/loop/fields/guests.php:60
+msgid "Guests"
+msgstr "Jumlah"
+
+#: elementor/widgets/progress.php:76 elementor/widgets/heading.php:96
+#: elementor/widgets/header-banner.php:171
+msgid "H1"
+msgstr ""
+
+#: elementor/widgets/progress.php:77 elementor/widgets/heading.php:97
+#: elementor/widgets/header-banner.php:172
+msgid "H2"
+msgstr ""
+
+#: elementor/widgets/progress.php:78 elementor/widgets/heading.php:98
+#: elementor/widgets/header-banner.php:173
+msgid "H3"
+msgstr ""
+
+#: elementor/widgets/progress.php:79 elementor/widgets/heading.php:99
+#: elementor/widgets/header-banner.php:174
+msgid "H4"
+msgstr ""
+
+#: elementor/widgets/progress.php:80 elementor/widgets/heading.php:100
+#: elementor/widgets/header-banner.php:175
+msgid "H5"
+msgstr ""
+
+#: elementor/widgets/progress.php:81 elementor/widgets/heading.php:101
+#: elementor/widgets/header-banner.php:176
+msgid "H6"
+msgstr ""
+
+#: inc/class-customize.php:566 inc/class-customize.php:844
+#: inc/class-customize.php:1122 inc/class-customize.php:1748
+#: inc/class-customize.php:1847
+msgid "Header"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:42
+msgid "Header Banner"
+msgstr ""
+
+#: inc/class-customize.php:580
+msgid "Header Default"
+msgstr ""
+
+#: inc/class-elementor.php:48
+msgid "Header Footer"
+msgstr ""
+
+#: inc/class-customize.php:338
+msgid "Heading"
+msgstr ""
+
+#: elementor/widgets/tabs.php:938 elementor/widgets/progress.php:205
+#: elementor/widgets/our-team.php:324 elementor/widgets/special-offer.php:251
+#: elementor/widgets/icon-box.php:588 elementor/widgets/gallery-filter.php:353
+#: elementor/widgets/video.php:326 elementor/widgets/gallery-slide.php:307
+#: elementor/widgets/gallery-slide.php:560
+#: elementor/widgets/gallery-slide.php:628 elementor/widgets/toggle.php:600
+msgid "Height"
+msgstr ""
+
+#: inc/class-elementor.php:98
+msgid "Helix"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:190
+msgid "Henry K. Melendez"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:153 elementor/widgets/blog-grid.php:165
+#: elementor/widgets/blog-grid.php:190 elementor/widgets/blog-grid.php:202
+#: elementor/widgets/blog-grid.php:215 elementor/widgets/blog-grid.php:228
+#: elementor/widgets/menu-canvas.php:87 elementor/widgets/our-team.php:135
+#: elementor/widgets/special-offer.php:176 elementor/widgets/icon-box.php:116
+#: elementor/widgets/testimonial-6.php:111
+#: elementor/widgets/testimonial-5.php:122
+#: elementor/widgets/testimonial-4.php:74
+#: elementor/widgets/gallery-slide.php:67 elementor/widgets/toggle.php:480
+#: elementor/widgets/toggle.php:923
+msgid "Hide"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:3594
+msgid "Hide Details"
+msgstr "Sembunyikan"
+
+#: elementor/widgets/gallery-slide.php:135
+msgid "Historical Building"
+msgstr ""
+
+#: template-parts/parts/breadcrumbs_title.php:5
+#: template-parts/parts/breadcrumbs_title.php:9
+#: template-parts/parts/breadcrumbs.php:13
+#: template-parts/parts/breadcrumbs.php:13
+#: template-parts/parts/breadcrumbs.php:184
+msgid "Home"
+msgstr ""
+
+#: elementor/widgets/logo.php:50
+msgid "Home Page"
+msgstr ""
+
+#: elementor/widgets/tabs.php:155
+msgid "Horizontal"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:193
+#: elementor/widgets/gallery-filter.php:197
+msgid "Hotel"
+msgstr ""
+
+#: elementor/widgets/countdown.php:68
+msgid "Hour"
+msgstr "Jam"
+
+#: elementor/widgets/tabs.php:477 elementor/widgets/tabs.php:832
+#: elementor/widgets/menu-canvas.php:177 elementor/widgets/menu-canvas.php:266
+#: elementor/widgets/our-team.php:566 elementor/widgets/special-offer.php:552
+#: elementor/widgets/icon-box.php:397 elementor/widgets/menu-footer.php:113
+#: elementor/widgets/menu-footer.php:211
+#: elementor/widgets/gallery-filter.php:523 elementor/widgets/video.php:258
+#: elementor/widgets/menu-nav.php:140 elementor/widgets/menu-nav.php:271
+#: elementor/widgets/my-account-button.php:192
+#: elementor/widgets/special-offer-2.php:450 elementor/widgets/toggle.php:334
+#: elementor/widgets/toggle.php:529 elementor/widgets/toggle.php:981
+msgid "Hover"
+msgstr ""
+
+#: elementor/widgets/icon-box.php:230
+msgid "Hover Box Shadow "
+msgstr ""
+
+#: elementor/widgets/our-team.php:402 elementor/widgets/icon-box.php:622
+#: elementor/widgets/switch-language.php:144
+#: elementor/widgets/special-offer-2.php:306 elementor/widgets/toggle.php:751
+#: elementor/widgets/toggle.php:860
+msgid "Hover Color"
+msgstr ""
+
+#: elementor/widgets/progress.php:72 elementor/widgets/heading.php:92
+msgid "HTML Tag"
+msgstr ""
+
+#. URI of the theme
+msgid "https://themeforest.net/user/ovatheme/portfolio"
+msgstr ""
+
+#: elementor/widgets/contact-info.php:142
+#: elementor/widgets/contact-info.php:155 elementor/widgets/menu-canvas.php:97
+msgid "https://your-domain.com"
+msgstr ""
+
+#: elementor/widgets/our-team.php:61 elementor/widgets/our-team.php:149
+#: elementor/widgets/share-buttons.php:84 elementor/widgets/icon-box.php:85
+#: elementor/widgets/testimonial-3.php:80
+#: elementor/widgets/testimonial-2.php:118
+#: elementor/widgets/gallery-filter.php:76
+#: elementor/widgets/gallery-filter.php:95 elementor/widgets/logo.php:68
+#: elementor/widgets/special-offer-2.php:49
+#: elementor/widgets/contact-form.php:143
+#: elementor/widgets/gallery-slide.php:84
+msgid "https://your-link.com"
+msgstr ""
+
+#: inc/class-elementor.php:149
+msgid "Icomoon"
+msgstr ""
+
+#: inc/class-elementor.php:425 inc/class-elementor.php:515
+#: elementor/widgets/contact-info.php:212 elementor/widgets/tabs.php:59
+#: elementor/widgets/tabs.php:790 elementor/widgets/blog-grid.php:238
+#: elementor/widgets/counter-list.php:86 elementor/widgets/counter-list.php:250
+#: elementor/widgets/our-team.php:162 elementor/widgets/icon-list.php:50
+#: elementor/widgets/icon-list.php:181 elementor/widgets/special-offer.php:197
+#: elementor/widgets/icon-box.php:61 elementor/widgets/icon-box.php:141
+#: elementor/widgets/icon-box.php:269 elementor/widgets/icon-box.php:721
+#: elementor/widgets/testimonial-6.php:58
+#: elementor/widgets/testimonial-6.php:219
+#: elementor/widgets/testimonial-4.php:126 elementor/widgets/counter.php:59
+#: elementor/widgets/counter.php:193 elementor/widgets/switch-language.php:64
+#: elementor/widgets/testimonial-2.php:81
+#: elementor/widgets/gallery-filter.php:112
+#: elementor/widgets/gallery-filter.php:387 elementor/widgets/menu-cart.php:45
+#: elementor/widgets/menu-cart.php:68 elementor/widgets/image-gallery.php:105
+#: elementor/widgets/video.php:47 elementor/widgets/video.php:208
+#: elementor/widgets/gallery-slide.php:444 elementor/widgets/toggle.php:97
+#: elementor/widgets/toggle.php:700 elementor/widgets/toggle.php:826
+msgid "Icon"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:531
+msgid "Icon "
+msgstr ""
+
+#: elementor/widgets/switch-language.php:46
+msgid "Icon Before"
+msgstr ""
+
+#: elementor/widgets/video.php:63
+msgid "Icon Class"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:528
+msgid "Icon Color"
+msgstr ""
+
+#: inc/class-elementor.php:365
+msgid "Icon Margin Left"
+msgstr ""
+
+#: elementor/widgets/testimonial.php:51 elementor/widgets/testimonial-3.php:47
+msgid "Icon Quote"
+msgstr ""
+
+#: inc/class-elementor.php:345 elementor/widgets/our-team.php:506
+#: elementor/widgets/share-buttons.php:285
+msgid "Icon Size"
+msgstr ""
+
+#: elementor/widgets/tabs.php:51 elementor/widgets/tabs.php:762
+msgid "Icon/Image"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:116
+msgid "ID"
+msgstr ""
+
+#: elementor/widgets/tabs.php:63 elementor/widgets/tabs.php:901
+#: elementor/widgets/blog-grid.php:343 elementor/widgets/road-map.php:416
+#: elementor/widgets/our-team.php:269 elementor/widgets/special-offer.php:233
+#: elementor/widgets/testimonial-5.php:449
+#: elementor/widgets/testimonial-4.php:629
+#: elementor/widgets/testimonial-3.php:433
+#: elementor/widgets/gallery-filter.php:152
+#: elementor/widgets/gallery-filter.php:345 elementor/widgets/logo.php:39
+#: elementor/widgets/contact-form.php:57 elementor/widgets/contact-form.php:414
+#: elementor/widgets/gallery-slide.php:287
+msgid "Image"
+msgstr "Gambar"
+
+#: elementor/widgets/image-gallery.php:20
+msgid "Image Gallery"
+msgstr "Gambar Galeri"
+
+#: woocommerce/rental/loop/tabs.php:39
+#: woocommerce/rental/loop/included-excluded.php:39
+msgid "Included/Excluded"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:308
+#: elementor/widgets/testimonial.php:166
+#: elementor/widgets/testimonial-3.php:207
+#: elementor/widgets/testimonial-2.php:238
+#: elementor/widgets/gallery-slide.php:218
+msgid "Infinite Loop"
+msgstr ""
+
+#: elementor/widgets/contact-info.php:360 elementor/widgets/contact-form.php:48
+#: elementor/widgets/contact-form.php:240
+msgid "Info"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2802
+msgid "Install"
+msgstr ""
+
+#. %2$s: plugin name in screen reader markup
+#: install-resource/class-tgm-plugin-activation.php:2688
+#, php-format
+msgid "Install %2$s"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:335
+msgid "Install Plugins"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:334
+msgid "Install Required Plugins"
+msgstr ""
+
+#. 1: install status, 2: update status
+#: install-resource/class-tgm-plugin-activation.php:2427
+#, php-format
+msgctxt "Install/Update Status"
+msgid "%1$s, %2$s"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2404
+msgid "Installed But Not Activated"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2575
+msgid "Installed version:"
+msgstr ""
+
+#. 1: plugin name, 2: action number 3: total number of actions.
+#: install-resource/class-tgm-plugin-activation.php:3597
+#, php-format
+msgid "Installing and Activating Plugin %1$s (%2$d/%3$d)"
+msgstr ""
+
+#. 1: plugin name, 2: action number 3: total number of actions.
+#: install-resource/class-tgm-plugin-activation.php:3605
+#, php-format
+msgid "Installing Plugin %1$s (%2$d/%3$d)"
+msgstr ""
+
+#. %s: plugin name.
+#: install-resource/class-tgm-plugin-activation.php:337
+#, php-format
+msgid "Installing Plugin: %s"
+msgstr ""
+
+#: template-parts/post/content-none.php:14
+msgid ""
+"It seems we can&rsquo;t find what you&rsquo;re looking for. Perhaps "
+"searching can help."
+msgstr ""
+
+#: elementor/widgets/switch-language.php:95
+msgid "Italy"
+msgstr ""
+
+#: elementor/widgets/icon-list.php:117 elementor/widgets/testimonial-4.php:377
+msgid "Item"
+msgstr ""
+
+#: elementor/widgets/progress.php:137
+msgid "Item Color"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:244
+#: elementor/widgets/testimonial-4.php:257
+#: elementor/widgets/testimonial-3.php:170
+#: elementor/widgets/testimonial-2.php:203
+#: elementor/widgets/gallery-slide.php:183
+msgid "Item Number"
+msgstr ""
+
+#: elementor/widgets/road-map.php:144 elementor/widgets/counter-list.php:126
+#: elementor/widgets/icon-list.php:92 elementor/widgets/testimonial-2.php:402
+#: elementor/widgets/menu-cart.php:108
+msgid "Items"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:163
+msgid "Items Gallery"
+msgstr ""
+
+#: elementor/widgets/contact-info.php:185
+msgid "Items Info"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:181
+#: elementor/widgets/testimonial.php:103
+#: elementor/widgets/testimonial-3.php:114
+#: elementor/widgets/testimonial-2.php:152
+msgid "Items Testimonial"
+msgstr ""
+
+#: elementor/widgets/testimonial-3.php:124
+#: elementor/widgets/testimonial-2.php:162
+msgid "Jenny Wilson"
+msgstr ""
+
+#: elementor/widgets/testimonial.php:113
+msgid "jenny wilson"
+msgstr ""
+
+#: elementor/widgets/our-team.php:96 elementor/widgets/our-team.php:417
+#: elementor/widgets/testimonial-6.php:90
+#: elementor/widgets/testimonial-6.php:295
+#: elementor/widgets/testimonial-5.php:78
+#: elementor/widgets/testimonial-5.php:549
+#: elementor/widgets/testimonial-4.php:103
+#: elementor/widgets/testimonial-4.php:727 elementor/widgets/testimonial.php:74
+#: elementor/widgets/testimonial.php:525 elementor/widgets/testimonial-3.php:69
+#: elementor/widgets/testimonial-3.php:575
+#: elementor/widgets/testimonial-2.php:57
+#: elementor/widgets/testimonial-2.php:560
+msgid "Job"
+msgstr "Pekerjaan"
+
+#: elementor/widgets/tabs.php:182 elementor/widgets/tabs.php:212
+msgid "Justified"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:175
+msgid "Justify"
+msgstr ""
+
+#: elementor/widgets/contact-info.php:59 elementor/widgets/contact-info.php:61
+#: elementor/widgets/contact-info.php:314 elementor/widgets/contact-form.php:68
+#: elementor/widgets/contact-form.php:291
+msgid "Label"
+msgstr ""
+
+#: elementor/widgets/switch-language.php:78
+#: elementor/widgets/switch-language.php:87
+msgid "Languages"
+msgstr "Bahasa"
+
+#: inc/class-customize.php:470 inc/class-customize.php:501
+#: inc/class-customize.php:826 inc/class-customize.php:885
+#: elementor/widgets/gallery-filter.php:50
+msgid "Layout"
+msgstr ""
+
+#: elementor/widgets/menu-canvas.php:69 elementor/widgets/counter-list.php:158
+#: elementor/widgets/progress.php:148 elementor/widgets/progress.php:220
+#: elementor/widgets/our-team.php:110 elementor/widgets/share-buttons.php:163
+#: elementor/widgets/icon-box.php:242 elementor/widgets/heading.php:116
+#: elementor/widgets/counter.php:102 elementor/widgets/header-banner.php:315
+#: elementor/widgets/logo.php:83 elementor/widgets/toggle.php:656
+msgid "Left"
+msgstr ""
+
+#: inc/class-hook.php:265 inc/class-customize.php:1734
+#: inc/class-customize.php:1833
+msgid "Left Sidebar"
+msgstr ""
+
+#: elementor/widgets/our-team.php:88
+msgid "Leland D. Johnston"
+msgstr ""
+
+#: inc/class-customize.php:139
+msgid "Letter Spacing"
+msgstr ""
+
+#: inc/class-customize.php:378
+msgid "Light"
+msgstr ""
+
+#: elementor/widgets/icon-box.php:554
+msgid "Line Decoration"
+msgstr ""
+
+#: inc/class-customize.php:121
+msgid "Line height"
+msgstr ""
+
+#: elementor/widgets/progress.php:285
+msgid "Linear Gradient"
+msgstr ""
+
+#: elementor/widgets/contact-info.php:78 elementor/widgets/our-team.php:59
+#: elementor/widgets/our-team.php:147 elementor/widgets/special-offer.php:66
+#: elementor/widgets/icon-box.php:83 elementor/widgets/heading.php:78
+#: elementor/widgets/testimonial-3.php:78
+#: elementor/widgets/testimonial-2.php:116
+#: elementor/widgets/gallery-filter.php:74 elementor/widgets/logo.php:47
+#: elementor/widgets/logo.php:63 elementor/widgets/video.php:94
+#: elementor/widgets/special-offer-2.php:47
+#: elementor/widgets/contact-form.php:141
+#: elementor/widgets/gallery-slide.php:79
+msgid "Link"
+msgstr ""
+
+#: elementor/widgets/contact-info.php:153
+msgid "Link Adress"
+msgstr ""
+
+#: elementor/widgets/menu-canvas.php:95
+msgid "Link Button"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:635
+msgid "Link Color"
+msgstr ""
+
+#: elementor/widgets/contact-info.php:382 elementor/widgets/blog-grid.php:646
+msgid "Link Color hover"
+msgstr ""
+
+#: elementor/widgets/contact-info.php:140
+msgid "Link Label"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:329
+msgid "Linkedin"
+msgstr ""
+
+#: elementor/widgets/switch-language.php:124
+msgid "List Languages "
+msgstr ""
+
+#: elementor/widgets/our-team.php:171
+msgid "List Socials"
+msgstr ""
+
+#: customize/custom-control/google-font.php:122
+msgid "Load Font Weight"
+msgstr ""
+
+#: inc/class-woo.php:168 elementor/widgets/my-account-button.php:60
+msgid "Login"
+msgstr ""
+
+#: elementor/widgets/my-account-button.php:210
+msgid "Login Background"
+msgstr ""
+
+#: elementor/widgets/my-account-button.php:157
+msgid "Login Background "
+msgstr ""
+
+#: elementor/widgets/my-account-button.php:146
+#: elementor/widgets/my-account-button.php:199
+msgid "Login Color"
+msgstr ""
+
+#: elementor/widgets/logo.php:19
+msgid "Logo"
+msgstr ""
+
+#: inc/class-customize.php:45
+msgid "Logo Default"
+msgstr ""
+
+#: elementor/widgets/my-account-button.php:77
+msgid "Logout Status"
+msgstr ""
+
+#: elementor/widgets/video.php:148
+msgid "Loop"
+msgstr ""
+
+#: elementor/widgets/tabs.php:128 elementor/widgets/tabs.php:132
+#: elementor/widgets/toggle.php:74 elementor/widgets/toggle.php:78
+msgid ""
+"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, "
+"luctus nec ullamcorper mattis, pulvinar dapibus leo."
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:196
+msgid "Luxury 5star Hotel"
+msgstr ""
+
+#: install-resource/active-plugins.php:81
+msgid "Mailchimp"
+msgstr ""
+
+#: inc/class-widgets.php:20 inc/class-widgets.php:22
+msgid "Main Sidebar"
+msgstr ""
+
+#: inc/class-elementor.php:240 elementor/widgets/contact-info.php:263
+#: elementor/widgets/contact-info.php:342
+#: elementor/widgets/contact-info.php:401 elementor/widgets/tabs.php:378
+#: elementor/widgets/tabs.php:648 elementor/widgets/tabs.php:745
+#: elementor/widgets/tabs.php:888 elementor/widgets/tabs.php:992
+#: elementor/widgets/blog-grid.php:304 elementor/widgets/blog-grid.php:427
+#: elementor/widgets/blog-grid.php:473 elementor/widgets/blog-grid.php:519
+#: elementor/widgets/blog-grid.php:593 elementor/widgets/blog-grid.php:699
+#: elementor/widgets/road-map.php:424 elementor/widgets/road-map.php:484
+#: elementor/widgets/road-map.php:542 elementor/widgets/counter-list.php:321
+#: elementor/widgets/progress.php:336 elementor/widgets/progress.php:438
+#: elementor/widgets/our-team.php:220 elementor/widgets/our-team.php:277
+#: elementor/widgets/our-team.php:358 elementor/widgets/our-team.php:425
+#: elementor/widgets/our-team.php:482 elementor/widgets/icon-list.php:80
+#: elementor/widgets/icon-list.php:263 elementor/widgets/special-offer.php:585
+#: elementor/widgets/icon-box.php:319 elementor/widgets/icon-box.php:488
+#: elementor/widgets/icon-box.php:540 elementor/widgets/icon-box.php:633
+#: elementor/widgets/icon-box.php:658 elementor/widgets/icon-box.php:709
+#: elementor/widgets/testimonial-6.php:185
+#: elementor/widgets/testimonial-6.php:261
+#: elementor/widgets/testimonial-6.php:303
+#: elementor/widgets/testimonial-6.php:345
+#: elementor/widgets/testimonial-5.php:255
+#: elementor/widgets/testimonial-5.php:335
+#: elementor/widgets/testimonial-5.php:392
+#: elementor/widgets/testimonial-5.php:434
+#: elementor/widgets/testimonial-5.php:492
+#: elementor/widgets/testimonial-5.php:534
+#: elementor/widgets/testimonial-5.php:576
+#: elementor/widgets/testimonial-4.php:517
+#: elementor/widgets/testimonial-4.php:573
+#: elementor/widgets/testimonial-4.php:615
+#: elementor/widgets/testimonial-4.php:672
+#: elementor/widgets/testimonial-4.php:713
+#: elementor/widgets/testimonial-4.php:754
+#: elementor/widgets/testimonial-4.php:855 elementor/widgets/countdown.php:104
+#: elementor/widgets/countdown.php:158 elementor/widgets/heading.php:205
+#: elementor/widgets/heading.php:275 elementor/widgets/heading.php:331
+#: elementor/widgets/menu-footer.php:134 elementor/widgets/menu-footer.php:232
+#: elementor/widgets/counter.php:264 elementor/widgets/testimonial.php:381
+#: elementor/widgets/testimonial.php:438 elementor/widgets/testimonial.php:496
+#: elementor/widgets/testimonial.php:553
+#: elementor/widgets/testimonial-3.php:442
+#: elementor/widgets/testimonial-3.php:487
+#: elementor/widgets/testimonial-3.php:545
+#: elementor/widgets/testimonial-3.php:603
+#: elementor/widgets/testimonial-2.php:432
+#: elementor/widgets/testimonial-2.php:474
+#: elementor/widgets/testimonial-2.php:531
+#: elementor/widgets/testimonial-2.php:588
+#: elementor/widgets/gallery-filter.php:243
+#: elementor/widgets/gallery-filter.php:329
+#: elementor/widgets/gallery-filter.php:587
+#: elementor/widgets/gallery-filter.php:630
+#: elementor/widgets/image-gallery.php:226 elementor/widgets/video.php:388
+#: elementor/widgets/special-offer-2.php:127
+#: elementor/widgets/special-offer-2.php:208
+#: elementor/widgets/special-offer-2.php:262
+#: elementor/widgets/special-offer-2.php:328
+#: elementor/widgets/special-offer-2.php:382
+#: elementor/widgets/contact-form.php:266
+#: elementor/widgets/contact-form.php:319
+#: elementor/widgets/contact-form.php:360
+#: elementor/widgets/contact-form.php:401
+#: elementor/widgets/contact-form.php:423
+#: elementor/widgets/contact-form.php:505
+#: elementor/widgets/contact-form.php:595
+#: elementor/widgets/contact-form.php:636
+#: elementor/widgets/gallery-slide.php:510 elementor/widgets/toggle.php:260
+#: elementor/widgets/toggle.php:465 elementor/widgets/toggle.php:682
+#: elementor/widgets/toggle.php:805 elementor/widgets/toggle.php:905
+#: elementor/widgets/toggle.php:1037 elementor/widgets/toggle.php:1140
+msgid "Margin"
+msgstr ""
+
+#: elementor/widgets/toggle.php:1152
+msgid "Margin (p, h1... h6)"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:220
+#: elementor/widgets/testimonial-4.php:232
+#: elementor/widgets/testimonial-3.php:160
+#: elementor/widgets/testimonial-2.php:193
+#: elementor/widgets/gallery-slide.php:163
+msgid "Margin Right Items"
+msgstr ""
+
+#: elementor/widgets/testimonial.php:114
+msgid "Marketing head"
+msgstr ""
+
+#: inc/class-customize.php:650
+msgid "Masonry"
+msgstr ""
+
+#: woocommerce/rental/loop/fields/extra_fields.php:168
+#, php-format
+msgid "Max file size: %sMB"
+msgstr ""
+
+#: template-parts/header-default.php:22 elementor/widgets/menu-footer.php:44
+#: elementor/widgets/menu-footer.php:72 elementor/widgets/menu-nav.php:16
+#: elementor/widgets/menu-nav.php:340
+msgid "Menu"
+msgstr ""
+
+#: elementor/widgets/menu-canvas.php:215
+msgid "Menu Background"
+msgstr ""
+
+#: elementor/widgets/menu-canvas.php:16
+msgid "Menu Canvas"
+msgstr ""
+
+#: elementor/widgets/menu-cart.php:21
+msgid "Menu Cart"
+msgstr ""
+
+#: elementor/widgets/menu-canvas.php:250 elementor/widgets/menu-canvas.php:273
+#: elementor/widgets/menu-canvas.php:297 elementor/widgets/menu-nav.php:122
+#: elementor/widgets/menu-nav.php:147 elementor/widgets/menu-nav.php:172
+#: elementor/widgets/menu-nav.php:253 elementor/widgets/menu-nav.php:278
+#: elementor/widgets/menu-nav.php:302
+msgid "Menu Color"
+msgstr ""
+
+#: elementor/widgets/menu-canvas.php:65
+msgid "Menu Direction"
+msgstr ""
+
+#: elementor/widgets/menu-footer.php:20
+msgid "Menu Footer"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:327
+msgid "Messenger"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:488
+msgid "Meta"
+msgstr ""
+
+#: elementor/widgets/gallery-slide.php:132
+msgid "Metro Stations"
+msgstr ""
+
+#: elementor/widgets/testimonial.php:118
+msgid "Mike Hardson"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:186
+#: elementor/widgets/testimonial.php:108
+#: elementor/widgets/testimonial-3.php:119
+#: elementor/widgets/testimonial-3.php:129
+#: elementor/widgets/testimonial-2.php:157
+#: elementor/widgets/testimonial-2.php:167
+msgid "Mila McSabbu"
+msgstr ""
+
+#: woocommerce/rental/loop/table_price.php:203
+msgid "Min - Max (Days)"
+msgstr "Min - Max (Hari)"
+
+#: woocommerce/rental/loop/table_price.php:39
+#: woocommerce/rental/loop/table_price.php:189
+msgid "Min - Max (Persons)"
+msgstr "Min - Max (Orang)"
+
+#: elementor/widgets/blog-grid.php:352
+msgid "Min height (px)"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2583
+msgid "Minimum required version:"
+msgstr ""
+
+#: elementor/widgets/logo.php:175
+msgid "Mobile Logo"
+msgstr ""
+
+#: elementor/widgets/logo.php:210
+msgid "Mobile Logo Height"
+msgstr ""
+
+#: elementor/widgets/logo.php:190
+msgid "Mobile Logo Width"
+msgstr ""
+
+#: elementor/widgets/video.php:176
+msgid "Modest Branding"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:119
+msgid "Modified"
+msgstr ""
+
+#: elementor/widgets/contact-form.php:169
+#: elementor/widgets/contact-form.php:170
+msgid "Mondays - Sundays"
+msgstr "Senin-Minggu"
+
+#: inc/class-elementor.php:93
+msgid "Move Down"
+msgstr ""
+
+#: inc/class-elementor.php:94
+msgid "Move Left"
+msgstr ""
+
+#: inc/class-elementor.php:95
+msgid "Move Right"
+msgstr ""
+
+#: inc/class-elementor.php:92
+msgid "Move Up"
+msgstr ""
+
+#: elementor/widgets/video.php:134
+msgid "Mute"
+msgstr ""
+
+#: elementor/widgets/my-account-button.php:50
+msgid "My account"
+msgstr "Akun Saya"
+
+#: elementor/widgets/my-account-button.php:18
+msgid "My Account Button"
+msgstr "Tombol Akun"
+
+#: elementor/widgets/progress.php:54
+msgid "My Skill"
+msgstr "Kemampuan"
+
+#: inc/class-hook.php:410 elementor/widgets/our-team.php:86
+#: elementor/widgets/our-team.php:350 elementor/widgets/testimonial-5.php:507
+#: elementor/widgets/testimonial-4.php:686
+msgid "Name"
+msgstr "Nama"
+
+#: woocommerce/rental/loop/request-form.php:86
+msgid "Name *"
+msgstr "Nama *"
+
+#: woocommerce/rental/loop/request-form.php:93
+msgid "Name is required."
+msgstr "Nama dibutuhkan"
+
+#: elementor/widgets/tabs.php:312
+msgid "Navigation"
+msgstr ""
+
+#: elementor/widgets/tabs.php:241
+msgid "Navigation Width"
+msgstr ""
+
+#: elementor/widgets/contact-form.php:70
+msgid "Need help?"
+msgstr "Butuh bantuan?"
+
+#: elementor/widgets/share-buttons.php:42
+msgid "Network"
+msgstr ""
+
+#: elementor/widgets/gallery-slide.php:138
+msgid "New York City Museum"
+msgstr ""
+
+#: template-parts/post/content-post.php:84
+msgid "Next"
+msgstr ""
+
+#: inc/class-customize.php:670 inc/class-customize.php:690
+#: inc/class-customize.php:710 inc/class-customize.php:730
+#: inc/class-customize.php:750 inc/class-customize.php:770
+#: inc/class-customize.php:791 inc/class-customize.php:811
+#: inc/class-customize.php:908 inc/class-customize.php:928
+#: inc/class-customize.php:948 inc/class-customize.php:968
+#: inc/class-customize.php:988 inc/class-customize.php:1008
+#: inc/class-customize.php:1028 inc/class-customize.php:1048
+#: inc/class-customize.php:1068 inc/class-customize.php:1088
+#: inc/class-customize.php:1108 inc/class-customize.php:1177
+#: inc/class-customize.php:1197 inc/class-customize.php:1217
+#: inc/class-customize.php:1237 inc/class-customize.php:1257
+#: inc/class-customize.php:1277 inc/class-customize.php:1297
+#: inc/class-customize.php:1317 inc/class-customize.php:1337
+#: inc/class-customize.php:1364 inc/class-customize.php:1384
+#: inc/class-customize.php:1404 inc/class-customize.php:1424
+#: inc/class-customize.php:1444 inc/class-customize.php:1464
+#: inc/class-customize.php:1484 inc/class-customize.php:1504
+#: inc/class-customize.php:1525 inc/class-customize.php:1546
+#: inc/class-customize.php:1566 inc/class-customize.php:1586
+#: inc/class-customize.php:1606 inc/class-customize.php:1626
+#: inc/class-customize.php:1646 inc/class-customize.php:1666
+#: inc/class-customize.php:1686 inc/class-customize.php:1805
+#: inc/class-customize.php:1888 elementor/widgets/road-map.php:66
+#: elementor/widgets/counter-list.php:75
+#: elementor/widgets/share-buttons.php:195
+#: elementor/widgets/testimonial-5.php:110
+#: elementor/widgets/testimonial-4.php:285
+#: elementor/widgets/testimonial-4.php:299
+#: elementor/widgets/testimonial-4.php:313
+#: elementor/widgets/testimonial-4.php:327
+#: elementor/widgets/testimonial-4.php:364
+#: elementor/widgets/testimonial.php:156 elementor/widgets/testimonial.php:171
+#: elementor/widgets/testimonial.php:185 elementor/widgets/testimonial.php:222
+#: elementor/widgets/testimonial-3.php:197
+#: elementor/widgets/testimonial-3.php:212
+#: elementor/widgets/testimonial-3.php:226
+#: elementor/widgets/testimonial-3.php:263
+#: elementor/widgets/testimonial-2.php:228
+#: elementor/widgets/testimonial-2.php:243
+#: elementor/widgets/testimonial-2.php:257
+#: elementor/widgets/testimonial-2.php:294
+#: elementor/widgets/image-gallery.php:72 elementor/widgets/video.php:123
+#: elementor/widgets/video.php:137 elementor/widgets/video.php:151
+#: elementor/widgets/video.php:165 elementor/widgets/video.php:179
+#: elementor/widgets/video.php:193 elementor/widgets/my-account-button.php:80
+#: elementor/widgets/gallery-slide.php:208
+#: elementor/widgets/gallery-slide.php:223
+#: elementor/widgets/gallery-slide.php:237
+#: elementor/widgets/gallery-slide.php:274
+msgid "No"
+msgstr "Tidak"
+
+#. 1: plugin name.
+#: install-resource/class-tgm-plugin-activation.php:397
+#, php-format
+msgid "No action taken. Plugin %1$s was already active."
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:46
+msgid "No content Category found"
+msgstr "Tidak menemukan kategori"
+
+#: woocommerce/rental/loop/table_price.php:225
+msgid "No Discount in this time"
+msgstr "Belum ada diskon"
+
+#: install-resource/class-tgm-plugin-activation.php:3019
+msgid "No plugins are available to be activated at this time."
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2885
+msgid "No plugins are available to be installed at this time."
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2887
+msgid "No plugins are available to be updated at this time."
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2618
+msgid "No plugins to install, update or activate."
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2993
+msgid "No plugins were selected to be activated. No action taken."
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2842
+msgid "No plugins were selected to be installed. No action taken."
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2844
+msgid "No plugins were selected to be updated. No action taken."
+msgstr ""
+
+#: inc/class-hook.php:263 inc/class-customize.php:1732
+#: inc/class-customize.php:1831
+msgid "No Sidebar"
+msgstr ""
+
+#: woocommerce/rental/loop/request-form.php:147
+#: woocommerce/rental/loop/fields/dates.php:89
+msgid "No time"
+msgstr ""
+
+#: elementor/widgets/tabs.php:55 elementor/widgets/tabs.php:332
+#: elementor/widgets/logo.php:51
+msgid "None"
+msgstr ""
+
+#: elementor/widgets/tabs.php:422 elementor/widgets/tabs.php:811
+#: elementor/widgets/road-map.php:118 elementor/widgets/road-map.php:347
+#: elementor/widgets/menu-canvas.php:141 elementor/widgets/menu-canvas.php:243
+#: elementor/widgets/our-team.php:545 elementor/widgets/special-offer.php:100
+#: elementor/widgets/special-offer.php:500 elementor/widgets/icon-box.php:350
+#: elementor/widgets/menu-footer.php:93 elementor/widgets/menu-footer.php:191
+#: elementor/widgets/gallery-filter.php:492 elementor/widgets/video.php:217
+#: elementor/widgets/menu-nav.php:115 elementor/widgets/menu-nav.php:246
+#: elementor/widgets/my-account-button.php:139
+#: elementor/widgets/special-offer-2.php:419
+#: elementor/widgets/gallery-slide.php:524 elementor/widgets/toggle.php:303
+#: elementor/widgets/toggle.php:509 elementor/widgets/toggle.php:961
+msgid "Normal"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2400
+msgid "Not Installed"
+msgstr ""
+
+#: inc/class-customize.php:1713
+msgid "Not Rental products"
+msgstr ""
+
+#: elementor/widgets/progress.php:410
+msgid "Notes"
+msgstr "Catatan"
+
+#: template-parts/post/content-none.php:3
+msgid "Nothing Found"
+msgstr "Tidak ketemu"
+
+#: elementor/widgets/counter-list.php:98 elementor/widgets/counter-list.php:337
+#: elementor/widgets/countdown.php:96 elementor/widgets/counter.php:71
+#: elementor/widgets/counter.php:280
+msgid "Number"
+msgstr "Nomer"
+
+#: elementor/widgets/counter-list.php:57
+msgid "Number Column"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:246
+#: elementor/widgets/testimonial-4.php:259
+#: elementor/widgets/testimonial-3.php:172
+#: elementor/widgets/testimonial-2.php:205
+#: elementor/widgets/gallery-slide.php:185
+msgid "Number Item"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:136
+msgid "off"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:333
+msgid "OK"
+msgstr ""
+
+#: elementor/widgets/testimonial-5.php:100
+#: elementor/widgets/testimonial-4.php:174
+msgid ""
+"OMG! I cannot believe that I have got a brand new landing page after getting "
+"appmax. It was super easy to edit and publish.I have got a brand new landing "
+"page."
+msgstr ""
+
+#: install-resource/active-plugins.php:26
+msgid "One click demo import"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:563
+msgid "Opacity"
+msgstr ""
+
+#: elementor/widgets/testimonial.php:308 elementor/widgets/testimonial.php:346
+#: elementor/widgets/testimonial-3.php:372
+#: elementor/widgets/testimonial-3.php:410
+#: elementor/widgets/testimonial-2.php:341
+#: elementor/widgets/testimonial-2.php:379
+msgid "Opacity Dots"
+msgstr ""
+
+#: elementor/widgets/testimonial.php:654
+msgid "Opacity image"
+msgstr ""
+
+#: elementor/widgets/testimonial.php:631
+msgid "Opacity image active"
+msgstr ""
+
+#: elementor/widgets/testimonial-3.php:324
+msgid "Opacity Quote"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:192
+msgid "Open in new window"
+msgstr ""
+
+#: template-parts/404.php:6
+msgid "Opps! That Links Is Broken."
+msgstr "Maaf! Link tidak benar"
+
+#: woocommerce/rental/content-item-product-list.php:338
+#: woocommerce/rental/content-item-product.php:228
+msgid "Option Price"
+msgstr "Pilihan Harga"
+
+#: elementor/widgets/blog-grid.php:128
+msgid "Order"
+msgstr "Pesanan"
+
+#: elementor/widgets/blog-grid.php:112
+msgid "Order By"
+msgstr "Pesan dengan"
+
+#: elementor/widgets/our-team.php:18
+msgid "Our Team"
+msgstr "Tim Kami"
+
+#: elementor/widgets/testimonial-4.php:150
+#: elementor/widgets/testimonial-2.php:105
+msgid "Outline"
+msgstr ""
+
+#: inc/class-elementor.php:271
+msgid "Ova Accordion"
+msgstr ""
+
+#: inc/class-elementor.php:338
+msgid "Ova Button"
+msgstr ""
+
+#: elementor/widgets/counter.php:22 elementor/widgets/counter.php:50
+#: elementor/widgets/counter.php:126
+msgid "Ova Counter"
+msgstr ""
+
+#: elementor/widgets/heading.php:20
+msgid "Ova Heading"
+msgstr ""
+
+#: inc/class-elementor.php:418 elementor/widgets/icon-box.php:18
+msgid "Ova Icon Box"
+msgstr ""
+
+#: inc/class-elementor.php:508 elementor/widgets/icon-list.php:18
+msgid "Ova Icon List"
+msgstr ""
+
+#: elementor/widgets/progress.php:44
+msgid "Ova Progress"
+msgstr ""
+
+#: inc/class-elementor.php:198
+msgid "Ova Social Icon"
+msgstr ""
+
+#: elementor/widgets/testimonial.php:17
+msgid "Ova Testimonial"
+msgstr ""
+
+#: elementor/widgets/testimonial-2.php:18
+msgid "Ova Testimonial 2"
+msgstr ""
+
+#: elementor/widgets/testimonial-3.php:18
+msgid "Ova Testimonial 3"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:18
+msgid "Ova Testimonial 4"
+msgstr ""
+
+#: elementor/widgets/testimonial-5.php:18
+msgid "Ova Testimonial 5"
+msgstr ""
+
+#: elementor/widgets/testimonial-6.php:18
+msgid "Ova Testimonial 6"
+msgstr ""
+
+#: inc/class-elementor.php:233
+msgid "Ova Text Editor"
+msgstr ""
+
+#: elementor/widgets/video.php:23
+msgid "Ova Video"
+msgstr ""
+
+#. Author of the theme
+msgid "Ovatheme"
+msgstr ""
+
+#: install-resource/active-plugins.php:50
+msgid "OvaTheme Destination"
+msgstr ""
+
+#: install-resource/active-plugins.php:57
+msgid "OvaTheme Events"
+msgstr ""
+
+#: install-resource/active-plugins.php:31
+msgid "OvaTheme Framework"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:372
+msgid "Overlay Color"
+msgstr ""
+
+#: elementor/widgets/gallery-slide.php:325
+msgid "Overlay Color (Hover)"
+msgstr ""
+
+#: elementor/widgets/image-gallery.php:181
+msgid "Overlay Hover Color"
+msgstr ""
+
+#: elementor/widgets/image-gallery.php:160
+msgid "Overlay Hover Opacity"
+msgstr ""
+
+#: elementor/widgets/progress.php:84 elementor/widgets/heading.php:104
+msgid "p"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:198
+msgid "Pacific D. Lee"
+msgstr ""
+
+#: elementor/widgets/road-map.php:436
+msgid "Paddding"
+msgstr ""
+
+#: inc/class-elementor.php:252 elementor/widgets/contact-info.php:275
+#: elementor/widgets/tabs.php:366 elementor/widgets/tabs.php:635
+#: elementor/widgets/tabs.php:731 elementor/widgets/tabs.php:875
+#: elementor/widgets/tabs.php:979 elementor/widgets/blog-grid.php:292
+#: elementor/widgets/road-map.php:497 elementor/widgets/road-map.php:555
+#: elementor/widgets/counter-list.php:213
+#: elementor/widgets/counter-list.php:417
+#: elementor/widgets/counter-list.php:471 elementor/widgets/progress.php:324
+#: elementor/widgets/progress.php:426 elementor/widgets/our-team.php:232
+#: elementor/widgets/our-team.php:289 elementor/widgets/our-team.php:370
+#: elementor/widgets/our-team.php:437 elementor/widgets/our-team.php:494
+#: elementor/widgets/icon-list.php:136 elementor/widgets/icon-list.php:251
+#: elementor/widgets/special-offer.php:300
+#: elementor/widgets/special-offer.php:355
+#: elementor/widgets/special-offer.php:410
+#: elementor/widgets/special-offer.php:469
+#: elementor/widgets/special-offer.php:597 elementor/widgets/icon-box.php:189
+#: elementor/widgets/testimonial-6.php:151
+#: elementor/widgets/testimonial-5.php:171
+#: elementor/widgets/testimonial-4.php:396 elementor/widgets/countdown.php:116
+#: elementor/widgets/countdown.php:170 elementor/widgets/heading.php:193
+#: elementor/widgets/heading.php:263 elementor/widgets/heading.php:319
+#: elementor/widgets/menu-footer.php:146 elementor/widgets/menu-footer.php:244
+#: elementor/widgets/counter.php:156 elementor/widgets/counter.php:360
+#: elementor/widgets/counter.php:414 elementor/widgets/testimonial.php:393
+#: elementor/widgets/testimonial.php:450 elementor/widgets/testimonial.php:508
+#: elementor/widgets/testimonial.php:565
+#: elementor/widgets/testimonial-3.php:499
+#: elementor/widgets/testimonial-3.php:557
+#: elementor/widgets/testimonial-3.php:615
+#: elementor/widgets/testimonial-2.php:411
+#: elementor/widgets/testimonial-2.php:486
+#: elementor/widgets/testimonial-2.php:543
+#: elementor/widgets/testimonial-2.php:600
+#: elementor/widgets/gallery-filter.php:231
+#: elementor/widgets/gallery-filter.php:317 elementor/widgets/video.php:441
+#: elementor/widgets/menu-nav.php:84
+#: elementor/widgets/my-account-button.php:110
+#: elementor/widgets/special-offer-2.php:139
+#: elementor/widgets/special-offer-2.php:220
+#: elementor/widgets/special-offer-2.php:274
+#: elementor/widgets/special-offer-2.php:340
+#: elementor/widgets/special-offer-2.php:394
+#: elementor/widgets/contact-form.php:201
+#: elementor/widgets/contact-form.php:278
+#: elementor/widgets/contact-form.php:517
+#: elementor/widgets/gallery-slide.php:376
+#: elementor/widgets/gallery-slide.php:429 elementor/widgets/toggle.php:248
+#: elementor/widgets/toggle.php:453 elementor/widgets/toggle.php:793
+#: elementor/widgets/toggle.php:890 elementor/widgets/toggle.php:1128
+msgid "Padding"
+msgstr ""
+
+#: template-parts/page.php:23
+msgid "Page"
+msgstr ""
+
+#: template-parts/404.php:10
+msgid "Page does not exist or some other error occured. Go to our Home Page"
+msgstr ""
+
+#: template-parts/parts/breadcrumbs.php:134
+msgid "Page not found"
+msgstr ""
+
+#: template-parts/parts/breadcrumbs_title.php:36
+msgid "page not found"
+msgstr ""
+
+#: template-parts/page.php:19 template-parts/parts/content.php:4
+msgid "Pages:"
+msgstr ""
+
+#: elementor/widgets/menu-nav.php:67
+msgid "Parent Menu"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:294
+#: elementor/widgets/testimonial.php:151
+#: elementor/widgets/testimonial-3.php:192
+#: elementor/widgets/testimonial-2.php:223
+#: elementor/widgets/gallery-slide.php:203
+msgid "Pause on Hover"
+msgstr ""
+
+#: woocommerce/rental/loop/fields/deposit.php:43
+#: woocommerce/rental/loop/fields/deposit.php:48
+msgid "Pay Deposit"
+msgstr "Bayar DP"
+
+#: woocommerce/rental/loop/fields/deposit.php:33
+msgid "Per item"
+msgstr ""
+
+#: elementor/widgets/progress.php:95 elementor/widgets/progress.php:266
+msgid "Percent"
+msgstr "Persen"
+
+#: elementor/widgets/progress.php:352
+msgid "Percentage"
+msgstr "Persentase"
+
+#: elementor/widgets/contact-info.php:77 elementor/widgets/contact-form.php:373
+msgid "Phone"
+msgstr "Whatsapp"
+
+#: woocommerce/rental/loop/request-form.php:109
+msgid "Phone *"
+msgstr "Whatsapp *"
+
+#: elementor/widgets/contact-info.php:127 elementor/widgets/contact-form.php:95
+msgid "Phone Adress"
+msgstr "No Whatsapp"
+
+#: woocommerce/rental/loop/request-form.php:116
+msgid "Phone is required."
+msgstr "No Whatsapp dibutuhkan"
+
+#: elementor/widgets/contact-info.php:114 elementor/widgets/contact-form.php:86
+msgid "Phone Label"
+msgstr ""
+
+#: elementor/widgets/contact-form.php:98
+msgid "Phone number"
+msgstr "No Whatsapp"
+
+#: elementor/widgets/image-gallery.php:84
+msgid "Photo Gallery"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:330
+msgid "Pinterest"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:112
+msgid "Plan your next trip"
+msgstr "Perjalanan Selanjutnya"
+
+#: elementor/widgets/video.php:162
+msgid "Player Controls"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:404
+msgid "Please contact the administrator of this site for help."
+msgstr "Silahkan hubungi admin untuk bantuannya"
+
+#: install-resource/class-tgm-plugin-activation.php:1019
+#: install-resource/class-tgm-plugin-activation.php:1022
+msgid ""
+"Please contact the plugin provider and ask them to package their plugin "
+"according to the WordPress guidelines."
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2632
+msgid "Plugin"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:1206
+#: install-resource/class-tgm-plugin-activation.php:3033
+msgctxt "plugin A *and* plugin B"
+msgid "and"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:394
+#: install-resource/class-tgm-plugin-activation.php:3244
+msgid "Plugin activated successfully."
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:3243
+msgid "Plugin activation failed."
+msgstr ""
+
+#. 1: plugin name.
+#: install-resource/class-tgm-plugin-activation.php:399
+#, php-format
+msgid ""
+"Plugin not activated. A higher version of %s is needed for this theme. "
+"Please update the plugin."
+msgstr ""
+
+#. 1: number of plugins.
+#: install-resource/class-tgm-plugin-activation.php:2473
+#, php-format
+msgctxt "plugins"
+msgid "All <span class=\"count\">(%s)</span>"
+msgid_plural "All <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#: elementor/widgets/share-buttons.php:339
+msgid "Pocket"
+msgstr ""
+
+#: inc/class-elementor.php:445
+msgid "Polygon"
+msgstr ""
+
+#: inc/class-elementor.php:441
+msgid "Polygon Shape"
+msgstr ""
+
+#: inc/class-elementor.php:99
+msgid "PopUp"
+msgstr ""
+
+#: elementor/widgets/tabs.php:151
+msgid "Position"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:86
+msgid "Post Total"
+msgstr ""
+
+#: elementor/widgets/progress.php:163
+msgid "Pre Sale"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2383
+msgid "Pre-Packaged"
+msgstr ""
+
+#: template-parts/post/content-post.php:71
+msgid "Previous"
+msgstr ""
+
+#: woocommerce/rental/loop/table_price.php:149
+#: woocommerce/rental/loop/table_price.php:153
+#: woocommerce/rental/loop/table_price.php:158
+#: woocommerce/rental/loop/table_price.php:206
+#: woocommerce/rental/loop/table_price.php:210
+#: woocommerce/rental/loop/table_price.php:215
+msgid "Price from"
+msgstr "Harga Mulai"
+
+#: inc/class-customize.php:256
+msgid "Primary"
+msgstr ""
+
+#: inc/class-customize.php:152 inc/class-customize.php:169
+msgid "Primary Font"
+msgstr ""
+
+#: inc/class-customize.php:277
+msgid "Primary Hover"
+msgstr ""
+
+#: inc/class-main.php:92
+msgid "Primary Menu"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:343
+msgid "Print"
+msgstr ""
+
+#: inc/class-customize.php:1811
+msgid "Product detail"
+msgstr "Rincian produk"
+
+#: elementor/widgets/progress.php:21
+msgid "Progress"
+msgstr ""
+
+#: elementor/widgets/progress.php:186
+msgid "Progress Bar"
+msgstr ""
+
+#: woocommerce/rental/loop/fields/quantity.php:22
+msgid "Quantity"
+msgstr "Jumlah"
+
+#: woocommerce/rental/loop/fields/quantity.php:30
+msgid "Quantity is required."
+msgstr "Jumlah dibutuhkan"
+
+#: elementor/widgets/testimonial-5.php:47
+#: elementor/widgets/testimonial-5.php:350
+#: elementor/widgets/testimonial-4.php:59
+#: elementor/widgets/testimonial-4.php:531
+#: elementor/widgets/testimonial.php:244
+#: elementor/widgets/testimonial-3.php:287
+msgid "Quote"
+msgstr ""
+
+#: elementor/widgets/testimonial.php:253
+#: elementor/widgets/testimonial-3.php:296
+msgid "Quote Job"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:120
+msgid "Rand"
+msgstr ""
+
+#: woocommerce/rental/content-item-product-list.php:262
+#: woocommerce/rental/content-item-product.php:206
+#: woocommerce/rental/loop/location-review.php:60
+#, php-format
+msgid "Rated %s out of 5"
+msgstr ""
+
+#: elementor/widgets/testimonial-6.php:121
+#: elementor/widgets/testimonial-6.php:337
+#: elementor/widgets/testimonial-5.php:131
+#: elementor/widgets/testimonial-5.php:270
+#: elementor/widgets/testimonial-4.php:111
+#: elementor/widgets/testimonial-4.php:452
+#: elementor/widgets/testimonial-2.php:66
+msgid "Rating"
+msgstr ""
+
+#: elementor/widgets/testimonial-2.php:615
+msgid "Rating Stars"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:143 elementor/widgets/blog-grid.php:661
+#: elementor/widgets/icon-box.php:130
+msgid "Read More"
+msgstr "Selanjutnya"
+
+#: template-parts/parts/readmore.php:2
+msgid "Read more"
+msgstr "Selanjutnya"
+
+#: template-parts/post/content-none.php:10
+#, php-format
+msgid ""
+"Ready to publish your first post? <a href=\"%1$s\">Get started here</a>."
+msgstr ""
+
+#: woocommerce/rental/loop/booking-form.php:65
+#: woocommerce/rental/loop/request-form.php:241
+msgid "reCAPTCHA response error, please try again later"
+msgstr ""
+
+#: woocommerce/rental/loop/booking-form.php:66
+#: woocommerce/rental/loop/request-form.php:242
+msgid "reCAPTCHA response expires, you needs to re-verify"
+msgstr ""
+
+#: inc/class-customize.php:122
+msgid "Recommend use em. Example: 1.6em, 23px"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2361
+msgid "Recommended"
+msgstr "Rekomendasi"
+
+#: elementor/widgets/share-buttons.php:331
+msgid "Reddit"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:63
+msgid "Redirect URL"
+msgstr ""
+
+#: inc/class-woo.php:174
+msgid "Register"
+msgstr "Daftar"
+
+#: inc/class-customize.php:1712
+msgid "Rental products"
+msgstr "Sewa produk"
+
+#: install-resource/class-tgm-plugin-activation.php:2358
+msgid "Required"
+msgstr "Dibutuhkan"
+
+#: install-resource/class-tgm-plugin-activation.php:2412
+msgid "Required Update not Available"
+msgstr ""
+
+#: woocommerce/rental/loop/booking-form.php:64
+#: woocommerce/rental/loop/request-form.php:240
+msgid "Requires reCAPTCHA"
+msgstr "Butuh reCAPTCHA"
+
+#: install-resource/class-tgm-plugin-activation.php:2415
+msgid "Requires Update"
+msgstr "Butuh Update"
+
+#: elementor/widgets/gallery-filter.php:201
+msgid "Restaurant"
+msgstr "Restoran"
+
+#: elementor/widgets/gallery-filter.php:136
+#: elementor/widgets/gallery-filter.php:168
+#: elementor/widgets/gallery-filter.php:200
+msgid "Restaurant On Sea Beach"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:392
+msgid "Return to Required Plugins Installer"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:393
+#: install-resource/class-tgm-plugin-activation.php:912
+#: install-resource/class-tgm-plugin-activation.php:2618
+#: install-resource/class-tgm-plugin-activation.php:3665
+msgid "Return to the Dashboard"
+msgstr ""
+
+#: woocommerce/rental/loop/tabs.php:51
+msgid "Reviews"
+msgstr ""
+
+#: woocommerce/rental/loop/review.php:34
+msgid "Reviews (%d)"
+msgstr ""
+
+#: woocommerce/rental/loop/review.php:52
+msgid "Reviews are only visible in a single product page"
+msgstr ""
+
+#: install-resource/active-plugins.php:76
+msgid "ReviewX"
+msgstr ""
+
+#: elementor/widgets/menu-canvas.php:73 elementor/widgets/counter-list.php:166
+#: elementor/widgets/progress.php:228 elementor/widgets/our-team.php:118
+#: elementor/widgets/share-buttons.php:171 elementor/widgets/icon-box.php:250
+#: elementor/widgets/heading.php:124 elementor/widgets/counter.php:110
+#: elementor/widgets/header-banner.php:323 elementor/widgets/logo.php:91
+msgid "Right"
+msgstr ""
+
+#: inc/class-hook.php:264 inc/class-customize.php:1733
+#: inc/class-customize.php:1832
+msgid "Right Sidebar"
+msgstr ""
+
+#: elementor/widgets/road-map.php:18 elementor/widgets/road-map.php:41
+msgid "Road Map"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:433
+msgid "Rotate"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:455
+msgid "Rotate Hover"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:238
+msgid "Rows Gap"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:101
+msgid "Sale Off"
+msgstr "Diskon"
+
+#: elementor/widgets/special-offer.php:102
+msgid "Save Up To"
+msgstr "Hemat hingga"
+
+#: inc/class-elementor.php:96
+msgid "Scale Up"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:169
+#: elementor/widgets/gallery-filter.php:173
+#: elementor/widgets/gallery-filter.php:181
+msgid "Sea Beach"
+msgstr ""
+
+#: template-parts/parts/breadcrumbs_title.php:17
+msgid "Search"
+msgstr "Cari"
+
+#: template-parts/parts/breadcrumbs.php:72
+msgid "Search results for"
+msgstr "Carikan"
+
+#: template-parts/search.php:7
+msgid "Search Results for: "
+msgstr "Carikan:"
+
+#: inc/class-customize.php:438
+msgid "Second Background"
+msgstr ""
+
+#: inc/class-customize.php:298
+msgid "Secondary"
+msgstr ""
+
+#: inc/class-elementor.php:534
+msgid "Secondary Color"
+msgstr ""
+
+#: inc/class-customize.php:318
+msgid "Secondary Hover"
+msgstr ""
+
+#: elementor/widgets/icon-box.php:105
+msgid "Sed ut perspiciatis unde omnis totam rem aperia eaque"
+msgstr ""
+
+#: woocommerce/rental/loop/fields/services.php:52
+#: woocommerce/rental/loop/fields/extra_fields.php:78
+#, php-format
+msgid "Select %s"
+msgstr "Pilih %s"
+
+#: elementor/widgets/menu-canvas.php:54 elementor/widgets/menu-footer.php:58
+#: elementor/widgets/menu-nav.php:50
+msgid "Select Menu"
+msgstr "Pilih Menu"
+
+#: woocommerce/rental/loop/request-form.php:247
+msgid "Send Now"
+msgstr "Kirim"
+
+#: woocommerce/rental/loop/fields/services.php:35
+msgid "Services"
+msgstr "Paket"
+
+#: elementor/widgets/testimonial-4.php:272
+#: elementor/widgets/testimonial-3.php:184
+#: elementor/widgets/testimonial-2.php:215
+#: elementor/widgets/gallery-slide.php:195
+msgid "Set how many slides are scrolled per swipe."
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:13
+#: elementor/widgets/share-buttons.php:206
+msgid "Share Buttons"
+msgstr "Berbagi"
+
+#: template-parts/parts/tags.php:9
+msgid "Share: "
+msgstr "Bagikan:"
+
+#: elementor/widgets/special-offer-2.php:108
+msgid "Shop Now"
+msgstr "Beli"
+
+#: inc/class-customize.php:1706
+msgid "Shop products display"
+msgstr "Beli produk"
+
+#: elementor/widgets/blog-grid.php:443
+msgid "Short Description"
+msgstr "Deskripsi singkat"
+
+#: elementor/widgets/blog-grid.php:152 elementor/widgets/blog-grid.php:164
+#: elementor/widgets/blog-grid.php:189 elementor/widgets/blog-grid.php:201
+#: elementor/widgets/blog-grid.php:214 elementor/widgets/blog-grid.php:227
+#: elementor/widgets/menu-canvas.php:86 elementor/widgets/our-team.php:134
+#: elementor/widgets/special-offer.php:175 elementor/widgets/icon-box.php:115
+#: elementor/widgets/testimonial-6.php:110
+#: elementor/widgets/testimonial-5.php:121
+#: elementor/widgets/testimonial-4.php:73
+#: elementor/widgets/gallery-slide.php:66 elementor/widgets/toggle.php:479
+#: elementor/widgets/toggle.php:922
+msgid "Show"
+msgstr "Tampilkan"
+
+#: elementor/widgets/gallery-filter.php:65
+msgid "Show all"
+msgstr "Tampilkan semua"
+
+#: inc/class-customize.php:744 inc/class-customize.php:982
+#: elementor/widgets/blog-grid.php:199
+msgid "Show Author"
+msgstr ""
+
+#: elementor/widgets/toggle.php:477
+msgid "Show Before Title"
+msgstr ""
+
+#: elementor/widgets/toggle.php:920
+msgid "Show Border Icon"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:198
+msgid "Show Breadcrumbs"
+msgstr ""
+
+#: inc/class-customize.php:1331 elementor/widgets/menu-canvas.php:84
+msgid "Show Button"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:173
+msgid "Show button"
+msgstr ""
+
+#: elementor/widgets/icon-box.php:113
+msgid "Show Button Readmore"
+msgstr ""
+
+#: inc/class-customize.php:724 inc/class-customize.php:962
+msgid "Show Category"
+msgstr "Tampilkan Kategori"
+
+#: inc/class-customize.php:764 inc/class-customize.php:1002
+msgid "Show Comment"
+msgstr "Tampilkan Komentar"
+
+#: inc/class-customize.php:1022
+msgid "Show Content"
+msgstr "Tampilkan Konten"
+
+#: inc/class-customize.php:704 inc/class-customize.php:942
+#: elementor/widgets/blog-grid.php:187
+msgid "Show Date"
+msgstr "Tampilkan Tgl"
+
+#: inc/class-customize.php:1540
+msgid "Show Description"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:3594
+msgid "Show Details"
+msgstr "Tampilkan detail"
+
+#: elementor/widgets/testimonial-4.php:359
+#: elementor/widgets/testimonial.php:217
+#: elementor/widgets/testimonial-3.php:258
+#: elementor/widgets/testimonial-2.php:289
+#: elementor/widgets/gallery-slide.php:269
+msgid "Show Dots"
+msgstr ""
+
+#: inc/class-customize.php:1231
+msgid "Show Duration"
+msgstr "Lihat durasi"
+
+#: inc/class-customize.php:785
+msgid "Show Excerpt"
+msgstr ""
+
+#: inc/class-customize.php:1171
+msgid "Show Featured"
+msgstr "Lihat Fitur"
+
+#: inc/class-customize.php:1519
+msgid "Show Features"
+msgstr "Lihat Fitur"
+
+#: inc/class-customize.php:1640
+msgid "Show Form"
+msgstr "Lihat Form"
+
+#: inc/class-customize.php:1458
+msgid "Show Gallery Button"
+msgstr ""
+
+#: inc/class-customize.php:1498
+msgid "Show Gallery Slide"
+msgstr ""
+
+#: elementor/widgets/gallery-slide.php:64
+msgid "Show Icon"
+msgstr ""
+
+#: inc/class-customize.php:1560
+msgid "Show Included/Excluded"
+msgstr "Lihat Included/Excluded"
+
+#: elementor/widgets/video.php:190
+msgid "Show Info"
+msgstr "Lihat Info"
+
+#: inc/class-customize.php:1102
+msgid "Show Leave a Reply"
+msgstr ""
+
+#: inc/class-customize.php:1271 inc/class-customize.php:1378
+msgid "Show Location"
+msgstr "Lihat Lokasi"
+
+#: inc/class-customize.php:1600
+msgid "Show Map"
+msgstr ""
+
+#: inc/class-customize.php:1211
+msgid "Show Max Guest"
+msgstr ""
+
+#: inc/class-customize.php:664 inc/class-customize.php:902
+msgid "Show Media"
+msgstr ""
+
+#: inc/class-customize.php:1082
+msgid "Show Next Prev Post"
+msgstr ""
+
+#: elementor/widgets/progress.php:117
+msgid "Show Notes"
+msgstr ""
+
+#: elementor/widgets/counter-list.php:72
+msgid "Show Offsets Between Columns"
+msgstr ""
+
+#: elementor/widgets/progress.php:107
+msgid "Show Percent"
+msgstr "Tampilkan Persen"
+
+#: inc/class-customize.php:1311
+msgid "Show Price"
+msgstr "Tampilkan Harga"
+
+#: inc/class-customize.php:1291 inc/class-customize.php:1398
+#: elementor/widgets/testimonial-6.php:108
+#: elementor/widgets/testimonial-5.php:119
+#: elementor/widgets/testimonial-4.php:71
+msgid "Show Rating"
+msgstr ""
+
+#: inc/class-customize.php:805 elementor/widgets/blog-grid.php:225
+msgid "Show Read More"
+msgstr ""
+
+#: inc/class-customize.php:1680
+msgid "Show Related"
+msgstr "Tampilkan related"
+
+#: inc/class-customize.php:1620
+msgid "Show Reviews"
+msgstr ""
+
+#: inc/class-customize.php:1478
+msgid "Show Share Button"
+msgstr ""
+
+#: inc/class-customize.php:1062
+msgid "Show Share Social Icon"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:162
+msgid "Show Short Description"
+msgstr ""
+
+#: elementor/widgets/our-team.php:132
+msgid "Show Social"
+msgstr ""
+
+#: inc/class-customize.php:1660
+msgid "Show Table Price"
+msgstr ""
+
+#: inc/class-customize.php:1042
+msgid "Show Tag"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:150
+msgid "Show Thumbnail"
+msgstr ""
+
+#: inc/class-customize.php:684 inc/class-customize.php:922
+#: inc/class-customize.php:1251 inc/class-customize.php:1358
+#: elementor/widgets/blog-grid.php:212 elementor/widgets/progress.php:62
+#: elementor/widgets/header-banner.php:135
+#: elementor/widgets/image-gallery.php:67
+msgid "Show Title"
+msgstr ""
+
+#: inc/class-customize.php:1580
+msgid "Show Tour Plan"
+msgstr ""
+
+#: inc/class-customize.php:1438
+msgid "Show Video Button"
+msgstr ""
+
+#: inc/class-customize.php:1191 inc/class-customize.php:1418
+msgid "Show Wishlist"
+msgstr ""
+
+#: inc/class-customize.php:1799 inc/class-customize.php:1882
+msgid "Show/Hide Title"
+msgstr ""
+
+#: inc/class-customize.php:518 inc/class-customize.php:1782
+msgid "Sidebar Width (px)"
+msgstr ""
+
+#: elementor/widgets/my-account-button.php:70
+msgid "Sign Up"
+msgstr "Daftar"
+
+#: inc/class-customize.php:870 inc/class-customize.php:1342
+msgid "Single"
+msgstr ""
+
+#: elementor/widgets/counter-list.php:61
+msgid "Single Column"
+msgstr ""
+
+#: inc/class-customize.php:1826
+msgid "Single Layout"
+msgstr ""
+
+#: elementor/widgets/my-account-button.php:232
+msgid "Singup Background"
+msgstr ""
+
+#: elementor/widgets/my-account-button.php:179
+msgid "Singup Background "
+msgstr ""
+
+#: elementor/widgets/my-account-button.php:168
+#: elementor/widgets/my-account-button.php:221
+msgid "Singup Color"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:540 elementor/widgets/road-map.php:293
+#: elementor/widgets/road-map.php:448 elementor/widgets/counter-list.php:258
+#: elementor/widgets/icon-list.php:189 elementor/widgets/special-offer.php:208
+#: elementor/widgets/icon-box.php:277 elementor/widgets/icon-box.php:730
+#: elementor/widgets/testimonial-5.php:278
+#: elementor/widgets/testimonial-5.php:358
+#: elementor/widgets/testimonial-5.php:457
+#: elementor/widgets/testimonial-4.php:460
+#: elementor/widgets/testimonial-4.php:539
+#: elementor/widgets/testimonial-4.php:637
+#: elementor/widgets/testimonial-4.php:780 elementor/widgets/counter.php:201
+#: elementor/widgets/testimonial.php:591
+#: elementor/widgets/testimonial-2.php:626
+#: elementor/widgets/gallery-filter.php:395 elementor/widgets/menu-cart.php:76
+#: elementor/widgets/special-offer-2.php:151
+msgid "Size"
+msgstr "Ukuran"
+
+#: elementor/widgets/testimonial.php:264
+#: elementor/widgets/testimonial-3.php:307
+msgid "Size quote"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:336
+msgid "Skype"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:270
+#: elementor/widgets/testimonial-3.php:182
+#: elementor/widgets/testimonial-2.php:213
+#: elementor/widgets/gallery-slide.php:193
+msgid "Slides to Scroll"
+msgstr ""
+
+#: elementor/widgets/road-map.php:117
+msgid "Slow"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:350
+#: elementor/widgets/testimonial.php:208
+#: elementor/widgets/testimonial-3.php:249
+#: elementor/widgets/testimonial-2.php:280
+#: elementor/widgets/gallery-slide.php:260
+msgid "Smart Speed"
+msgstr ""
+
+#: elementor/widgets/our-team.php:471
+msgid "Social"
+msgstr ""
+
+#: elementor/widgets/counter-list.php:139
+msgid "Social follow likes"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:32
+#: elementor/widgets/share-buttons.php:120
+msgid "Social Icons"
+msgstr ""
+
+#: elementor/widgets/progress.php:166
+msgid "Soft Cap"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:146
+#: elementor/widgets/testimonial-2.php:101
+msgid "Solid"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:194
+msgid "Somalia D. Silva"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:340
+msgid "Something went wrong with the plugin API."
+msgstr ""
+
+#: template-parts/search.php:29
+msgid ""
+"Sorry, but nothing matched your search terms. Please try again with some "
+"different keywords."
+msgstr ""
+"Maaf, yang anda cari tidak ditemukan. coba lagi dengan keyword lainnya."
+
+#: template-parts/page.php:34
+msgid "Sorry, no pages matched your criteria."
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2633
+msgid "Source"
+msgstr ""
+
+#: elementor/widgets/toggle.php:223
+msgid "Space Between"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:496 elementor/widgets/testimonial-5.php:301
+#: elementor/widgets/testimonial-4.php:483
+#: elementor/widgets/testimonial-4.php:798
+#: elementor/widgets/testimonial-2.php:643 elementor/widgets/toggle.php:775
+msgid "Spacing"
+msgstr ""
+
+#: elementor/widgets/progress.php:83 elementor/widgets/heading.php:103
+msgid "span"
+msgstr ""
+
+#: elementor/widgets/special-offer-2.php:87
+msgid "Special Deal Of This Week"
+msgstr "Harga Spesial Pekan Ini"
+
+#: woocommerce/rental/loop/table_price.php:130
+#: woocommerce/rental/loop/table_price.php:162
+msgid "Special Discount"
+msgstr "Spesial Diskon"
+
+#: elementor/widgets/special-offer.php:20
+msgid "Special Offer"
+msgstr "Penawaran Spesial"
+
+#: elementor/widgets/special-offer-2.php:18
+msgid "Special Offer 2"
+msgstr "Penawaran Spesial 2"
+
+#: woocommerce/rental/loop/table_price.php:117
+msgid "Special Time"
+msgstr "Waktu Spesial"
+
+#: elementor/widgets/gallery-slide.php:173
+msgid "Stage Padding"
+msgstr ""
+
+#: elementor/widgets/tabs.php:170 elementor/widgets/tabs.php:200
+#: elementor/widgets/tabs.php:774 elementor/widgets/toggle.php:715
+msgid "Start"
+msgstr "Mulai"
+
+#: woocommerce/rental/loop/table_price.php:121
+#: woocommerce/rental/loop/table_price.php:143
+msgid "Start Date"
+msgstr "Tgl Mulai"
+
+#: install-resource/class-tgm-plugin-activation.php:2639
+msgid "Status"
+msgstr ""
+
+#: inc/class-customize.php:223
+msgid ""
+"Step 1: Insert font-face in style.css file: Refer https://www.w3schools."
+"com/cssref/css3_pr_font-face_rule.asp. Step 2: Insert font-family and font-"
+"weight like format: \n"
+"\t\t\t\t\t\t[\"Perpetua\", \"Regular:Bold:Italic:Light\"] | [\"Name-Font\", "
+"\"Regular:Bold:Italic:Light\"]. Step 3: Refresh customize page to display "
+"new font in dropdown font field."
+msgstr ""
+
+#: elementor/widgets/logo.php:242
+msgid "Sticky Logo"
+msgstr ""
+
+#: elementor/widgets/logo.php:279
+msgid "Sticky Logo Height"
+msgstr ""
+
+#: elementor/widgets/logo.php:259
+msgid "Sticky Logo Width"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:337
+msgid "StumbleUpon"
+msgstr ""
+
+#: elementor/widgets/menu-canvas.php:130
+msgid "Style"
+msgstr ""
+
+#: elementor/widgets/menu-footer.php:170 elementor/widgets/menu-nav.php:194
+msgid "Sub Menu"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:110
+#: elementor/widgets/special-offer.php:146
+#: elementor/widgets/special-offer.php:371 elementor/widgets/heading.php:51
+#: elementor/widgets/heading.php:221
+msgid "Sub Title"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:122
+msgid "Sub Title 1"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:134
+msgid "Sub Title 2"
+msgstr ""
+
+#: elementor/widgets/special-offer-2.php:74
+#: elementor/widgets/special-offer-2.php:200
+msgid "Subtitle"
+msgstr ""
+
+#: elementor/widgets/counter-list.php:107
+#: elementor/widgets/counter-list.php:379 elementor/widgets/counter.php:80
+#: elementor/widgets/counter.php:322
+msgid "Suffix"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:180
+msgid "Summer Sea Beach"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:172
+msgid "Swimming Pool"
+msgstr ""
+
+#: elementor/widgets/switch-language.php:18
+msgid "Switch Language"
+msgstr "Ganti Bahasa"
+
+#: elementor/widgets/tabs.php:127
+msgid "Tab #1"
+msgstr ""
+
+#: elementor/widgets/tabs.php:131
+msgid "Tab #2"
+msgstr ""
+
+#: elementor/widgets/tabs.php:112 elementor/widgets/tabs.php:113
+msgid "Tab Content"
+msgstr ""
+
+#: elementor/widgets/tabs.php:99 elementor/widgets/tabs.php:100
+msgid "Tab Title"
+msgstr ""
+
+#: elementor/widgets/tabs.php:40 elementor/widgets/gallery-slide.php:124
+msgid "Tabs"
+msgstr ""
+
+#: elementor/widgets/tabs.php:122
+msgid "Tabs Items"
+msgstr ""
+
+#: template-parts/parts/breadcrumbs_title.php:25
+msgid "Tags"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:338
+msgid "Telegram"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:60 elementor/widgets/icon-box.php:47
+#: elementor/widgets/testimonial-4.php:46
+#: elementor/widgets/gallery-slide.php:51
+msgid "Template"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:64 elementor/widgets/icon-box.php:51
+#: elementor/widgets/testimonial-4.php:50
+#: elementor/widgets/gallery-slide.php:55
+msgid "Template 1"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:65 elementor/widgets/icon-box.php:52
+#: elementor/widgets/testimonial-4.php:51
+#: elementor/widgets/gallery-slide.php:56
+msgid "Template 2"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:66 elementor/widgets/icon-box.php:53
+msgid "Template 3"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:67
+msgid "Template 4"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:177
+#: elementor/widgets/gallery-filter.php:185
+#: elementor/widgets/gallery-filter.php:189
+msgid "Temple"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:192
+msgid "Tent Camping On Hills"
+msgstr ""
+
+#: elementor/widgets/testimonial-6.php:177
+msgid "Testimonial"
+msgstr "Testimoni"
+
+#: elementor/widgets/testimonial-5.php:672
+#: elementor/widgets/testimonial-4.php:989
+#: elementor/widgets/testimonial.php:702
+#: elementor/widgets/testimonial-3.php:670
+#: elementor/widgets/testimonial-3.php:677
+#: elementor/widgets/testimonial-2.php:749
+msgid "testimonial"
+msgstr "testimoni"
+
+#: elementor/widgets/testimonial-6.php:99
+#: elementor/widgets/testimonial-5.php:98
+#: elementor/widgets/testimonial-4.php:172 elementor/widgets/testimonial.php:94
+#: elementor/widgets/testimonial-3.php:105
+#: elementor/widgets/testimonial-2.php:143
+msgid "Testimonial "
+msgstr "Testimoni"
+
+#: inc/class-customize.php:358 elementor/widgets/contact-info.php:79
+#: elementor/widgets/contact-info.php:172 elementor/widgets/progress.php:129
+#: elementor/widgets/icon-box.php:670 elementor/widgets/countdown.php:150
+#: elementor/widgets/video.php:85 elementor/widgets/video.php:403
+#: elementor/widgets/contact-form.php:131
+msgid "Text"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:605
+msgid "Text "
+msgstr ""
+
+#: elementor/widgets/menu-canvas.php:113
+#: elementor/widgets/special-offer.php:185 elementor/widgets/icon-box.php:128
+#: elementor/widgets/special-offer-2.php:106
+#: elementor/widgets/special-offer-2.php:374
+msgid "Text Button"
+msgstr ""
+
+#: elementor/widgets/switch-language.php:113
+#: elementor/widgets/image-gallery.php:215
+msgid "Text Color"
+msgstr ""
+
+#: elementor/widgets/countdown.php:57
+msgid "Text Day"
+msgstr ""
+
+#: elementor/widgets/menu-cart.php:57
+msgid "Text Empty"
+msgstr ""
+
+#: inc/class-customize.php:86
+msgid "Text Font"
+msgstr ""
+
+#: elementor/widgets/countdown.php:66
+msgid "Text Hour"
+msgstr ""
+
+#: elementor/widgets/my-account-button.php:57
+msgid "Text Login Button"
+msgstr ""
+
+#: elementor/widgets/countdown.php:75
+msgid "Text Minute"
+msgstr ""
+
+#: elementor/widgets/my-account-button.php:47
+msgid "Text My Account Button"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:141
+msgid "Text Read More"
+msgstr ""
+
+#: elementor/widgets/countdown.php:84
+msgid "Text Second"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:347
+#: elementor/widgets/special-offer.php:402
+#: elementor/widgets/special-offer.php:461
+msgid "Text Shadow"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:63
+msgid "Text Show All"
+msgstr ""
+
+#: elementor/widgets/my-account-button.php:67
+msgid "Text Sign Up Button"
+msgstr ""
+
+#. %s: version number
+#: install-resource/class-tgm-plugin-activation.php:2067
+#, php-format
+msgid "TGMPA v%s"
+msgstr ""
+
+#: elementor/widgets/gallery-slide.php:141
+msgid "The Bund"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:353
+#, php-format
+msgid ""
+"The following plugin needs to be updated to its latest version to ensure "
+"maximum compatibility with this theme: %1$s."
+msgid_plural ""
+"The following plugins need to be updated to their latest version to ensure "
+"maximum compatibility with this theme: %1$s."
+msgstr[0] ""
+msgstr[1] ""
+
+#: install-resource/class-tgm-plugin-activation.php:395
+#: install-resource/class-tgm-plugin-activation.php:3037
+msgid "The following plugin was activated successfully:"
+msgid_plural "The following plugins were activated successfully:"
+msgstr[0] ""
+msgstr[1] ""
+
+#: install-resource/class-tgm-plugin-activation.php:371
+#, php-format
+msgid "The following recommended plugin is currently inactive: %1$s."
+msgid_plural "The following recommended plugins are currently inactive: %1$s."
+msgstr[0] ""
+msgstr[1] ""
+
+#: install-resource/class-tgm-plugin-activation.php:365
+#, php-format
+msgid "The following required plugin is currently inactive: %1$s."
+msgid_plural "The following required plugins are currently inactive: %1$s."
+msgstr[0] ""
+msgstr[1] ""
+
+#: install-resource/class-tgm-plugin-activation.php:3592
+msgid ""
+"The installation and activation process is starting. This process may take a "
+"while on some hosts, so please be patient."
+msgstr ""
+
+#. 1: plugin name.
+#: install-resource/class-tgm-plugin-activation.php:3588
+#, php-format
+msgid "The installation of %1$s failed."
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:3600
+msgid ""
+"The installation process is starting. This process may take a while on some "
+"hosts, so please be patient."
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:1022
+msgid ""
+"The remote plugin package consists of more than one file, but the files are "
+"not packaged in a folder."
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:1019
+msgid ""
+"The remote plugin package does not contain a folder with the desired slug "
+"and renaming did not work."
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:403
+msgid ""
+"There are one or more required or recommended plugins to install, update or "
+"activate."
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:359
+#, php-format
+msgid "There is an update available for: %1$s."
+msgid_plural "There are updates available for the following plugins: %1$s."
+msgstr[0] ""
+msgstr[1] ""
+
+#: inc/class-customize.php:458
+msgid "Third Background"
+msgstr ""
+
+#: elementor/widgets/testimonial-6.php:101
+msgid ""
+"This is due to their excellent service, competitive pricing and customer "
+"support. It’s throughly refresing to get such"
+msgstr ""
+
+#: inc/class-customize.php:581 inc/class-customize.php:609
+msgid "This isn't effect in Blog"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:607
+msgid "This plugin needs to be updated to be compatible with your theme."
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:347
+#, php-format
+msgid "This theme recommends the following plugin: %1$s."
+msgid_plural "This theme recommends the following plugins: %1$s."
+msgstr[0] ""
+msgstr[1] ""
+
+#: install-resource/class-tgm-plugin-activation.php:341
+#, php-format
+msgid "This theme requires the following plugin: %1$s."
+msgid_plural "This theme requires the following plugins: %1$s."
+msgstr[0] ""
+msgstr[1] ""
+
+#: elementor/widgets/share-buttons.php:344
+msgid "Tiktok"
+msgstr ""
+
+#: elementor/widgets/contact-form.php:177
+#: elementor/widgets/contact-form.php:608
+msgid "Time"
+msgstr "Waktu"
+
+#: woocommerce/rental/loop/table_price.php:169
+msgid "Time Discount: "
+msgstr "Waktu Diskon::"
+
+#: elementor/widgets/road-map.php:234
+msgid "Timeline"
+msgstr ""
+
+#: elementor/widgets/road-map.php:210
+msgid "Timeline Gap"
+msgstr ""
+
+#: elementor/widgets/tabs.php:394 elementor/widgets/blog-grid.php:117
+#: elementor/widgets/blog-grid.php:389 elementor/widgets/road-map.php:86
+#: elementor/widgets/road-map.php:476 elementor/widgets/counter-list.php:116
+#: elementor/widgets/counter-list.php:433 elementor/widgets/progress.php:51
+#: elementor/widgets/progress.php:297 elementor/widgets/icon-list.php:62
+#: elementor/widgets/icon-list.php:224 elementor/widgets/special-offer.php:86
+#: elementor/widgets/special-offer.php:316 elementor/widgets/icon-box.php:73
+#: elementor/widgets/icon-box.php:449 elementor/widgets/heading.php:60
+#: elementor/widgets/heading.php:142 elementor/widgets/counter.php:89
+#: elementor/widgets/counter.php:376 elementor/widgets/gallery-filter.php:133
+#: elementor/widgets/gallery-filter.php:560
+#: elementor/widgets/image-gallery.php:82
+#: elementor/widgets/image-gallery.php:200
+#: elementor/widgets/special-offer-2.php:84
+#: elementor/widgets/special-offer-2.php:254
+#: elementor/widgets/gallery-slide.php:106
+#: elementor/widgets/gallery-slide.php:338 elementor/widgets/toggle.php:275
+msgid "Title"
+msgstr "Judul"
+
+#: elementor/widgets/tabs.php:97 elementor/widgets/toggle.php:42
+msgid "Title & Description"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:145
+msgid "Title Color"
+msgstr ""
+
+#: inc/class-elementor.php:468
+msgid "Title Color Hover"
+msgstr ""
+
+#: elementor/widgets/toggle.php:155
+msgid "Title HTML Tag"
+msgstr ""
+
+#: inc/class-elementor.php:490
+msgid "Title Margin"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:157
+msgid "Title Padding"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:188
+msgid "Title Typo"
+msgstr ""
+
+#. 1: number of plugins.
+#: install-resource/class-tgm-plugin-activation.php:2485
+#, php-format
+msgid "To Activate <span class=\"count\">(%s)</span>"
+msgid_plural "To Activate <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#. 1: number of plugins.
+#: install-resource/class-tgm-plugin-activation.php:2477
+#, php-format
+msgid "To Install <span class=\"count\">(%s)</span>"
+msgid_plural "To Install <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#: elementor/widgets/toggle.php:33 elementor/widgets/toggle.php:185
+msgid "Toggle"
+msgstr ""
+
+#: elementor/widgets/toggle.php:73
+msgid "Toggle #1"
+msgstr ""
+
+#: elementor/widgets/toggle.php:77
+msgid "Toggle #2"
+msgstr ""
+
+#: elementor/widgets/toggle.php:57
+msgid "Toggle Content"
+msgstr ""
+
+#: elementor/widgets/toggle.php:68
+msgid "Toggle Items"
+msgstr ""
+
+#: elementor/widgets/toggle.php:44
+msgid "Toggle Title"
+msgstr ""
+
+#: elementor/widgets/progress.php:379 elementor/widgets/toggle.php:630
+msgid "Top"
+msgstr "Atas"
+
+#: elementor/widgets/icon-list.php:103
+msgid "Top Notch Support"
+msgstr ""
+
+#: elementor/widgets/counter-list.php:118
+#: elementor/widgets/counter-list.php:131
+msgid "Total active pro users"
+msgstr ""
+
+#: elementor/widgets/counter-list.php:135
+msgid "Total available tours"
+msgstr ""
+
+#: elementor/widgets/counter.php:91
+msgid "Total Users"
+msgstr "Total Pengguna"
+
+#: woocommerce/rental/loop/fields/ajax-total.php:34
+msgid "Total:"
+msgstr ""
+
+#: inc/class-customize.php:1151
+msgid "Tour"
+msgstr ""
+
+#: woocommerce/rental/loop/tabs.php:47 woocommerce/rental/loop/map.php:51
+#: woocommerce/rental/loop/map.php:66
+msgid "Tour Map"
+msgstr ""
+
+#: woocommerce/rental/loop/tabs.php:43 woocommerce/rental/loop/plan.php:36
+msgid "Tour Plan"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:126
+msgid "Travel"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:145
+msgid "Travel & Food"
+msgstr ""
+
+#: install-resource/active-plugins.php:43
+msgid "Travel and Tour Booking"
+msgstr ""
+
+#. Name of the theme
+#: inc/class-elementor.php:56
+msgid "Tripgo"
+msgstr ""
+
+#. Description of the theme
+msgid ""
+"Tripgo is a modernized take on an ever-popular WordPress. It has custom "
+"color options with beautiful default color schemes, a harmonious fluid grid "
+"using a mobile-first approach, and impeccable polish in every detail. Tripgo "
+"will make your WordPress look beautiful everywhere. Created by <a "
+"href=\"https://themeforest.net/user/ovatheme\">Ovatheme</a>"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:334
+msgid "Tumblr"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:328
+msgid "Twitter"
+msgstr ""
+
+#: inc/class-customize.php:643
+#: install-resource/class-tgm-plugin-activation.php:2634
+#: elementor/widgets/contact-info.php:72
+msgid "Type"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:96
+msgid "Type Sale"
+msgstr ""
+
+#: elementor/widgets/icon-box.php:106 elementor/widgets/special-offer-2.php:99
+msgid "Type your description here"
+msgstr ""
+
+#: elementor/widgets/testimonial-5.php:62
+#: elementor/widgets/testimonial-4.php:88
+msgid "Type your evaluate here"
+msgstr ""
+
+#: elementor/widgets/our-team.php:99
+msgid "Type your job here"
+msgstr ""
+
+#: elementor/widgets/switch-language.php:57
+msgid "Type your language here"
+msgstr ""
+
+#: elementor/widgets/our-team.php:89
+msgid "Type your name here"
+msgstr ""
+
+#: elementor/widgets/special-offer-2.php:109
+msgid "Type your text button here"
+msgstr ""
+
+#: elementor/widgets/road-map.php:89 elementor/widgets/icon-box.php:76
+#: elementor/widgets/image-gallery.php:85
+#: elementor/widgets/special-offer-2.php:77
+#: elementor/widgets/special-offer-2.php:88
+msgid "Type your title here"
+msgstr ""
+
+#: inc/class-customize.php:58 elementor/widgets/special-offer.php:325
+#: elementor/widgets/special-offer.php:380
+#: elementor/widgets/special-offer.php:439
+#: elementor/widgets/special-offer.php:508 elementor/widgets/heading.php:150
+#: elementor/widgets/heading.php:230 elementor/widgets/heading.php:300
+#: elementor/widgets/my-account-button.php:101
+msgid "Typography"
+msgstr ""
+
+#: elementor/widgets/testimonial-3.php:125
+#: elementor/widgets/testimonial-2.php:163
+msgid "UI/UX Designer"
+msgstr ""
+
+#: elementor/widgets/testimonial-2.php:674
+msgid "Unmarked Color"
+msgstr ""
+
+#: elementor/widgets/testimonial-4.php:142
+#: elementor/widgets/testimonial-2.php:97
+msgid "Unmarked Style"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:124
+msgid "Up to"
+msgstr "Hingga"
+
+#: install-resource/class-tgm-plugin-activation.php:2808
+msgid "Update"
+msgstr ""
+
+#. %2$s: plugin name in screen reader markup
+#: install-resource/class-tgm-plugin-activation.php:2693
+#, php-format
+msgid "Update %2$s"
+msgstr ""
+
+#. 1: number of plugins.
+#: install-resource/class-tgm-plugin-activation.php:2481
+#, php-format
+msgid "Update Available <span class=\"count\">(%s)</span>"
+msgid_plural "Update Available <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#: install-resource/class-tgm-plugin-activation.php:2418
+msgid "Update recommended"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:608
+msgid "Update Required"
+msgstr ""
+
+#. 1: plugin name, 2: action number 3: total number of actions.
+#: install-resource/class-tgm-plugin-activation.php:3583
+#, php-format
+msgid "Updating Plugin %1$s (%2$d/%3$d)"
+msgstr ""
+
+#. %s: plugin name.
+#: install-resource/class-tgm-plugin-activation.php:339
+#, php-format
+msgid "Updating Plugin: %s"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2769
+msgid "Upgrade message from the plugin author:"
+msgstr ""
+
+#: elementor/widgets/video.php:75
+msgid "URL Video"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2638
+#: elementor/widgets/our-team.php:46 elementor/widgets/special-offer.php:50
+msgid "Version"
+msgstr ""
+
+#: elementor/widgets/our-team.php:50 elementor/widgets/special-offer.php:54
+msgid "Version 1"
+msgstr ""
+
+#: elementor/widgets/our-team.php:51 elementor/widgets/special-offer.php:55
+msgid "Version 2"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:56
+msgid "Version 3"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:57
+msgid "Version 4"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:58
+msgid "Version 5"
+msgstr ""
+
+#: elementor/widgets/tabs.php:156
+msgid "Vertical"
+msgstr ""
+
+#: elementor/widgets/video.php:108
+msgid "Video Options"
+msgstr ""
+
+#: elementor/widgets/tabs.php:142 elementor/widgets/toggle.php:88
+msgid "View"
+msgstr "Lihat"
+
+#: elementor/widgets/special-offer.php:187
+msgid "View Deals"
+msgstr ""
+
+#: elementor/widgets/gallery-slide.php:715
+msgid "View Detail"
+msgstr ""
+
+#: woocommerce/rental/loop/table_price.php:164
+msgid "View Discount"
+msgstr ""
+
+#: woocommerce/rental/content-item-product-list.php:220
+#: woocommerce/rental/loop/video-gallery.php:97
+msgid "View video"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:332
+msgid "VK"
+msgstr ""
+
+#: elementor/widgets/special-offer.php:148
+msgid "Want to save up to"
+msgstr "Hemat Hingga"
+
+#: inc/class-hook.php:428
+msgid "Website"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:341
+msgid "Whatsapp"
+msgstr ""
+
+#: elementor/widgets/road-map.php:88
+msgid "When We Started"
+msgstr ""
+
+#: inc/class-hook.php:374
+msgid "Wide"
+msgstr ""
+
+#: inc/class-customize.php:535
+msgid "Wide Site"
+msgstr ""
+
+#: install-resource/active-plugins.php:21
+msgid "Widget importer exporter"
+msgstr ""
+
+#: elementor/widgets/tabs.php:910 elementor/widgets/icon-box.php:565
+#: elementor/widgets/video.php:300 elementor/widgets/gallery-slide.php:542
+#: elementor/widgets/gallery-slide.php:610 elementor/widgets/toggle.php:570
+#: elementor/widgets/toggle.php:932
+msgid "Width"
+msgstr ""
+
+#: install-resource/active-plugins.php:91
+msgid "Woo multi currency"
+msgstr ""
+
+#: install-resource/active-plugins.php:38
+msgid "Woocommerce"
+msgstr ""
+
+#: inc/class-widgets.php:35 inc/class-widgets.php:37
+msgid "WooCommerce Sidebar"
+msgstr ""
+
+#: install-resource/class-tgm-plugin-activation.php:2377
+msgid "WordPress Repository"
+msgstr ""
+
+#: elementor/widgets/blog-grid.php:174
+msgid "Words Total"
+msgstr ""
+
+#: elementor/widgets/gallery-filter.php:214
+msgid "Wrap Category"
+msgstr ""
+
+#: elementor/widgets/share-buttons.php:340
+msgid "Xing"
+msgstr ""
+
+#: inc/class-customize.php:669 inc/class-customize.php:689
+#: inc/class-customize.php:709 inc/class-customize.php:729
+#: inc/class-customize.php:749 inc/class-customize.php:769
+#: inc/class-customize.php:790 inc/class-customize.php:810
+#: inc/class-customize.php:907 inc/class-customize.php:927
+#: inc/class-customize.php:947 inc/class-customize.php:967
+#: inc/class-customize.php:987 inc/class-customize.php:1007
+#: inc/class-customize.php:1027 inc/class-customize.php:1047
+#: inc/class-customize.php:1067 inc/class-customize.php:1087
+#: inc/class-customize.php:1107 inc/class-customize.php:1176
+#: inc/class-customize.php:1196 inc/class-customize.php:1216
+#: inc/class-customize.php:1236 inc/class-customize.php:1256
+#: inc/class-customize.php:1276 inc/class-customize.php:1296
+#: inc/class-customize.php:1316 inc/class-customize.php:1336
+#: inc/class-customize.php:1363 inc/class-customize.php:1383
+#: inc/class-customize.php:1403 inc/class-customize.php:1423
+#: inc/class-customize.php:1443 inc/class-customize.php:1463
+#: inc/class-customize.php:1483 inc/class-customize.php:1503
+#: inc/class-customize.php:1524 inc/class-customize.php:1545
+#: inc/class-customize.php:1565 inc/class-customize.php:1585
+#: inc/class-customize.php:1605 inc/class-customize.php:1625
+#: inc/class-customize.php:1645 inc/class-customize.php:1665
+#: inc/class-customize.php:1685 inc/class-customize.php:1804
+#: inc/class-customize.php:1887 elementor/widgets/road-map.php:65
+#: elementor/widgets/counter-list.php:74
+#: elementor/widgets/share-buttons.php:194
+#: elementor/widgets/testimonial-5.php:109
+#: elementor/widgets/testimonial-4.php:284
+#: elementor/widgets/testimonial-4.php:298
+#: elementor/widgets/testimonial-4.php:312
+#: elementor/widgets/testimonial-4.php:326
+#: elementor/widgets/testimonial-4.php:363
+#: elementor/widgets/testimonial.php:155 elementor/widgets/testimonial.php:170
+#: elementor/widgets/testimonial.php:184 elementor/widgets/testimonial.php:221
+#: elementor/widgets/testimonial-3.php:196
+#: elementor/widgets/testimonial-3.php:211
+#: elementor/widgets/testimonial-3.php:225
+#: elementor/widgets/testimonial-3.php:262
+#: elementor/widgets/testimonial-2.php:227
+#: elementor/widgets/testimonial-2.php:242
+#: elementor/widgets/testimonial-2.php:256
+#: elementor/widgets/testimonial-2.php:293
+#: elementor/widgets/image-gallery.php:71 elementor/widgets/video.php:122
+#: elementor/widgets/video.php:136 elementor/widgets/video.php:150
+#: elementor/widgets/video.php:164 elementor/widgets/video.php:178
+#: elementor/widgets/video.php:192 elementor/widgets/my-account-button.php:79
+#: elementor/widgets/gallery-slide.php:207
+#: elementor/widgets/gallery-slide.php:222
+#: elementor/widgets/gallery-slide.php:236
+#: elementor/widgets/gallery-slide.php:273
+msgid "Yes"
+msgstr "Ya"
+
+#: install-resource/active-plugins.php:86
+msgid "YITH WooCommerce Wishlist"
+msgstr ""
+
+#: elementor/widgets/header-banner.php:123
+msgid "You can add background image in Advanced Tab"
+msgstr ""
+
+#: woocommerce/rental/loop/unavailable_time.php:41
+msgid "You can't book product in this time"
+msgstr "Kamu tidak dapat memesan paket ini sekarang"
+
+#: woocommerce/rental/loop/related.php:70
+msgid "You May Like"
+msgstr ""
+
+#: woocommerce/rental/loop/request-form.php:128
+msgid "Your address"
+msgstr "Alamat anda"
+
+#: elementor/widgets/menu-cart.php:59
+msgid "Your Cart is Empty"
+msgstr "Keranjang anda kosong"
+
+#: template-parts/parts/comment.php:21
+msgid "Your comment is awaiting moderation."
+msgstr "Komentar anda sedang dicek"
+
+#: woocommerce/rental/loop/request-form.php:92
+msgid "Your name"
+msgstr "Nama anda"
+
+#: elementor/widgets/contact-info.php:174
+msgid "Your text"
+msgstr "Tulisan anda"

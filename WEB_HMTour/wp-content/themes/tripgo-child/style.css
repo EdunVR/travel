@@ -1,0 +1,712 @@
+/* Theme Name: Tripgo Child Theme
+Theme URI: https://themeforest.net/user/ovatheme/portfolio
+Description: This is child theme of tripgo
+Author: Ovatheme
+Author URI: https://themeforest.net/user/ovatheme
+Template: tripgo
+Version: 1.0.0
+Tags: two-columns, three-columns, left-sidebar, right-sidebar, custom-menu, editor-style, featured-images, flexible-header, full-width-template, post-formats, rtl-language-support, sticky-post, translation-ready
+Text Domain:  tripgo-child
+*/
+
+
+/* ========================================
+   HM TOUR & TRAVEL - CUSTOM STYLES
+   ======================================== */
+
+/* 1. Hero Section Title Font Fix */
+.hero-section h1,
+.hero-section .elementor-heading-title,
+.elementor-widget-heading .elementor-heading-title {
+    font-family: 'Playfair Display', 'Georgia', serif !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+}
+
+/* Responsive font sizes for hero */
+@media (max-width: 768px) {
+    .hero-section h1,
+    .hero-section .elementor-heading-title {
+        font-size: 32px !important;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .hero-section h1,
+    .hero-section .elementor-heading-title {
+        font-size: 42px !important;
+    }
+}
+
+@media (min-width: 1025px) {
+    .hero-section h1,
+    .hero-section .elementor-heading-title {
+        font-size: 54px !important;
+    }
+}
+
+/* 2. Dropdown Menu "Tentang Kami" Fix */
+/* Fix dropdown disappearing when cursor moves down */
+.main-navigation .sub-menu,
+.menu-item-has-children .sub-menu,
+.nav-menu .sub-menu {
+    margin-top: 0 !important;
+    padding-top: 10px;
+    top: 100%;
+}
+
+/* Ensure dropdown stays visible on hover */
+.menu-item-has-children:hover > .sub-menu,
+.menu-item-has-children:focus-within > .sub-menu {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+/* Add smooth transition */
+.menu-item-has-children .sub-menu {
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transition-delay: 0.1s;
+}
+
+.menu-item-has-children:hover .sub-menu {
+    transition-delay: 0s;
+}
+
+/* Prevent gap between parent and dropdown */
+.menu-item-has-children {
+    position: relative;
+}
+
+.menu-item-has-children .sub-menu {
+    position: absolute;
+    left: 0;
+    z-index: 9999;
+}
+
+/* Add invisible bridge between menu and dropdown */
+.menu-item-has-children::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background: transparent;
+}
+
+/* Dropdown item hover effect */
+.sub-menu li:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.sub-menu li a {
+    padding: 10px 20px;
+    display: block;
+    transition: all 0.3s ease;
+}
+
+.sub-menu li a:hover {
+    padding-left: 25px;
+    color: #d4af37; /* Gold color for HM Travel brand */
+}
+
+/* 3. Tagline & Moto Styling */
+.tagline-text {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: #d4af37;
+}
+
+/* 4. Team Section Styling */
+.team-member-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.team-member-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.team-member-position {
+    color: #d4af37;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* 5. Timeline Section Styling */
+.timeline-item {
+    position: relative;
+    padding-left: 40px;
+    margin-bottom: 30px;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 20px;
+    height: 20px;
+    background: #d4af37;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 3px #d4af37;
+}
+
+.timeline-year {
+    font-weight: 700;
+    color: #d4af37;
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+
+/* 6. Achievement Cards */
+.achievement-card {
+    background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+    border-left: 4px solid #d4af37;
+    padding: 25px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.achievement-card:hover {
+    border-left-width: 8px;
+    box-shadow: 0 5px 20px rgba(212, 175, 55, 0.2);
+}
+
+/* 7. Legalitas Section */
+.legalitas-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 5px;
+}
+
+.legalitas-item strong {
+    color: #333;
+    min-width: 200px;
+    font-weight: 600;
+}
+
+/* 8. Visi Misi Section */
+.visi-misi-box {
+    background: linear-gradient(135deg, #d4af37 0%, #c9a02c 100%);
+    color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.visi-misi-box h3 {
+    color: #fff;
+    margin-bottom: 15px;
+    font-size: 24px;
+}
+
+/* 9. Brand Colors */
+:root {
+    --hm-gold: #d4af37;
+    --hm-dark: #1a1a1a;
+    --hm-light: #f5f5f5;
+}
+
+/* 10. Button Styling */
+.btn-hm-primary {
+    background: linear-gradient(135deg, #d4af37 0%, #c9a02c 100%);
+    color: #fff;
+    padding: 12px 30px;
+    border-radius: 5px;
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-hm-primary:hover {
+    background: linear-gradient(135deg, #c9a02c 0%, #b8911f 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+}
+
+/* 11. Responsive Adjustments */
+@media (max-width: 768px) {
+    .legalitas-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .legalitas-item strong {
+        min-width: auto;
+        margin-bottom: 5px;
+    }
+    
+    .timeline-item {
+        padding-left: 30px;
+    }
+}
+
+/* 12. Smooth Scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* 13. Loading Animation for Images */
+img {
+    transition: opacity 0.3s ease;
+}
+
+img[loading="lazy"] {
+    opacity: 0;
+}
+
+img[loading="lazy"].loaded {
+    opacity: 1;
+}
+
+
+/* ========================================
+   ADDITIONAL ENHANCEMENTS
+   ======================================== */
+
+/* 14. Back to Top Button */
+.back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #d4af37 0%, #c9a02c 100%);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 9999;
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.back-to-top.is-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.back-to-top:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+}
+
+.back-to-top:active {
+    transform: translateY(-2px);
+}
+
+/* 15. Sticky Header */
+.site-header.is-sticky,
+header.is-sticky {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9998;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+/* 16. Mobile Menu Enhancements */
+.mobile-menu-toggle.is-active span {
+    background: #d4af37;
+}
+
+.main-navigation.is-open {
+    display: block !important;
+}
+
+body.menu-open {
+    overflow: hidden;
+}
+
+/* 17. Loading Animation */
+.loading-spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #d4af37;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 18. Hover Effects for Links */
+a {
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: #d4af37;
+}
+
+/* 19. Section Spacing */
+.section-spacing {
+    padding: 80px 0;
+}
+
+@media (max-width: 768px) {
+    .section-spacing {
+        padding: 50px 0;
+    }
+}
+
+/* 20. Container Max Width */
+.hmtravel-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* 21. Gradient Text Effect */
+.gradient-text {
+    background: linear-gradient(135deg, #d4af37 0%, #c9a02c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* 22. Card Hover Effects */
+.card-hover {
+    transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* 23. Divider Line */
+.divider-gold {
+    width: 80px;
+    height: 3px;
+    background: linear-gradient(90deg, #d4af37 0%, #c9a02c 100%);
+    margin: 20px auto;
+}
+
+/* 24. Badge Styling */
+.badge-gold {
+    display: inline-block;
+    padding: 5px 15px;
+    background: linear-gradient(135deg, #d4af37 0%, #c9a02c 100%);
+    color: #fff;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* 25. Icon Styling */
+.icon-gold {
+    color: #d4af37;
+    font-size: 24px;
+    margin-right: 10px;
+}
+
+/* 26. Quote Styling */
+.quote-box {
+    border-left: 4px solid #d4af37;
+    padding: 20px 30px;
+    background: #f9f9f9;
+    font-style: italic;
+    margin: 30px 0;
+}
+
+/* 27. Stats Counter Animation */
+.stat-counter {
+    font-size: 48px;
+    font-weight: bold;
+    color: #d4af37;
+    line-height: 1;
+}
+
+/* 28. Social Media Icons */
+.social-icons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.social-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f5f5;
+    border-radius: 50%;
+    color: #333;
+    transition: all 0.3s ease;
+}
+
+.social-icon:hover {
+    background: linear-gradient(135deg, #d4af37 0%, #c9a02c 100%);
+    color: #fff;
+    transform: translateY(-3px);
+}
+
+/* 29. Testimonial Card */
+.testimonial-card {
+    background: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    position: relative;
+}
+
+.testimonial-card::before {
+    content: '"';
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    font-size: 60px;
+    color: #d4af37;
+    opacity: 0.3;
+    font-family: Georgia, serif;
+}
+
+/* 30. CTA Button Large */
+.cta-button-large {
+    display: inline-block;
+    padding: 18px 40px;
+    background: linear-gradient(135deg, #d4af37 0%, #c9a02c 100%);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 50px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
+}
+
+.cta-button-large:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(212, 175, 55, 0.4);
+    color: #fff;
+}
+
+/* 31. Image Overlay Effect */
+.image-overlay {
+    position: relative;
+    overflow: hidden;
+}
+
+.image-overlay::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.8) 0%, rgba(201, 160, 44, 0.8) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.image-overlay:hover::after {
+    opacity: 1;
+}
+
+/* 32. Breadcrumb Styling */
+.breadcrumb {
+    display: flex;
+    gap: 10px;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.breadcrumb a {
+    color: #666;
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    color: #d4af37;
+}
+
+.breadcrumb-separator {
+    color: #999;
+}
+
+/* 33. Alert Box */
+.alert-info {
+    background: #e7f3ff;
+    border-left: 4px solid #2196F3;
+    padding: 15px 20px;
+    margin: 20px 0;
+    border-radius: 4px;
+}
+
+.alert-success {
+    background: #e8f5e9;
+    border-left: 4px solid #4CAF50;
+    padding: 15px 20px;
+    margin: 20px 0;
+    border-radius: 4px;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 15px 20px;
+    margin: 20px 0;
+    border-radius: 4px;
+}
+
+/* 34. Print Styles */
+@media print {
+    .back-to-top,
+    .mobile-menu-toggle,
+    .social-icons,
+    .cta-button-large {
+        display: none !important;
+    }
+}
+
+/* 35. Accessibility Improvements */
+.skip-to-content {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #d4af37;
+    color: white;
+    padding: 8px;
+    text-decoration: none;
+    z-index: 10000;
+}
+
+.skip-to-content:focus {
+    top: 0;
+}
+
+/* Focus visible for keyboard navigation */
+a:focus-visible,
+button:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 2px;
+}
+
+/* 36. Preloader (Optional) */
+.preloader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    transition: opacity 0.3s ease;
+}
+
+.preloader.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* 37. Scroll Progress Bar */
+.scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #d4af37 0%, #c9a02c 100%);
+    z-index: 9999;
+    transition: width 0.1s ease;
+}
+
+/* 38. Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+    .back-to-top {
+        bottom: 20px;
+        right: 20px;
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+    }
+    
+    .cta-button-large {
+        padding: 15px 30px;
+        font-size: 16px;
+    }
+    
+    .stat-counter {
+        font-size: 36px;
+    }
+}
+
+/* 39. Dark Mode Support (Optional) */
+@media (prefers-color-scheme: dark) {
+    /* Add dark mode styles if needed */
+}
+
+/* 40. Animation Classes */
+.fade-in {
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.slide-up {
+    animation: slideUp 0.5s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* End of Additional Enhancements */

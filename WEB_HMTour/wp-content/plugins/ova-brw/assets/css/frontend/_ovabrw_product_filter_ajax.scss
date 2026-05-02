@@ -1,0 +1,228 @@
+.ova-product-filter-ajax{
+
+	display: flex;
+	gap: 24px;
+	position: relative;
+	overflow: hidden;
+
+	@media(max-width: 1024px){
+		flex-flow: column;
+	}
+
+	ul{
+		list-style-type: none;
+		padding: 30px;
+		margin: 0;
+		background: #F2FBFA;
+		width: calc(34% - 12px);
+		@media(max-width: 1024px){
+			width: 100%;
+		}
+
+		li.filter-title {
+			position: relative;
+			display: inline-block;
+			margin: 0 0 40px 0;
+			padding: 0 0 16px 0;;
+			font-size: 28px;
+			font-weight: 600;
+			line-height: 1.2;
+			color: var(--heading);
+			&:after {
+				position: absolute;
+				content: "";
+				left: 0;
+				bottom: 0;
+				width: 60px;
+				height: 4px;
+				background-color: var(--primary);
+			}
+		}
+
+		li.product-filter-button{
+			transition: all .3s ease; 
+			cursor: pointer;
+			position: relative;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			font-size: 18px;
+			font-weight: 600;
+			padding: 16px 20px;
+			color: var(--heading);
+			background-color: #fff;
+			margin: 0 5px 5px 0;
+			@media (max-width: 767px) {
+				font-size: 16px;
+			}
+
+			&.active-category{
+				transition: all .3s ease; 
+				background-color: var(--primary);
+				color: #fff;
+			}
+
+			&:hover{
+				transition: all .3s ease; 
+				background-color: var(--primary);
+				color: #fff;
+			}
+		}
+	}
+
+	.content-item {
+		width: calc(66% - 12px);
+		@media(max-width: 1024px){
+			width: 100%;
+		}
+		.owl-stage-outer{
+			.owl-stage{
+				.owl-item{
+					&.first-active{
+						&.active {
+							.product-slider {
+								.info {
+									a.next-button {
+										transition: all 0.7s ease;
+				                        right: 0;
+				                        visibility: visible;
+				                        opacity: 1;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		.ova-product {
+			border-radius: 0;
+			.ova_head_product {
+				.ova-product-thumbnail {
+					border-radius: 0;
+					img {
+						min-height: 378px;
+					}
+				}
+			}
+			.ova_foot_product {
+				position: absolute;
+			    bottom: 0;
+			    right: 0;
+			    width: 100%;
+			    height: 100%;
+			    padding: 40px;
+			    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.9) 100%);
+
+			    display: flex;
+			    flex-direction: column;
+			    justify-content: flex-end;
+			    overflow: hidden;
+			    @media (max-width: 767px) {
+			    	padding: 40px 30px;
+			    }
+			    .ova-product-title {
+			    	&:hover {
+			    		a {
+			    			color: var(--primary);
+			    		}
+			    	}
+			    	a {
+			    		color: #fff;
+			    	}
+			    }
+			}
+		}
+		.ova-tour-day {
+			position: static;
+			width: fit-content;
+			margin-bottom: 10px; 
+		}
+		.ova-product-day-title-location {
+			transition: all .5s ease;
+		}
+		.ova-product-review-and-price {
+			display: flex;
+			align-items: center;
+			@media (max-width: 500px) {
+				align-items: flex-start;
+				flex-direction: column; 
+			}
+		}
+ 		.ova-product-wrapper-price {
+			padding: 0;
+			.ova-product-price {
+				.new-product-price {
+					color: #fff;
+				}
+				.old-product-price {
+					color: rgba(255,255,255,0.8);
+				}
+			}
+		}
+		.ova-product-review {}
+		.ova-product-location {
+			padding-bottom: 20px;
+			.location {
+				color: #fff;
+			}
+		}
+
+		.owl-dots{
+			display: flex;
+		    justify-content: center;
+		    align-items: center;
+		    position: relative;
+    		top: -20px;
+
+		    button{
+		    	width: 8px;
+			    height: 8px;
+			    background-color: #89909d;
+			    margin: 0 3px;
+			    border-radius: 505;
+			    &.active{
+			    	background-color: var(--primary);
+			    }
+		    }
+		}
+
+		.owl-nav{
+			position: absolute;
+		    top: 45%;
+		    display: flex;
+		    align-items: center;
+		    justify-content: space-between;
+		    width: 100%;
+		    button {
+		    	&.owl-next, &.owl-prev {
+		    		transition: al .3s ease; 
+			    	display: flex;
+				    align-items: center;
+				    justify-content: center;
+				    width: 46px;
+				    height: 46px;
+				    border-radius: 50%;
+				    background-color: transparent;
+				    border: 1px solid #fff; 
+				    font-size: 16px;
+				    color: #fff;
+				    &:hover {
+				    	transition: al .3s ease; 
+				    	background-color: #fff;
+				    	color: var(--heading);
+				    }
+		    	}
+		    	&.owl-next {
+		    		margin-right: 40px;
+		    	}
+		    	&.owl-prev {
+		    		margin-left: 40px;
+		    	}
+		    }
+		}
+		
+	}
+
+}

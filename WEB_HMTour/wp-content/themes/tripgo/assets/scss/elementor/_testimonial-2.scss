@@ -1,0 +1,233 @@
+.elementor-widget-tripgo_elementor_testimonial_2{
+	.elementor-widget-container{
+		min-height: 1px;
+	}
+}
+.ova-testimonial{
+	&.version-2{
+
+		.owl-stage-outer{
+			padding: 50px 0;
+		}
+
+		.owl-carousel.owl-drag{
+		}
+
+		.owl-carousel .owl-stage-outer {
+	       	margin-right: -30px;
+	       	margin-left: -30px;
+		    padding-left: 30px;
+		    padding-right: 30px;
+		    width: calc(100% + 60px);
+		}
+
+		.slide-testimonials{
+			width: 100%;
+			padding-right: 0;
+			.owl-item{
+				&.active{
+					box-shadow: 0px 4px 40px rgba(43, 89, 255, 0.08);
+					background: #FFFFFF;
+					border-radius: 10px;
+				}
+
+				.item{
+					padding: 40px;
+					@media(max-width: 479px){
+				    	padding: 15px;
+				    }
+
+					.evaluate{
+						margin: 0;
+						margin-bottom: 40px;
+					}
+
+					.info-content{
+						display: flex;
+						justify-content: space-between;
+						align-items: center;
+						@media(max-width: 371px){
+						   display: block;
+						}
+
+						.client-info{
+							display: inline-flex;
+						    align-items: center;
+						    justify-content: center;
+						    gap: 20px;
+						    @media(max-width: 830px){
+						    	flex-direction: unset;
+						    }
+							@media(max-width: 479px){
+								align-items: start;
+							}
+
+							.client{
+								@media(max-width: 830px){
+							    	margin-bottom: 0px;
+							    }
+								img{
+									width: 60px;
+									height: 60px;
+								}
+							}
+							.name-job{
+								.name{
+									margin: 0;
+								}
+								.job{
+									margin: 0;
+									font-size: 14px;
+								}
+							}
+						}
+
+						.ova-rating{
+							justify-content: center;
+							.elementor-star-rating{
+								font-size: 16px;
+								color: #ccd6df;
+								font-family: eicons;
+								display: inline-block;
+								.elementor-star-full{
+									&::before{
+										content: "\e934";
+										display: block;
+										font-size: inherit;
+										font-family: inherit;
+										position: absolute;
+										color: #FFBF48;
+										top: 0;
+										left: 0;
+									}
+								}
+								i{
+									display: inline-block;
+									position: relative;
+									font-style: normal;
+									cursor: default;
+									line-height: 100%;
+									vertical-align: middle;
+									font-family: eicons;
+									&::before{
+										display: block;
+										font-size: inherit;
+										font-family: inherit;
+										position: absolute;
+										overflow: hidden;
+										color: #FFBF48;
+										top: 0;
+										left: 0;
+									}
+								}
+								i.elementor-star-1{
+									&::before{
+										content: "\e934";
+										width: 10%;
+									}
+								}
+								i.elementor-star-2{
+									&::before{
+										content: "\e934";
+										width: 20%;
+									}
+								}
+								i.elementor-star-3{
+									&::before{
+										content: "\e934";
+										width: 30%;
+									}
+								}
+								i.elementor-star-4{
+									&::before{
+										content: "\e934";
+										width: 40%;
+									}
+								}
+								i.elementor-star-5{
+									&::before{
+										content: "\e934";
+										width: 50%;
+									}
+								}
+								i.elementor-star-6{
+									&::before{
+										content: "\e934";
+										width: 60%;
+									}
+								}
+								i.elementor-star-7{
+									&::before{
+										content: "\e934";
+										width: 70%;
+									}
+								}
+								i.elementor-star-8{
+									&::before{
+										content: "\e934";
+										width: 80%;
+									}
+								}
+								i.elementor-star-9{
+									&::before{
+										content: "\e934";
+										width: 90%;
+									}
+								}
+							}
+						}
+
+						.ova-rating.star_unicode{
+							.elementor-star-rating{
+								i.elementor-star-1,
+								i.elementor-star-2,
+								i.elementor-star-3,
+								i.elementor-star-4,
+								i.elementor-star-5,
+								i.elementor-star-6,
+								i.elementor-star-7,
+								i.elementor-star-8,
+								i.elementor-star-9{
+									&::before{
+										content: "\002605";
+									}
+								}
+								.elementor-star-full{
+									&::before{
+										content: "\002605";
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		
+			.owl-dots{
+				text-align: center;
+				margin-top: 2px;
+				.owl-dot{
+					outline: none;
+					span{
+						width: 17px;
+						height: 8px;
+						margin: 5px;
+						background-color: var(--primary);
+						opacity: 0.2;
+						display: block;
+						-webkit-backface-visibility: visible;
+						transition: all .2s ease;
+						border-radius: 4px;
+					}
+					&.active{
+						span{
+							width: 45px;
+							opacity: 1;
+							background-color: var(--primary);
+						}
+					}
+				}
+			}
+		}
+	}
+}

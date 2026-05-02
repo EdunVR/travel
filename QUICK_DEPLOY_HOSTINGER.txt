@@ -1,0 +1,95 @@
+╔══════════════════════════════════════════════════════════════════╗
+║          QUICK DEPLOY LARAVEL KE HOSTINGER - HMTOURTRAVEL.COM    ║
+╚══════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────┐
+│ STEP 1: PERSIAPAN (DI LOCALHOST)                                 │
+└──────────────────────────────────────────────────────────────────┘
+
+1. Double-click: prepare-laravel-for-hostinger.bat
+   → Tunggu sampai "DONE!"
+
+2. Edit file: laravel_app\.env
+   → Cari: DB_PASSWORD=GANTI_DENGAN_PASSWORD_DATABASE_HOSTINGER
+   → Ganti dengan password database Hostinger yang benar
+   → SAVE!
+
+3. Compress folder laravel_app ke ZIP
+   → Klik kanan laravel_app → Send to → Compressed folder
+
+┌──────────────────────────────────────────────────────────────────┐
+│ STEP 2: UPLOAD (DI HOSTINGER)                                    │
+└──────────────────────────────────────────────────────────────────┘
+
+1. Login Hostinger Control Panel
+2. File Manager → /home/u127727849/domains/hmtourtravel.com/
+3. Hapus folder laravel_app lama (jika ada)
+4. Upload laravel_app.zip
+5. Extract ZIP
+6. Hapus ZIP file
+
+┌──────────────────────────────────────────────────────────────────┐
+│ STEP 3: SETUP (VIA SSH)                                          │
+└──────────────────────────────────────────────────────────────────┘
+
+ssh u127727849@hmtourtravel.com
+cd /home/u127727849/domains/hmtourtravel.com/laravel_app
+
+# Set permission
+chmod -R 775 storage bootstrap/cache
+chown -R u127727849:u127727849 storage bootstrap/cache
+
+# Clear cache & migrate
+/opt/alt/php82/usr/bin/php artisan config:clear
+/opt/alt/php82/usr/bin/php artisan cache:clear
+/opt/alt/php82/usr/bin/php artisan route:clear
+/opt/alt/php82/usr/bin/php artisan migrate --force
+/opt/alt/php82/usr/bin/php artisan db:seed --class=TravelPermissionSeeder --force
+/opt/alt/php82/usr/bin/php artisan storage:link
+
+┌──────────────────────────────────────────────────────────────────┐
+│ STEP 4: TEST                                                     │
+└──────────────────────────────────────────────────────────────────┘
+
+Akses: https://hmtourtravel.com
+
+Cek:
+✓ Website loading tanpa error 500
+✓ Bisa login
+✓ Menu travel muncul
+✓ Database terkoneksi
+
+┌──────────────────────────────────────────────────────────────────┐
+│ JIKA ERROR 500                                                   │
+└──────────────────────────────────────────────────────────────────┘
+
+1. Upload: public_html/debug-error.php ke server
+2. Akses: https://hmtourtravel.com/debug-error.php
+3. Lihat error dan solusinya
+4. Fix sesuai instruksi
+5. Hapus debug-error.php setelah selesai
+
+┌──────────────────────────────────────────────────────────────────┐
+│ INFO PENTING                                                     │
+└──────────────────────────────────────────────────────────────────┘
+
+Domain: hmtourtravel.com
+Server Path: /home/u127727849/domains/hmtourtravel.com/
+Database: u127727849_morra
+DB User: u127727849_morra
+SSH: u127727849@hmtourtravel.com
+PHP: 8.2 atau 8.3 (gunakan /opt/alt/php82/usr/bin/php)
+
+┌──────────────────────────────────────────────────────────────────┐
+│ FILE PANDUAN LENGKAP                                             │
+└──────────────────────────────────────────────────────────────────┘
+
+→ LANJUT_DEPLOYMENT_SEKARANG.md - Panduan lengkap deployment
+→ CARA_PAKAI_PREPARE_SCRIPT.md - Cara pakai script persiapan
+→ DEBUG_ERROR_500.md - Cara debug error 500
+→ FIX_MISSING_API_ROUTES.md - Fix file routes hilang
+→ PENTING_ENV_UNTUK_HOSTINGER.md - Panduan .env
+
+╔══════════════════════════════════════════════════════════════════╗
+║                         SELAMAT DEPLOY! 🚀                       ║
+╚══════════════════════════════════════════════════════════════════╝

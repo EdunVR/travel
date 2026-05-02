@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Submenu Browser Reload Fix - Test Scenarios</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+        .scenario { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #007bff; }
+        .expected { color: #28a745; font-weight: bold; }
+        .should-not { color: #dc3545; font-weight: bold; }
+        .info { color: #17a2b8; font-weight: bold; }
+        .debug { background: #e9ecef; padding: 10px; margin: 5px 0; border-radius: 4px; font-family: monospace; font-size: 12px; }
+        .url-example { background: #fff3cd; padding: 8px; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Comprehensive Test Scenarios - Submenu Browser Reload Fix</h1>
+    
+    <div class="scenario">
+        <h3>Scenario 1: Dashboard Main Page</h3>
+        <div class="url-example">URL: https://yoursite.com/admin/dashboard</div>
+        <p><strong>Test:</strong> Press Ctrl+R or F5</p>
+        <p class="expected">Expected: Tab refreshes only, notification shows "Dashboard disegarkan"</p>
+        <p class="should-not">Should NOT: Reload entire browser page</p>
+        <div class="debug">Console: "🚫 PREVENTING browser reload for admin area"</div>
+    </div>
+    
+    <div class="scenario">
+        <h3>Scenario 2: Finance Submenu</h3>
+        <div class="url-example">URL: https://yoursite.com/admin/finance/laporan</div>
+        <p><strong>Test:</strong> Press Ctrl+R or F5</p>
+        <p class="expected">Expected: Tab refreshes only, notification shows page title</p>
+        <p class="should-not">Should NOT: Reload browser to finance URL</p>
+        <div class="debug">Console: "🔍 Refresh key pressed: {currentUrl: .../admin/finance/laporan}"</div>
+    </div>
+    
+    <div class="scenario">
+        <h3>Scenario 3: Inventory Submenu</h3>
+        <div class="url-example">URL: https://yoursite.com/admin/inventaris/sparepart</div>
+        <p><strong>Test:</strong> Press F5</p>
+        <p class="expected">Expected: Tab refreshes only, shows sparepart page title in notification</p>
+        <p class="should-not">Should NOT: Navigate browser to sparepart URL</p>
+        <div class="debug">Console: "🔄 Redirecting to tab refresh instead"</div>
+    </div>
+    
+    <div class="scenario">
+        <h3>Scenario 4: Production Submenu</h3>
+        <div class="url-example">URL: https://yoursite.com/admin/produksi/produksi</div>
+        <p><strong>Test:</strong> Press Ctrl+R</p>
+        <p class="expected">Expected: Tab refreshes only, production page refreshed in tab</p>
+        <p class="should-not">Should NOT: Browser navigate to production URL</p>
+        <div class="debug">Console: "✅ Tab refreshed successfully"</div>
+    </div>
+    
+    <div class="scenario">
+        <h3>Scenario 5: Deep Nested Admin URL</h3>
+        <div class="url-example">URL: https://yoursite.com/admin/finance/reports/profit-loss</div>
+        <p><strong>Test:</strong> Press F5</p>
+        <p class="expected">Expected: Tab refreshes only, regardless of URL depth</p>
+        <p class="should-not">Should NOT: Browser reload to nested URL</p>
+        <div class="debug">Console: isAdminArea detection should work for any /admin/* URL</div>
+    </div>
+    
+    <div class="scenario">
+        <h3>Scenario 6: Hard Refresh Test</h3>
+        <div class="url-example">URL: Any admin URL</div>
+        <p><strong>Test:</strong> Press Ctrl+Shift+R</p>
+        <p class="expected">Expected: Confirmation dialog with detailed warning</p>
+        <p class="info">Dialog should show: current page name, consequences of hard refresh</p>
+        <div class="debug">Console: "⚠️ Hard refresh requested in admin area"</div>
+    </div>
+    
+    <div class="scenario">
+        <h3>Scenario 7: Browser Close Warning</h3>
+        <div class="url-example">URL: Any admin URL</div>
+        <p><strong>Test:</strong> Try to close browser tab or navigate away</p>
+        <p class="expected">Expected: beforeunload warning with page-specific message</p>
+        <p class="info">Message should include current page name</p>
+        <div class="debug">Console: "🚫 Browser reload/close prevented for admin area"</div>
+    </div>
+    
+    <div class="scenario">
+        <h3>Scenario 8: Non-Admin Page (Control Test)</h3>
+        <div class="url-example">URL: https://yoursite.com/login or https://yoursite.com/</div>
+        <p><strong>Test:</strong> Press Ctrl+R or F5</p>
+        <p class="expected">Expected: Normal browser refresh behavior</p>
+        <p class="should-not">Should NOT: Show tab refresh notification</p>
+        <div class="debug">Console: "⏭️ Allowing normal browser refresh (not in admin area)"</div>
+    </div>
+    
+    <div class="scenario">
+        <h3>Scenario 9: Logout Navigation</h3>
+        <div class="url-example">URL: Any admin URL</div>
+        <p><strong>Test:</strong> Click logout button</p>
+        <p class="expected">Expected: Normal logout without warnings</p>
+        <p class="should-not">Should NOT: Show beforeunload warning</p>
+        <div class="debug">Console: "⏭️ Allowing navigation away from: [current URL]"</div>
+    </div>
+    
+    <div class="scenario">
+        <h3>Scenario 10: Error Handling</h3>
+        <div class="url-example">URL: Any admin URL</div>
+        <p><strong>Test:</strong> Press Ctrl+R when tab system is not ready</p>
+        <p class="expected">Expected: Fallback error message shown</p>
+        <p class="info">Should gracefully handle tab system errors</p>
+        <div class="debug">Console: "❌ Error refreshing tab: [error details]"</div>
+    </div>
+    
+    <h2>🔍 Debug Console Messages to Look For</h2>
+    <div class="debug">
+        🔍 Refresh key pressed: {key, ctrlKey, currentUrl, isAdminArea, tabSystemActive}<br>
+        🚫 PREVENTING browser reload for admin area<br>
+        🔄 Redirecting to tab refresh instead<br>
+        ✅ Tab refreshed successfully<br>
+        📢 Tab refresh notification shown for: [page title]<br>
+        ⏭️ Allowing normal browser refresh (not in admin area)<br>
+        🚫 Browser reload/close prevented for admin area: [URL]<br>
+        ⏭️ Allowing navigation away from: [URL]<br>
+        ⚠️ Hard refresh requested in admin area<br>
+        🚫 Hard refresh cancelled by user<br>
+        ✅ Hard refresh confirmed by user
+    </div>
+    
+    <h2>✅ Success Criteria</h2>
+    <ul>
+        <li>✅ Any admin URL (*/admin/*) prevents browser refresh</li>
+        <li>✅ Refresh keys redirect to tab refresh with notification</li>
+        <li>✅ Hard refresh shows detailed confirmation dialog</li>
+        <li>✅ Browser close shows warning with page info</li>
+        <li>✅ Non-admin pages work normally</li>
+        <li>✅ Logout and external navigation work without warnings</li>
+        <li>✅ Error handling works gracefully</li>
+        <li>✅ Console shows appropriate debug messages</li>
+    </ul>
+</body>
+</html>

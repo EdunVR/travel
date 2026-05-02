@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sparepart Syntax Test</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body>
+    <div x-data="{ message: 'Alpine.js is working!' }">
+        <h1>Syntax Test Page</h1>
+        <p x-text="message"></p>
+        <button @click="message = 'Button clicked!'">Test Alpine.js</button>
+    </div>
+    
+    <script>
+        console.log('Test page loaded');
+        
+        // Test if sparepart.js loads without errors
+        const script = document.createElement('script');
+        script.src = 'js/sparepart.js';
+        script.onload = function() {
+            console.log('✅ sparepart.js loaded successfully');
+            if (typeof sparepartData !== 'undefined') {
+                console.log('✅ sparepartData function is available');
+            } else {
+                console.log('❌ sparepartData function not found');
+            }
+        };
+        script.onerror = function() {
+            console.error('❌ Error loading sparepart.js');
+        };
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>

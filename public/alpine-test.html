@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>POS Alpine.js Test</title>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body>
+    <div x-data="{ message: 'Alpine.js is working!', count: 0 }">
+        <h1 x-text="message"></h1>
+        <button x-on:click="count++">Click me: <span x-text="count"></span></button>
+        
+        <div style="margin-top: 20px;">
+            <h2>Customer Search Test</h2>
+            <input type="text" x-model="search" x-on:input="console.log('Input event:', search)" placeholder="Type here...">
+            <div x-show="search" x-text="'You typed: ' + search"></div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('alpine:init', () => {
+            console.log('Alpine.js initialized successfully!');
+        });
+        
+        console.log('Test page loaded');
+    </script>
+</body>
+</html>

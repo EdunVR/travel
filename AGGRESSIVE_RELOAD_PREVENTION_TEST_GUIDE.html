@@ -1,0 +1,250 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Aggressive Reload Prevention - Test Guide</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+        .test-case { background: #f8f9fa; padding: 20px; margin: 15px 0; border-radius: 10px; border-left: 5px solid #dc3545; }
+        .expected { color: #28a745; font-weight: bold; background: #d4edda; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .critical { color: #dc3545; font-weight: bold; background: #f8d7da; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .info { color: #0c5460; background: #d1ecf1; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .step { background: white; padding: 12px; margin: 8px 0; border-radius: 6px; border-left: 3px solid #007bff; }
+        .console-msg { background: #2d3748; color: #e2e8f0; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>🚫 Aggressive Reload Prevention - Complete Test Guide</h1>
+    
+    <div class="critical">
+        <h2>⚠️ CRITICAL: This Must Work 100%</h2>
+        <p>Browser reload MUST be completely blocked in admin areas. Any failure means the tab system can be broken.</p>
+    </div>
+    
+    <div class="test-case">
+        <h2>🧪 Test 1: Ctrl+R Prevention</h2>
+        <div class="step">
+            <strong>Steps:</strong>
+            <ol>
+                <li>Navigate to any admin page (e.g., /admin/finance/laporan)</li>
+                <li>Press Ctrl+R</li>
+                <li>Observe what happens</li>
+            </ol>
+        </div>
+        
+        <div class="expected">
+            <strong>Expected Result:</strong>
+            <ul>
+                <li>🚫 Browser reload is BLOCKED</li>
+                <li>📢 Center notification appears: "RELOAD DICEGAH!"</li>
+                <li>🔄 Tab automatically refreshes (if tab system available)</li>
+                <li>✅ Success notification: "Tab berhasil disegarkan!"</li>
+            </ul>
+        </div>
+        
+        <div class="console-msg">
+            Console Messages:<br>
+            🚫 BLOCKING refresh key: r Ctrl: true Shift: false<br>
+            📢 Reload blocked notification: Refresh browser dicegah...
+        </div>
+    </div>
+    
+    <div class="test-case">
+        <h2>🧪 Test 2: F5 Prevention</h2>
+        <div class="step">
+            <strong>Steps:</strong>
+            <ol>
+                <li>Stay on admin page</li>
+                <li>Press F5</li>
+                <li>Observe behavior</li>
+            </ol>
+        </div>
+        
+        <div class="expected">
+            <strong>Expected Result:</strong>
+            <ul>
+                <li>🚫 F5 refresh is BLOCKED</li>
+                <li>📢 Same notification behavior as Ctrl+R</li>
+                <li>🔄 Tab refresh occurs automatically</li>
+            </ul>
+        </div>
+        
+        <div class="console-msg">
+            Console Messages:<br>
+            🚫 BLOCKING refresh key: F5 Ctrl: false Shift: false
+        </div>
+    </div>
+    
+    <div class="test-case">
+        <h2>🧪 Test 3: Hard Refresh (Ctrl+Shift+R)</h2>
+        <div class="step">
+            <strong>Steps:</strong>
+            <ol>
+                <li>Stay on admin page</li>
+                <li>Press Ctrl+Shift+R</li>
+                <li>Read the confirmation dialog</li>
+                <li>Test both "OK" and "Cancel"</li>
+            </ol>
+        </div>
+        
+        <div class="expected">
+            <strong>Expected Result:</strong>
+            <ul>
+                <li>⚠️ Confirmation dialog appears with detailed warning</li>
+                <li>📝 Dialog explains consequences of hard refresh</li>
+                <li>✅ "Cancel" shows info notification</li>
+                <li>🔄 "OK" allows hard refresh (sets NAVIGATING_AWAY flag)</li>
+            </ul>
+        </div>
+        
+        <div class="info">
+            <strong>Dialog Message Should Include:</strong>
+            <ul>
+                <li>"HARD REFRESH DICEGAH!"</li>
+                <li>Current page name</li>
+                <li>"Hard refresh akan merusak sistem tab!"</li>
+                <li>"Gunakan tombol refresh di tab sebagai gantinya"</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="test-case">
+        <h2>🧪 Test 4: Browser Close/Navigate Away</h2>
+        <div class="step">
+            <strong>Steps:</strong>
+            <ol>
+                <li>Stay on admin page</li>
+                <li>Try to close browser tab (Ctrl+W or X button)</li>
+                <li>Or try to navigate to different URL</li>
+            </ol>
+        </div>
+        
+        <div class="expected">
+            <strong>Expected Result:</strong>
+            <ul>
+                <li>⚠️ beforeunload warning appears</li>
+                <li>📝 Enhanced message with "SISTEM ERP PROTECTION!"</li>
+                <li>🔄 Instructions to use tab refresh instead</li>
+            </ul>
+        </div>
+        
+        <div class="console-msg">
+            Console Messages:<br>
+            🚫 BLOCKING beforeunload for admin area
+        </div>
+    </div>
+    
+    <div class="test-case">
+        <h2>🧪 Test 5: Direct location.reload() Call</h2>
+        <div class="step">
+            <strong>Steps:</strong>
+            <ol>
+                <li>Open browser console (F12)</li>
+                <li>Type: <code>window.location.reload()</code></li>
+                <li>Press Enter</li>
+            </ol>
+        </div>
+        
+        <div class="expected">
+            <strong>Expected Result:</strong>
+            <ul>
+                <li>🚫 Direct reload call is BLOCKED</li>
+                <li>⚠️ Confirmation dialog appears</li>
+                <li>📢 Option to cancel or proceed</li>
+            </ul>
+        </div>
+        
+        <div class="console-msg">
+            Console Messages:<br>
+            🚫 BLOCKING direct location.reload() call
+        </div>
+    </div>
+    
+    <div class="test-case">
+        <h2>🧪 Test 6: Non-Admin Pages (Control Test)</h2>
+        <div class="step">
+            <strong>Steps:</strong>
+            <ol>
+                <li>Navigate to non-admin page (e.g., /login)</li>
+                <li>Press Ctrl+R or F5</li>
+                <li>Try to close browser</li>
+            </ol>
+        </div>
+        
+        <div class="expected">
+            <strong>Expected Result:</strong>
+            <ul>
+                <li>✅ Normal browser refresh works</li>
+                <li>✅ No blocking notifications</li>
+                <li>✅ No beforeunload warnings</li>
+            </ul>
+        </div>
+        
+        <div class="info">
+            This confirms the prevention only works in admin areas.
+        </div>
+    </div>
+    
+    <div class="test-case">
+        <h2>🧪 Test 7: Mobile/Touch Device</h2>
+        <div class="step">
+            <strong>Steps:</strong>
+            <ol>
+                <li>Open admin page on mobile device</li>
+                <li>Use pull-to-refresh gesture</li>
+                <li>Try browser refresh button</li>
+            </ol>
+        </div>
+        
+        <div class="expected">
+            <strong>Expected Result:</strong>
+            <ul>
+                <li>📱 Notifications are mobile-responsive</li>
+                <li>🚫 Refresh attempts are blocked</li>
+                <li>👆 Touch-friendly close buttons work</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="critical">
+        <h2>🎯 Success Criteria - ALL Must Pass</h2>
+        <ul>
+            <li>✅ Ctrl+R is completely blocked with notification</li>
+            <li>✅ F5 is completely blocked with notification</li>
+            <li>✅ Ctrl+Shift+R shows confirmation dialog</li>
+            <li>✅ Browser close shows beforeunload warning</li>
+            <li>✅ Direct location.reload() is blocked</li>
+            <li>✅ Non-admin pages work normally</li>
+            <li>✅ Mobile responsive notifications</li>
+            <li>✅ Console shows appropriate debug messages</li>
+            <li>✅ Tab refresh works when available</li>
+            <li>✅ No JavaScript errors in console</li>
+        </ul>
+    </div>
+    
+    <div class="info">
+        <h2>🔍 Debug Console Messages to Look For</h2>
+        <div class="console-msg">
+            ✅ Aggressive reload prevention installed<br>
+            🚫 BLOCKING refresh key: [key] Ctrl: [bool] Shift: [bool]<br>
+            📢 Reload blocked notification: [message]<br>
+            🚫 BLOCKING beforeunload for admin area<br>
+            🚫 BLOCKING direct location.reload() call<br>
+            🔍 URL changed from [old] to [new]<br>
+            ⚠️ Potential reload detected
+        </div>
+    </div>
+    
+    <div class="critical">
+        <h2>⚠️ If Any Test Fails</h2>
+        <p>If browser reload is not blocked:</p>
+        <ol>
+            <li>Check browser console for JavaScript errors</li>
+            <li>Verify you are on an admin URL (/admin/*)</li>
+            <li>Clear browser cache completely</li>
+            <li>Check if TAB_SYSTEM_ACTIVE is set</li>
+            <li>Verify event listeners are installed</li>
+        </ol>
+    </div>
+</body>
+</html>

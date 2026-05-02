@@ -1,0 +1,698 @@
+/**
+ * Inter Outlet Sale Application
+ * Alpine.js component for managing inter-outlet sales transactions
+ */
+
+// Define constants
+const ALL = 'all';
+
+console.log('🏪 Loading Inter Outlet Sale JavaScript...');
+
+function interOutletSaleApp() {
+    return {
+        // State
+        selectedOutlet: window.selectedOutlet || 1,
+        destinationOutlet: '',
+        transactionDate: new Date().toISOString().split('T')[0],
+        products: [],
+        filteredProducts: [],
+        availableOutlets: [],
+        categories: [],
+        cart: [],
+        searchProduct: '',
+        categoryFilter: '',
+        discountPercent: 0,
+        taxPercent: 0,
+        notes: '',
+        loading: false,
+        processing: false,
+        showHistory: false,
+        showCoaSettings: false,
+        showPriceSettings: false,
+        showSuccessModal: false,
+        successMessage: '',
+        lastTransactionId: null,
+
+        // History data
+        historyData: [],
+        historyLoading: false,
+        historyOutletFilter: 'all',
+        historyStatusFilter: 'all',
+        historyStartDate: '',
+        historyEndDate: '',
+
+        // COA Settings data
+        coaLoading: false,
+        coaSaving: false,
+        coaSelectedOutlet: '',
+        coaBooks: [],
+        coaAccounts: [],
+        coaData: {
+            accounting_book_id: '',
+            akun_piutang_antar_outlet: '',
+            akun_pendapatan_antar_outlet: '',
+            akun_hpp: '',
+            akun_persediaan: '',
+            akun_ppn: ''
+        },
+
+        // Price settings
+        priceSearchProduct: '',
+        priceCategoryFilter: '',
+        filteredPriceProducts: [],
+        priceProducts: [],
+
+        // Computed
+        get subtotal() {
+            return this.cart.reduce((sum, item) => sum + item.subtotal, 0);
+        },
+
+        get discountAmount() {
+            return (this.subtotal * this.discountPercent) / 100;
+        },
+
+        get taxAmount() {
+            return ((this.subtotal - this.discountAmount) * this.taxPercent) / 100;
+        },
+
+        get total() {
+            return this.subtotal - this.discountAmount + this.taxAmount;
+        },
+
+        get canProcess() {
+            return this.cart.length > 0 && 
+                   this.destinationOutlet && 
+                   this.transactionDate && 
+                   !this.processing;
+        },
+
+        get historyUrl() {
+            return window.routes?.interOutletHistory || '/admin/penjualan/inter-outlet/history';
+        },
+
+        get coaSettingsUrl() {
+            return window.routes?.interOutletCoaSettings || '/admin/penjualan/inter-outlet/coa-settings';
+        },
+
+        // Methods
+        init() {
+            console.log('🚀 Initializing Inter Outlet Sale App...');
+            this.loadProducts();
+            this.loadOutlets();
+        },
+
+        async loadProducts() {
+            this.loading = true;
+            try {
+                const url = window.routes?.interOutletProducts || `/admin/penjualan/inter-outlet/products`;
+                const response = await fetch(`${url}?outlet_id=${this.selectedOutlet}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.products = data.data;
+                    this.filteredProducts = [...this.products];
+                    this.categories = [...new Set(this.products.map(p => p.category))];
+                } else {
+                    this.showError(data.message);
+                }
+            } catch (error) {
+                this.showError('Gagal memuat produk');
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async loadOutlets() {
+            try {
+                const url = window.routes?.interOutletOutlets || `/admin/penjualan/inter-outlet/outlets`;
+                const response = await fetch(`${url}?current_outlet_id=${this.selectedOutlet}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.availableOutlets = data.data;
+                }
+            } catch (error) {
+                console.error('Gagal memuat outlet:', error);
+            }
+        },
+
+        changeOutlet() {
+            this.clearCart();
+            this.loadProducts();
+            this.loadOutlets();
+        },
+
+        searchProducts() {
+            this.filterProducts();
+        },
+
+        filterProducts() {
+            let filtered = [...this.products];
+            
+            if (this.searchProduct) {
+                const search = this.searchProduct.toLowerCase();
+                filtered = filtered.filter(p => 
+                    p.name.toLowerCase().includes(search) ||
+                    p.sku.toLowerCase().includes(search)
+                );
+            }
+            
+            if (this.categoryFilter) {
+                filtered = filtered.filter(p => p.category === this.categoryFilter);
+            }
+            
+            this.filteredProducts = filtered;
+        },
+
+        addToCart(product) {
+            if (product.stock <= 0) {
+                this.showError('Stok produk tidak mencukupi');
+                return;
+            }
+
+            const existingIndex = this.cart.findIndex(item => item.id_produk === product.id_produk);
+            
+            if (existingIndex >= 0) {
+                this.cart[existingIndex].quantity += 1;
+                this.updateCartItem(existingIndex);
+            } else {
+                this.cart.push({
+                    id_produk: product.id_produk,
+                    name: product.name,
+                    sku: product.sku,
+                    price: product.price,
+                    quantity: 1,
+                    satuan: product.satuan,
+                    stock: product.stock,
+                    subtotal: product.price
+                });
+            }
+        },
+
+        removeFromCart(index) {
+            this.cart.splice(index, 1);
+        },
+
+        increaseQuantity(index) {
+            const item = this.cart[index];
+            if (item.quantity < item.stock) {
+                item.quantity += 1;
+                this.updateCartItem(index);
+            } else {
+                this.showError('Kuantitas melebihi stok tersedia');
+            }
+        },
+
+        decreaseQuantity(index) {
+            const item = this.cart[index];
+            if (item.quantity > 0.01) {
+                item.quantity -= 1;
+                this.updateCartItem(index);
+            }
+        },
+
+        updateCartItem(index) {
+            const item = this.cart[index];
+            if (item.quantity > item.stock) {
+                item.quantity = item.stock;
+                this.showError('Kuantitas disesuaikan dengan stok tersedia');
+            }
+            item.subtotal = item.quantity * item.price;
+        },
+
+        calculateTotal() {
+            // Total akan dihitung otomatis melalui computed properties
+        },
+
+        clearCart() {
+            this.cart = [];
+            this.discountPercent = 0;
+            this.taxPercent = 0;
+            this.notes = '';
+            this.destinationOutlet = '';
+        },
+
+        async processTransaction() {
+            if (!this.canProcess) return;
+
+            this.processing = true;
+            
+            try {
+                const payload = {
+                    tanggal: this.transactionDate,
+                    outlet_asal: this.selectedOutlet,
+                    outlet_tujuan: this.destinationOutlet,
+                    items: this.cart.map(item => ({
+                        id_produk: item.id_produk,
+                        kuantitas: item.quantity,
+                        harga: item.price,
+                        subtotal: item.subtotal
+                    })),
+                    subtotal: this.subtotal,
+                    diskon_persen: this.discountPercent,
+                    ppn: this.taxAmount,
+                    total: this.total,
+                    catatan: this.notes
+                };
+
+                const url = window.routes?.interOutletStore || '/admin/penjualan/inter-outlet';
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.lastTransactionId = data.data.id;
+                    this.successMessage = `Transaksi ${data.data.no_transaksi} berhasil disimpan dengan total ${this.formatCurrency(data.data.total)}`;
+                    this.showSuccessModal = true;
+                    this.clearCart();
+                    this.loadProducts(); // Refresh products to update stock
+                } else {
+                    this.showError(data.message);
+                }
+            } catch (error) {
+                this.showError('Gagal memproses transaksi');
+            } finally {
+                this.processing = false;
+            }
+        },
+
+        printInvoice() {
+            if (this.lastTransactionId) {
+                const url = window.routes?.interOutletPrint || `/admin/penjualan/inter-outlet/${this.lastTransactionId}/print`;
+                window.open(url, '_blank');
+            }
+            this.showSuccessModal = false;
+        },
+
+        // Price Settings Methods
+        async loadPriceProducts() {
+            try {
+                const url = window.routes?.interOutletPriceProducts || '/admin/penjualan/inter-outlet/price-products';
+                const response = await fetch(`${url}?outlet_id=${this.selectedOutlet}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.priceProducts = data.data.map(product => ({
+                        ...product,
+                        markup_percent: product.markup_percent || 0,
+                        final_price: product.inter_outlet_price > 0 ? product.inter_outlet_price : product.regular_price,
+                        hpp: product.hpp || 0,
+                        regular_price: product.regular_price || 0,
+                        inter_outlet_price: product.inter_outlet_price || 0
+                    }));
+                    this.filteredPriceProducts = [...this.priceProducts];
+                }
+            } catch (error) {
+                console.error('Gagal memuat data harga produk:', error);
+            }
+        },
+
+        filterPriceProducts() {
+            let filtered = [...this.priceProducts];
+            
+            if (this.priceSearchProduct) {
+                const search = this.priceSearchProduct.toLowerCase();
+                filtered = filtered.filter(p => 
+                    p.name.toLowerCase().includes(search) ||
+                    p.sku.toLowerCase().includes(search)
+                );
+            }
+            
+            if (this.priceCategoryFilter) {
+                filtered = filtered.filter(p => p.category === this.priceCategoryFilter);
+            }
+            
+            this.filteredPriceProducts = filtered;
+        },
+
+        calculateFinalPrice(product) {
+            if (product.hpp && product.markup_percent) {
+                // Limit markup_percent input to prevent overflow
+                if (product.markup_percent > 99999999.99) {
+                    product.markup_percent = 99999999.99;
+                    this.showError('Markup dibatasi maksimal 99,999,999.99%');
+                }
+                
+                let calculatedPrice = product.hpp * (1 + product.markup_percent / 100);
+                
+                // Limit final price to prevent database overflow
+                if (calculatedPrice > 999999999999.99) {
+                    calculatedPrice = 999999999999.99;
+                    this.showError('Harga final terlalu besar, dibatasi maksimal 999,999,999,999.99');
+                }
+                
+                // Round to 2 decimal places
+                product.final_price = Math.round(calculatedPrice * 100) / 100;
+            }
+        },
+
+        calculateMarkupFromPrice(product) {
+            if (product.hpp && product.final_price && product.hpp > 0) {
+                let calculatedMarkup = ((product.final_price - product.hpp) / product.hpp) * 100;
+                
+                // Limit markup to prevent database overflow
+                if (calculatedMarkup > 99999999.99) {
+                    calculatedMarkup = 99999999.99;
+                    this.showError('Markup terlalu besar, dibatasi maksimal 99,999,999.99%');
+                }
+                
+                // Round to 2 decimal places
+                product.markup_percent = Math.round(calculatedMarkup * 100) / 100;
+            } else {
+                product.markup_percent = 0;
+            }
+        },
+
+        async updateSinglePrice(product) {
+            try {
+                const url = window.routes?.interOutletUpdatePrice || '/admin/penjualan/inter-outlet/update-price';
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        id_produk: product.id_produk,
+                        inter_outlet_price: product.final_price,
+                        markup_percent: product.markup_percent,
+                        outlet_id: this.selectedOutlet
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.showError('Harga inter outlet berhasil diupdate (tidak mempengaruhi harga produk umum)');
+                    // Update the main products list
+                    const mainProduct = this.products.find(p => p.id_produk === product.id_produk);
+                    if (mainProduct) {
+                        mainProduct.price = product.final_price;
+                    }
+                    this.filterProducts(); // Refresh filtered products
+                } else {
+                    this.showError(data.message || 'Gagal mengupdate harga');
+                }
+            } catch (error) {
+                this.showError('Terjadi kesalahan saat mengupdate harga');
+            }
+        },
+
+        async savePriceSettings() {
+            try {
+                const updates = this.filteredPriceProducts.map(product => ({
+                    id_produk: product.id_produk,
+                    inter_outlet_price: product.final_price,
+                    markup_percent: product.markup_percent
+                }));
+
+                const url = window.routes?.interOutletBulkUpdatePrices || '/admin/penjualan/inter-outlet/bulk-update-prices';
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ 
+                        products: updates,
+                        outlet_id: this.selectedOutlet
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.showError('Semua harga inter outlet berhasil diupdate (tidak mempengaruhi harga produk umum)');
+                    // Update the main products list with inter outlet prices
+                    updates.forEach(update => {
+                        const mainProduct = this.products.find(p => p.id_produk === update.id_produk);
+                        if (mainProduct) {
+                            // Update dengan harga inter outlet, bukan harga regular
+                            mainProduct.inter_outlet_price = update.inter_outlet_price;
+                            mainProduct.price = update.inter_outlet_price; // Display price
+                        }
+                    });
+                    this.filterProducts(); // Refresh filtered products
+                    this.showPriceSettings = false;
+                } else {
+                    this.showError(data.message || 'Gagal mengupdate harga inter outlet');
+                }
+            } catch (error) {
+                this.showError('Terjadi kesalahan saat mengupdate harga inter outlet');
+            }
+        },
+
+        formatCurrency(amount) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(amount);
+        },
+
+        // History Methods
+        async loadHistoryData() {
+            console.log('Loading history data with filters:', {
+                outlet_id: this.historyOutletFilter,
+                status: this.historyStatusFilter,
+                start_date: this.historyStartDate,
+                end_date: this.historyEndDate
+            });
+            
+            this.historyLoading = true;
+            try {
+                const params = new URLSearchParams({
+                    outlet_id: this.historyOutletFilter,
+                    status: this.historyStatusFilter,
+                    start_date: this.historyStartDate,
+                    end_date: this.historyEndDate
+                });
+                
+                const url = window.routes?.interOutletHistory || '/admin/penjualan/inter-outlet/history';
+                const response = await fetch(`${url}?${params}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Response is not JSON - server returned HTML instead');
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.historyData = data.data || [];
+                    console.log('History data loaded:', this.historyData.length, 'records for outlet filter:', this.historyOutletFilter);
+                } else {
+                    this.showError(data.message || 'Gagal memuat data riwayat');
+                    this.historyData = [];
+                }
+            } catch (error) {
+                console.error('Error loading history:', error);
+                this.showError('Terjadi kesalahan saat memuat riwayat: ' + error.message);
+                this.historyData = [];
+            } finally {
+                this.historyLoading = false;
+            }
+        },
+
+        printHistoryInvoice(transactionId) {
+            const url = window.routes?.interOutletPrint || `/admin/penjualan/inter-outlet/${transactionId}/print`;
+            window.open(url, '_blank');
+        },
+
+        async approveTransaction(transactionId) {
+            if (!confirm('Apakah Anda yakin ingin menyetujui transaksi ini?')) {
+                return;
+            }
+            
+            try {
+                const url = window.routes?.interOutletApprove || `/admin/penjualan/inter-outlet/${transactionId}/approve`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.showError('Transaksi berhasil disetujui');
+                    this.loadHistoryData(); // Refresh history data
+                } else {
+                    this.showError(data.message || 'Gagal menyetujui transaksi');
+                }
+            } catch (error) {
+                console.error('Error approving transaction:', error);
+                this.showError('Terjadi kesalahan saat menyetujui transaksi');
+            }
+        },
+
+        async deleteTransaction(transactionId) {
+            if (!confirm('Apakah Anda yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan.')) {
+                return;
+            }
+            
+            try {
+                const url = window.routes?.interOutletDelete || `/admin/penjualan/inter-outlet/${transactionId}`;
+                const response = await fetch(url, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.showError('Transaksi berhasil dihapus');
+                    this.loadHistoryData(); // Refresh history data
+                } else {
+                    this.showError(data.message || 'Gagal menghapus transaksi');
+                }
+            } catch (error) {
+                console.error('Error deleting transaction:', error);
+                this.showError('Terjadi kesalahan saat menghapus transaksi');
+            }
+        },
+
+        // COA Settings Methods
+        async loadCoaData() {
+            if (!this.coaSelectedOutlet) {
+                this.resetCoaForm();
+                return;
+            }
+            
+            this.coaLoading = true;
+            try {
+                const url = window.routes?.interOutletCoaModalData || '/admin/penjualan/inter-outlet/coa-modal-data';
+                const response = await fetch(`${url}?outlet_id=${this.coaSelectedOutlet}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    this.coaBooks = data.data.books || [];
+                    this.coaAccounts = data.data.accountsByType ? 
+                        [...(data.data.accountsByType.asset || []), 
+                         ...(data.data.accountsByType.liability || []), 
+                         ...(data.data.accountsByType.revenue || []), 
+                         ...(data.data.accountsByType.expense || [])] : [];
+                    
+                    // Load existing settings
+                    if (data.data.setting) {
+                        const setting = data.data.setting;
+                        this.coaData = {
+                            accounting_book_id: setting.accounting_book_id || '',
+                            akun_piutang_antar_outlet: setting.akun_piutang_antar_outlet || '',
+                            akun_pendapatan_antar_outlet: setting.akun_pendapatan_antar_outlet || '',
+                            akun_hpp: setting.akun_hpp || '',
+                            akun_persediaan: setting.akun_persediaan || '',
+                            akun_ppn: setting.akun_ppn || ''
+                        };
+                    } else {
+                        this.resetCoaForm();
+                    }
+                } else {
+                    this.showError(data.message || 'Gagal memuat data COA');
+                }
+            } catch (error) {
+                console.error('Error loading COA data:', error);
+                this.showError('Gagal memuat data COA: ' + error.message);
+            } finally {
+                this.coaLoading = false;
+            }
+        },
+
+        async saveCoaSettings() {
+            if (!this.coaSelectedOutlet) {
+                this.showError('Pilih outlet terlebih dahulu');
+                return;
+            }
+            
+            if (!this.coaData.accounting_book_id || !this.coaData.akun_piutang_antar_outlet || !this.coaData.akun_pendapatan_antar_outlet) {
+                this.showError('Lengkapi field yang wajib diisi');
+                return;
+            }
+            
+            this.coaSaving = true;
+            try {
+                const url = window.routes?.interOutletCoaSettingsUpdate || '/admin/penjualan/inter-outlet/coa-settings';
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        outlet_id: this.coaSelectedOutlet,
+                        ...this.coaData
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.showError('Pengaturan COA berhasil disimpan');
+                    this.showCoaSettings = false;
+                } else {
+                    this.showError(data.message || 'Gagal menyimpan pengaturan COA');
+                }
+            } catch (error) {
+                console.error('Error saving COA settings:', error);
+                this.showError('Terjadi kesalahan saat menyimpan');
+            } finally {
+                this.coaSaving = false;
+            }
+        },
+
+        resetCoaForm() {
+            this.coaData = {
+                accounting_book_id: '',
+                akun_piutang_antar_outlet: '',
+                akun_pendapatan_antar_outlet: '',
+                akun_hpp: '',
+                akun_persediaan: '',
+                akun_ppn: ''
+            };
+        },
+
+        showError(message) {
+            // Simple error notification - you can enhance this
+            alert(message);
+        }
+    }
+}
+
+// Make the function globally available
+window.interOutletSaleApp = interOutletSaleApp;
+
+console.log('✅ Inter Outlet Sale JavaScript loaded successfully');

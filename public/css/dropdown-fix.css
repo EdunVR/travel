@@ -1,0 +1,230 @@
+/* Dropdown Text Fix - Prevent Text Truncation */
+
+/* CRITICAL: Force all select elements to show full text */
+select {
+    min-width: 100% !important;
+    width: 100% !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    font-size: 12px !important;
+    padding: 8px 32px 8px 12px !important;
+}
+
+/* CRITICAL: Fix for select options - Force text display */
+select option {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    padding: 10px 12px !important;
+    min-height: 2.5em !important;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    display: block !important;
+    line-height: 1.5 !important;
+    font-size: 13px !important;
+}
+
+/* Remove any text truncation from parent elements */
+* select,
+div select,
+form select,
+section select {
+    white-space: normal !important;
+    text-overflow: clip !important;
+}
+
+* select option,
+div select option,
+form select option,
+section select option {
+    white-space: normal !important;
+    text-overflow: clip !important;
+    word-wrap: break-word !important;
+}
+
+/* Specific fix for POS page outlet and payment dropdowns */
+select[x-model*="outlet"],
+select[x-model*="method"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    white-space: normal !important;
+}
+
+select[x-model*="outlet"] option,
+select[x-model*="method"] option {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    padding: 10px 12px !important;
+}
+
+/* Fix for custom dropdown buttons */
+button[x-on\:click*="dropdown"],
+button[x-on\:click*="Dropdown"],
+button[@click*="dropdown"],
+button[@click*="Dropdown"] {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    min-height: 44px !important;
+    word-wrap: break-word !important;
+}
+
+/* Fix for dropdown menus */
+.dropdown-menu,
+[x-show*="dropdown"],
+[x-show*="Dropdown"] {
+    min-width: 100% !important;
+    width: max-content !important;
+    max-width: 400px !important;
+    white-space: normal !important;
+}
+
+/* Fix for dropdown items */
+.dropdown-item,
+.dropdown-menu > div,
+.dropdown-menu > button,
+.dropdown-menu > a {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    word-wrap: break-word !important;
+    padding: 8px 12px !important;
+    min-height: 2.5em !important;
+}
+
+/* Fix for Alpine.js dropdowns */
+[x-data*="dropdown"] button,
+[x-data*="Dropdown"] button {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    text-align: left !important;
+}
+
+/* Fix for outlet dropdown specifically */
+button[x-on\:click*="showOutletDropdown"],
+button[@click*="showOutletDropdown"] {
+    white-space: normal !important;
+    min-height: 44px !important;
+    height: auto !important;
+    padding: 10px 12px !important;
+}
+
+/* Fix for export dropdown */
+button[@click*="exportOpen"] {
+    white-space: normal !important;
+    min-height: 44px !important;
+}
+
+/* Ensure dropdown content is readable */
+.absolute.z-10 {
+    white-space: normal !important;
+}
+
+/* Fix for form select elements */
+.form-control,
+.form-select {
+    white-space: normal !important;
+    overflow: visible !important;
+}
+
+/* Fix for Tailwind select classes */
+.rounded-xl select,
+.rounded-lg select,
+.rounded select {
+    white-space: normal !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    select,
+    select option {
+        font-size: 14px !important;
+        padding: 10px !important;
+    }
+    
+    .dropdown-menu,
+    [x-show*="dropdown"] {
+        max-width: 90vw !important;
+    }
+}
+
+@media (max-width: 480px) {
+    select,
+    select option {
+        font-size: 13px !important;
+        padding: 8px !important;
+    }
+}
+
+/* POS Page Specific Fixes */
+/* Prevent outlet dropdown from overflowing on right side */
+.space-y-4 select[x-model*="outlet"] {
+    max-width: 250px !important;
+    width: auto !important;
+    min-width: 200px !important;
+}
+
+/* Ensure payment method dropdown fits properly */
+select[x-model*="method"] {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Fix for dropdowns in header section */
+section .flex select {
+    max-width: fit-content !important;
+    width: auto !important;
+}
+
+/* Ensure dropdown doesn't overflow container */
+.rounded-2xl select,
+.shadow-card select {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Fix for long text in dropdowns */
+select option,
+.dropdown-item {
+    display: block !important;
+    line-height: 1.4 !important;
+}
+
+/* Prevent ellipsis on dropdown text */
+[class*="truncate"] select,
+[class*="truncate"] option,
+.truncate select,
+.truncate option {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
+/* Fix for Select2 if used */
+.select2-container .select2-selection--single,
+.select2-container .select2-selection--multiple {
+    min-height: 44px !important;
+    height: auto !important;
+}
+
+.select2-results__option {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    padding: 8px 12px !important;
+}
+
+/* Fix for dropdown with icons */
+button span {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+}
+
+/* Ensure z-index for dropdowns */
+.dropdown-menu,
+[x-show*="dropdown"],
+.absolute.z-10 {
+    z-index: 9999 !important;
+}

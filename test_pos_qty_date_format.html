@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test POS Date Format</title>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+<body>
+    <div x-data="{
+        transactionDate: new Date().toISOString().split('T')[0],
+        formatDateDDMMYYYY(dateStr) {
+            if (!dateStr) return \"\";
+            const date = new Date(dateStr);
+            const day = String(date.getDate()).padStart(2, \"0\");
+            const month = String(date.getMonth() + 1).padStart(2, \"0\");
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+    }" class="p-4">
+        <h2>Test Date Format</h2>
+        <p>Original date: <span x-text="transactionDate"></span></p>
+        <p>Formatted date (DD/MM/YYYY): <span x-text="formatDateDDMMYYYY(transactionDate)"></span></p>
+        
+        <h2>Test Qty Input</h2>
+        <div class="flex items-center justify-center mt-4">
+            <input type="number" min="1" value="1" class="w-20 h-8 rounded border border-gray-300 text-center focus:border-blue-300 focus:ring-2 focus:ring-blue-100">
+        </div>
+        <p class="text-sm text-gray-600 mt-2">Input qty tanpa tombol - dan + (lebar 20)</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test URL Parsing</title>
+</head>
+<body>
+    <h1>Test URL Parsing</h1>
+    <div id="results"></div>
+
+    <script>
+        // Simulate different URLs
+        const testUrls = [
+            'https://poshan.my.id/hm/admin/inventaris/travel/document/2/manage-room-position',
+            'https://poshan.my.id/hm/admin/inventaris/travel/document/123/manage-room-position',
+            '/admin/inventaris/travel/document/4/manage-room-position'
+        ];
+
+        const resultsDiv = document.getElementById('results');
+
+        testUrls.forEach(url => {
+            // Parse URL
+            const pathParts = url.split('/').filter(p => p);
+            const documentIndex = pathParts.indexOf('document');
+            let keberangkatanId = null;
+            
+            if (documentIndex !== -1 && pathParts[documentIndex + 1]) {
+                keberangkatanId = pathParts[documentIndex + 1];
+            }
+
+            resultsDiv.innerHTML += `
+                <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
+                    <strong>URL:</strong> ${url}<br>
+                    <strong>Path Parts:</strong> ${pathParts.join(', ')}<br>
+                    <strong>Document Index:</strong> ${documentIndex}<br>
+                    <strong>Keberangkatan ID:</strong> <span style="color: ${keberangkatanId && keberangkatanId !== 'manage-room-position' ? 'green' : 'red'}; font-weight: bold;">${keberangkatanId}</span>
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html>

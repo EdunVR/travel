@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug HPP Values</title>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <style>
+    body { font-family: system-ui; padding: 20px; max-width: 800px; margin: 0 auto; }
+    .section { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 8px; }
+    .value { font-weight: bold; color: #059669; }
+    .calculation { font-size: 0.875rem; color: #64748b; }
+    input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 200px; }
+    label { display: block; margin: 10px 0 5px; }
+  </style>
+</head>
+<body>
+  <h1>Debug HPP Display Values</h1>
+  <p>Gunakan form ini untuk memverifikasi bahwa logika perhitungan HPP bekerja dengan benar.</p>
+
+  <div x-data="{
+    hppForm: {
+      flight_cost: 70000,
+      hotel_cost: 50000,
+      transportation_cost: 30000,
+      meal_cost: 40000,
+      visa_cost: 25000,
+      guide_cost: 20000,
+      insurance_cost: 15000,
+      operational_overhead: 10000,
+      contingency: 5000
+    },
+    selectedPackage: {
+      capacity: 4,
+      price: 300000
+    },
+    
+    calculateTotalHpp() {
+      const capacity = this.selectedPackage?.capacity || 1;
+      return ((this.hppForm.flight_cost || 0) +
+             (this.hppForm.hotel_cost || 0) +
+             (this.hppForm.transportation_cost || 0) +
+             (this.hppForm.meal_cost || 0) +
+             (this.hppForm.visa_cost || 0) +
+             (this.hppForm.guide_cost || 0) +
+             (this.hppForm.insurance_cost || 0) +
+             (this.hppForm.operational_overhead || 0) +
+             (this.hppForm.contingency || 0)) * capacity;
+    },
+    
+    formatCurrency(amount) {
+      return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount || 0);
+    }
+  }">
+    
+    <div class="section">
+      <h2>Input Data</h2>
+      <label>Kapasitas Jamaah:</label>
+      <input type="number" x-model.number="selectedPackage.capacity">
+      
+      <label>Harga Jual per Orang:</label>
+      <input type="number" x-model.number="selectedPackage.price">
+      
+      <label>Biaya Penerbangan (per orang):</label>
+      <input type="number" x-model.number="hppForm.flight_cost">
+      
+      <label>Biaya Hotel (per orang):</label>
+      <input type="number" x-model.number="hppForm.hotel_cost">
+      
+      <label>Biaya Transportasi (per orang):</label>
+      <input type="number" x-model.number="hppForm.transportation_cost">
+      
+      <label>Biaya Makan (per orang):</label>
+      <input type="number" x-model.number="hppForm.meal_cost">
+      
+      <label>Biaya Visa (per orang):</label>
+      <input type="number" x-model.number="hppForm.visa_cost">
+      
+      <label>Biaya Pembimbing (per orang):</label>
+      <input type="number" x-model.number="hppForm.guide_cost">
+      
+      <label>Biaya Asuransi (per orang):</label>
+      <input type="number" x-model.number="hppForm.insurance_cost">
+      
+      <label>Biaya Operasional (per orang):</label>
+      <input type="number" x-model.number="hppForm.operational_overhead">
+      
+      <label>Biaya Kontingensi (per orang):</label>
+      <input type="number" x-model.number="hppForm.contingency">
+    </div>
+
+    <div class="section">
+      <h2>Ringkasan HPP (Format yang Diharapkan)</h2>
+      <p><strong>Kapasitas:</strong> <span x-text="selectedPackage.capacity"></span> jamaah</p>
+      
+      <div style="margin: 15px 0;">
+        <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+          <span>Biaya Penerbangan:</span>
+          <div style="text-align: right;">
+            <div class="value" x-text="formatCurrency((hppForm.flight_cost || 0) * (selectedPackage?.capacity || 0))"></div>
+            <div class="calculation" x-text="formatCurrency(hppForm.flight_cost || 0) + ' × ' + (selectedPackage?.capacity || 0)"></div>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+          <span>Biaya Hotel:</span>
+          <div style="text-align: right;">
+            <div class="value" x-text="formatCurrency((hppForm.hotel_cost || 0) * (selectedPackage?.capacity || 0))"></div>
+            <div class="calculation" x-text="formatCurrency(hppForm.hotel_cost || 0) + ' × ' + (selectedPackage?.capacity || 0)"></div>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+          <span>Biaya Transportasi:</span>
+          <div style="text-align: right;">
+            <div class="value" x-text="formatCurrency((hppForm.transportation_cost || 0) * (selectedPackage?.capacity || 0))"></div>
+            <div class="calculation" x-text="formatCurrency(hppForm.transportation_cost || 0) + ' × ' + (selectedPackage?.capacity || 0)"></div>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+          <span>Biaya Makan:</span>
+          <div style="text-align: right;">
+            <div class="value" x-text="formatCurrency((hppForm.meal_cost || 0) * (selectedPackage?.capacity || 0))"></div>
+            <div class="calculation" x-text="formatCurrency(hppForm.meal_cost || 0) + ' × ' + (selectedPackage?.capacity || 0)"></div>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+          <span>Biaya Visa:</span>
+          <div style="text-align: right;">
+            <div class="value" x-text="formatCurrency((hppForm.visa_cost || 0) * (selectedPackage?.capacity || 0))"></div>
+            <div class="calculation" x-text="formatCurrency(hppForm.visa_cost || 0) + ' × ' + (selectedPackage?.capacity || 0)"></div>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+          <span>Biaya Pembimbing:</span>
+          <div style="text-align: right;">
+            <div class="value" x-text="formatCurrency((hppForm.guide_cost || 0) * (selectedPackage?.capacity || 0))"></div>
+            <div class="calculation" x-text="formatCurrency(hppForm.guide_cost || 0) + ' × ' + (selectedPackage?.capacity || 0)"></div>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+          <span>Biaya Asuransi:</span>
+          <div style="text-align: right;">
+            <div class="value" x-text="formatCurrency((hppForm.insurance_cost || 0) * (selectedPackage?.capacity || 0))"></div>
+            <div class="calculation" x-text="formatCurrency(hppForm.insurance_cost || 0) + ' × ' + (selectedPackage?.capacity || 0)"></div>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+          <span>Biaya Operasional:</span>
+          <div style="text-align: right;">
+            <div class="value" x-text="formatCurrency((hppForm.operational_overhead || 0) * (selectedPackage?.capacity || 0))"></div>
+            <div class="calculation" x-text="formatCurrency(hppForm.operational_overhead || 0) + ' × ' + (selectedPackage?.capacity || 0)"></div>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+          <span>Biaya Kontingensi:</span>
+          <div style="text-align: right;">
+            <div class="value" x-text="formatCurrency((hppForm.contingency || 0) * (selectedPackage?.capacity || 0))"></div>
+            <div class="calculation" x-text="formatCurrency(hppForm.contingency || 0) + ' × ' + (selectedPackage?.capacity || 0)"></div>
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin: 15px 0; padding-top: 15px; border-top: 2px solid #333; font-size: 1.1rem;">
+          <span><strong>Total HPP:</strong></span>
+          <div class="value" style="font-size: 1.2rem;" x-text="formatCurrency(calculateTotalHpp())"></div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+          <span>Total Pendapatan:</span>
+          <div class="value" x-text="formatCurrency((selectedPackage?.price || 0) * (selectedPackage?.capacity || 0))"></div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+          <span>Profit:</span>
+          <div class="value" x-text="formatCurrency(((selectedPackage?.price || 0) * (selectedPackage?.capacity || 0)) - calculateTotalHpp())"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Debug Console Output</h2>
+      <p>Buka browser console (F12) dan jalankan:</p>
+      <pre style="background: #fff; padding: 10px; border-radius: 4px;">
+// Di halaman paket perjalanan, jalankan ini di console:
+let data = Alpine.$data(document.querySelector('[x-data*="packageManagement"]'));
+console.log('HPP Form:', data.hppForm);
+console.log('Selected Package:', data.selectedPackage);
+console.log('Capacity:', data.selectedPackage?.capacity);
+console.log('Total HPP:', data.calculateTotalHpp());
+console.log('Flight Cost:', data.hppForm.flight_cost);
+console.log('Hotel Cost:', data.hppForm.hotel_cost);
+      </pre>
+    </div>
+
+    <div class="section">
+      <h2>Checklist Troubleshooting</h2>
+      <ol>
+        <li>✅ Pastikan paket memiliki kapasitas yang diisi (bukan 0 atau NULL)</li>
+        <li>✅ Pastikan HPP data sudah disimpan di database (cek tabel hpp_calculations)</li>
+        <li>✅ Clear cache Laravel: <code>php artisan view:clear && php artisan route:clear</code></li>
+        <li>✅ Hard refresh browser: <code>Ctrl + Shift + R</code> (Windows) atau <code>Cmd + Shift + R</code> (Mac)</li>
+        <li>✅ Cek browser console untuk error JavaScript</li>
+        <li>✅ Verifikasi data loading dengan console command di atas</li>
+      </ol>
+    </div>
+
+  </div>
+
+  <script>
+    console.log('Debug HPP page loaded successfully');
+    console.log('Alpine.js version:', Alpine.version);
+  </script>
+</body>
+</html>

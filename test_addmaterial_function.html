@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test addMaterial Function</title>
+</head>
+<body>
+    <h1>Testing addMaterial Function</h1>
+    
+    <div id="materialRequirements">
+        <!-- Initial material row -->
+        <div class="material-row">
+            <p>Initial material row</p>
+        </div>
+    </div>
+    
+    <button type="button" onclick="addMaterial()" id="testButton">Test Add Material</button>
+    
+    <div id="output"></div>
+    
+    <script>
+        // Test if the function is defined
+        console.log('Testing addMaterial function...');
+        
+        // Check if function exists
+        if (typeof addMaterial === 'function') {
+            document.getElementById('output').innerHTML += '<p style="color: green;">✅ addMaterial function is defined</p>';
+        } else {
+            document.getElementById('output').innerHTML += '<p style="color: red;">❌ addMaterial function is NOT defined</p>';
+        }
+        
+        // Load the production.js file
+        const script = document.createElement('script');
+        script.src = 'public/js/production.js';
+        script.onload = function() {
+            console.log('production.js loaded');
+            
+            // Check again after loading
+            if (typeof addMaterial === 'function') {
+                document.getElementById('output').innerHTML += '<p style="color: green;">✅ addMaterial function is defined after loading production.js</p>';
+            } else {
+                document.getElementById('output').innerHTML += '<p style="color: red;">❌ addMaterial function is still NOT defined after loading production.js</p>';
+            }
+            
+            // Check if window.addMaterial exists
+            if (typeof window.addMaterial === 'function') {
+                document.getElementById('output').innerHTML += '<p style="color: green;">✅ window.addMaterial function is defined</p>';
+            } else {
+                document.getElementById('output').innerHTML += '<p style="color: red;">❌ window.addMaterial function is NOT defined</p>';
+            }
+        };
+        script.onerror = function() {
+            document.getElementById('output').innerHTML += '<p style="color: red;">❌ Error loading production.js</p>';
+        };
+        document.head.appendChild(script);
+        
+        // Test button click
+        document.getElementById('testButton').addEventListener('click', function() {
+            try {
+                if (typeof addMaterial === 'function') {
+                    addMaterial();
+                    document.getElementById('output').innerHTML += '<p style="color: green;">✅ addMaterial function executed successfully</p>';
+                } else {
+                    document.getElementById('output').innerHTML += '<p style="color: red;">❌ addMaterial function not available for execution</p>';
+                }
+            } catch (error) {
+                document.getElementById('output').innerHTML += '<p style="color: red;">❌ Error executing addMaterial: ' + error.message + '</p>';
+            }
+        });
+    </script>
+</body>
+</html>

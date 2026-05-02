@@ -1,0 +1,45 @@
+========================================
+COMMANDS UNTUK SSH - COPY SEMUA INI
+========================================
+
+OPSI 1: Jika PHP sudah 8.2+ (cek dengan: php -v)
+-------------------------------------------------
+
+cd /home/u127727849/domains/hmtourtravel.com/laravel_app
+mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache/data storage/logs bootstrap/cache
+chmod -R 775 storage bootstrap/cache
+php artisan config:clear
+php artisan cache:clear
+php artisan migrate --force
+php artisan db:seed --class=TravelPermissionSeeder --force
+php artisan storage:link
+echo "DONE! Test: https://hmtourtravel.com"
+
+
+========================================
+
+OPSI 2: Jika PHP masih 8.1 (gunakan path lengkap)
+--------------------------------------------------
+
+cd /home/u127727849/domains/hmtourtravel.com/laravel_app
+mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache/data storage/logs bootstrap/cache
+chmod -R 775 storage bootstrap/cache
+/opt/alt/php82/usr/bin/php artisan config:clear
+/opt/alt/php82/usr/bin/php artisan cache:clear
+/opt/alt/php82/usr/bin/php artisan migrate --force
+/opt/alt/php82/usr/bin/php artisan db:seed --class=TravelPermissionSeeder --force
+/opt/alt/php82/usr/bin/php artisan storage:link
+echo "DONE! Test: https://hmtourtravel.com"
+
+
+========================================
+CARA PAKAI:
+========================================
+
+1. Switch PHP ke 8.2/8.3 via Hostinger Control Panel
+2. Login SSH: ssh u127727849@hmtourtravel.com
+3. Cek PHP: php -v
+4. Copy-paste OPSI 1 atau OPSI 2 (tergantung hasil php -v)
+5. Test: https://hmtourtravel.com
+
+========================================

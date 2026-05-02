@@ -1,0 +1,141 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║                   ✅ OpenWA WhatsApp Auto-Send Setup                        ║
+║                        HM Tour & Travel                                      ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+🎯 QUICK START (5 LANGKAH):
+
+1. INSTALL NODE.JS
+   Download: https://nodejs.org/ (pilih LTS version)
+   
+   Verify:
+   > node --version
+   > npm --version
+
+2. INSTALL DEPENDENCIES
+   > cd openwa-server
+   > npm install
+
+3. START SERVER
+   Windows:
+   > cd openwa-server
+   > start-server.bat
+   
+   Linux/Mac:
+   > cd openwa-server
+   > ./start-server.sh
+
+4. SCAN QR CODE
+   - Browser Chrome akan terbuka otomatis
+   - Buka WhatsApp di HP → Settings → Linked Devices
+   - Scan QR code yang muncul
+   - Tunggu: "✅ WhatsApp client is ready!"
+
+5. TEST
+   > php test-whatsapp-integration.php
+   
+   Atau test via website:
+   - Buka: https://poshan.my.id/hm
+   - Pilih paket umroh
+   - Isi form pemesanan
+   - Upload bukti transfer
+   - Submit → WhatsApp terkirim OTOMATIS! 🎉
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📚 DOKUMENTASI LENGKAP:
+
+1. QUICK_START_OPENWA.md          → Quick start guide (5 menit)
+2. OPENWA_SETUP_COMPLETE.md       → Complete setup & troubleshooting
+3. openwa-server/README.md        → OpenWA server documentation
+4. WHATSAPP_AUTO_SEND_IMPLEMENTATION.md → Implementation details
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔧 PRODUCTION SETUP (PM2):
+
+Windows:
+> cd openwa-server
+> install-pm2.bat
+
+Linux/Mac:
+> npm install -g pm2
+> cd openwa-server
+> pm2 start server.js --name "openwa-hm-tour"
+> pm2 save
+> pm2 startup
+
+Monitoring:
+> pm2 status
+> pm2 logs openwa-hm-tour
+> pm2 monit
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🐛 TROUBLESHOOTING:
+
+Problem: "WhatsApp server not ready"
+→ cd openwa-server && npm start
+
+Problem: "Session expired"
+→ rm -rf openwa-server/.wa-session/ && npm start (scan QR lagi)
+
+Problem: Message tidak terkirim
+→ curl http://localhost:3000/health
+→ pm2 logs openwa-hm-tour
+
+Problem: QR code tidak muncul
+→ Edit openwa-server/.env → WA_HEADLESS=false
+
+═══════════════════════════════════════════════════════════════════════════════
+
+⚠️ PENTING:
+
+1. GANTI API KEY di openwa-server/.env:
+   API_KEY=hm-tour-secret-key-2026-GANTI-INI
+
+2. Pastikan API KEY sama di Laravel .env:
+   OPENWA_API_KEY=hm-tour-secret-key-2026-GANTI-INI
+
+3. Gunakan nomor WhatsApp bisnis terpisah (bukan pribadi)
+
+4. Jangan spam! Max ~20 pesan/menit
+
+5. Backup folder .wa-session/ secara berkala
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ CHECKLIST:
+
+[ ] Node.js installed (v16+)
+[ ] Dependencies installed (npm install)
+[ ] .env configured with strong API_KEY
+[ ] Server started (npm start)
+[ ] QR code scanned and connected
+[ ] Health check returns "ready"
+[ ] Test message sent successfully
+[ ] Laravel .env configured
+[ ] Test booking via website works
+[ ] WhatsApp received automatically
+[ ] PM2 configured for production
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🆘 NEED HELP?
+
+1. Check QUICK_START_OPENWA.md
+2. Check Laravel logs: storage/logs/laravel.log
+3. Check OpenWA logs: pm2 logs openwa-hm-tour
+4. Test health: curl http://localhost:3000/health
+5. Restart: pm2 restart openwa-hm-tour
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎉 SELAMAT! Sistem WhatsApp auto-send siap digunakan!
+
+Ketika jamaah melakukan pembayaran via website, WhatsApp akan otomatis
+terkirim dari admin ke nomor jamaah tanpa perlu klik manual.
+
+═══════════════════════════════════════════════════════════════════════════════

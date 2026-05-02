@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test HPP Custom Components V2.0.3</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        .log { max-height: 400px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test HPP Custom Components V2.0.3</h1>
+        
+        <div class="status info">
+            <strong>Test Status:</strong> Ready to test
+        </div>
+
+        <h2>Instructions:</h2>
+        <ol>
+            <li>Open browser console (F12)</li>
+            <li>Navigate to: <code>http://localhost/hm/admin/inventaris/travel/package</code></li>
+            <li>Look for console message: <strong style="color: lime;">✓✓✓ HPP V2.0.3 DIRECT LOADED ✓✓✓</strong></li>
+            <li>Click "Kelola HPP" button on any package</li>
+            <li>Add custom components (e.g., "Komponen A" = 100, "Komponen B" = 200)</li>
+            <li>Click "Simpan HPP"</li>
+            <li>Check console for payload with <code>custom_components</code> array</li>
+            <li>Check Laravel log for: <code>has_custom_components: true</code></li>
+        </ol>
+
+        <h2>Expected Console Output:</h2>
+        <pre>
+✓✓✓ HPP V2.0.3 DIRECT LOADED ✓✓✓
+TIMESTAMP: [current timestamp]
+NO @push - DIRECT INLINE
+
+=== HPP PAYLOAD V2.0.3 DIRECT ===
+TIMESTAMP: [current timestamp]
+Custom components count: 2
+custom_components: [
+  {label: "Komponen A", value: 100},
+  {label: "Komponen B", value: 200}
+]
+        </pre>
+
+        <h2>Expected Laravel Log:</h2>
+        <pre>
+[timestamp] production.INFO: === HPP UPDATE REQUEST === 
+{
+  "package_id": X,
+  "has_custom_components": true,
+  "custom_components": [
+    {"label": "Komponen A", "value": 100},
+    {"label": "Komponen B", "value": 200}
+  ]
+}
+
+[timestamp] production.INFO: Saving custom components: 
+[
+  {"label": "Komponen A", "value": 100},
+  {"label": "Komponen B", "value": 200}
+]
+
+[timestamp] production.INFO: HPP calculation updated successfully {"package_id": X}
+        </pre>
+
+        <h2>Verification Steps:</h2>
+        <div class="status info">
+            <strong>Step 1:</strong> Compiled view cache cleared ✓<br>
+            <strong>Step 2:</strong> V2.0.3 code in blade file ✓<br>
+            <strong>Step 3:</strong> No @push directives ✓<br>
+            <strong>Step 4:</strong> Backend ready to receive custom_components ✓<br>
+            <strong>Step 5:</strong> Backend returns custom_components to frontend ✓<br>
+            <strong>Step 6:</strong> RAB integration creates separate items ✓<br>
+        </div>
+
+        <h2>Quick Commands:</h2>
+        <button onclick="copyCommand('tail -f storage/logs/laravel.log')">📋 Copy Log Tail Command</button>
+        <button onclick="copyCommand('php artisan view:clear')">📋 Copy View Clear Command</button>
+        
+        <h2>Troubleshooting:</h2>
+        <ul>
+            <li>If console shows V2.0.2: Clear browser cache (Ctrl+Shift+Delete)</li>
+            <li>If 500 error: Check <code>storage/logs/laravel.log</code></li>
+            <li>If custom components accumulate: Check console payload structure</li>
+            <li>If RAB doesn't show separate items: Check <code>RabIntegrationService::generateRabComponents()</code></li>
+        </ul>
+
+        <div class="status success">
+            <strong>✓ All systems ready!</strong> The compiled view cache has been cleared and V2.0.3 is loaded.
+        </div>
+    </div>
+
+    <script>
+        function copyCommand(cmd) {
+            navigator.clipboard.writeText(cmd).then(() => {
+                alert('Command copied: ' + cmd);
+            });
+        }
+    </script>
+</body>
+</html>

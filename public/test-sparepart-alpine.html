@@ -1,0 +1,24 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Sparepart Alpine.js</title>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body>
+    <div x-data="sparepartData()" x-init="init()">
+        <h1>Test Sparepart Component</h1>
+        <p>Stats Total: <span x-text="stats.total"></span></p>
+        <button @click="openAddModal()">Test Modal</button>
+        <div x-show="showModal">
+            <p>Modal is open!</p>
+            <button @click="closeModal()">Close</button>
+        </div>
+    </div>
+    
+    <script src="sparepart-emergency-fix.js"></script>
+    <script>
+        console.log('Test page loaded');
+    </script>
+</body>
+</html>

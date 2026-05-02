@@ -1,0 +1,12 @@
+node_modules/
+.env
+*.session.data.json
+*.log
+.wa-session/
+session/
+
+# managed
+**.data.json
+**.node-persist**
+**_IGNORE_**
+# end managed

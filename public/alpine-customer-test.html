@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Alpine.js Test</title>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body>
+    <div x-data="{ search: '', dropdown: false }">
+        <h1>Alpine.js Customer Search Test</h1>
+        
+        <div style="margin: 20px 0;">
+            <label>Customer Search:</label>
+            <input type="text" 
+                   x-model="search" 
+                   x-on:input="dropdown = true; console.log('Input event:', search)" 
+                   x-on:focus="dropdown = true; console.log('Focus event')"
+                   placeholder="Type here to test..."
+                   style="padding: 8px; border: 1px solid #ccc; width: 300px;">
+        </div>
+        
+        <div x-show="dropdown && search" 
+             style="border: 1px solid #ccc; padding: 10px; margin-top: 5px; background: white;">
+            <div x-text="'You typed: ' + search"></div>
+            <div style="margin-top: 10px;">
+                <button x-on:click="search = 'Test Customer'; dropdown = false">Select Test Customer</button>
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <button x-on:click="console.log('Current search:', search); console.log('Dropdown visible:', dropdown)">
+                Debug State
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('alpine:init', () => {
+            console.log('✅ Alpine.js initialized successfully!');
+        });
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('📄 DOM loaded');
+            setTimeout(() => {
+                console.log('🔍 Alpine available:', typeof Alpine !== 'undefined');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,326 @@
+/* Travel Management Responsive Styles */
+
+/* Mobile-first approach - Base styles for mobile */
+@media (max-width: 640px) {
+    /* Header adjustments */
+    .travel-header h1 {
+        font-size: 1.25rem;
+    }
+    
+    .travel-header p {
+        font-size: 0.75rem;
+    }
+    
+    /* Button groups */
+    .travel-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .travel-actions button,
+    .travel-actions a {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    /* Filter sections */
+    .travel-filters {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Table responsiveness */
+    .travel-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .travel-table {
+        min-width: 800px;
+    }
+    
+    /* Card layouts */
+    .travel-card-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Modal adjustments */
+    .travel-modal {
+        margin: 0;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+    
+    .travel-modal-content {
+        max-height: calc(100vh - 120px);
+    }
+    
+    /* Touch-friendly buttons */
+    .travel-btn {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 0.75rem 1rem;
+    }
+    
+    /* Form inputs */
+    .travel-input,
+    .travel-select,
+    .travel-textarea {
+        min-height: 44px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    /* Spacing adjustments */
+    .travel-section {
+        padding: 1rem;
+    }
+    
+    /* Workflow timeline */
+    .workflow-timeline {
+        flex-direction: column;
+    }
+    
+    .workflow-stage {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+}
+
+/* Tablet styles */
+@media (min-width: 641px) and (max-width: 1024px) {
+    /* Header */
+    .travel-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    /* Filter sections */
+    .travel-filters {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    /* Card layouts */
+    .travel-card-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    /* Table adjustments */
+    .travel-table {
+        font-size: 0.875rem;
+    }
+    
+    .travel-table th,
+    .travel-table td {
+        padding: 0.5rem;
+    }
+    
+    /* Modal */
+    .travel-modal {
+        max-width: 90%;
+    }
+}
+
+/* Desktop styles */
+@media (min-width: 1025px) {
+    /* Card layouts */
+    .travel-card-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    /* Filter sections */
+    .travel-filters {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    /* Modal */
+    .travel-modal {
+        max-width: 800px;
+    }
+}
+
+/* Touch-friendly enhancements */
+@media (hover: none) and (pointer: coarse) {
+    /* Increase touch targets */
+    .travel-btn,
+    .travel-link,
+    .travel-icon-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Remove hover effects on touch devices */
+    .travel-btn:hover,
+    .travel-link:hover {
+        transform: none;
+    }
+    
+    /* Add active states for touch feedback */
+    .travel-btn:active {
+        transform: scale(0.98);
+        opacity: 0.9;
+    }
+    
+    /* Larger tap areas for checkboxes and radios */
+    input[type="checkbox"],
+    input[type="radio"] {
+        min-width: 20px;
+        min-height: 20px;
+    }
+    
+    /* Swipe-friendly cards */
+    .travel-card {
+        touch-action: pan-y;
+    }
+}
+
+/* Landscape orientation adjustments */
+@media (max-width: 896px) and (orientation: landscape) {
+    /* Reduce vertical spacing */
+    .travel-section {
+        padding: 0.5rem 1rem;
+    }
+    
+    /* Compact headers */
+    .travel-header {
+        padding: 0.5rem 0;
+    }
+    
+    /* Modal height adjustments */
+    .travel-modal-content {
+        max-height: calc(100vh - 80px);
+    }
+}
+
+/* Print styles */
+@media print {
+    /* Hide interactive elements */
+    .travel-actions,
+    .travel-filters,
+    .travel-btn,
+    .sidebar,
+    .navbar {
+        display: none !important;
+    }
+    
+    /* Optimize for print */
+    .travel-table {
+        font-size: 10pt;
+    }
+    
+    .travel-card {
+        break-inside: avoid;
+    }
+    
+    /* Show all content */
+    .travel-modal {
+        position: static;
+        max-height: none;
+    }
+}
+
+/* Accessibility enhancements */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .travel-card,
+    .travel-modal,
+    .travel-input {
+        border-width: 2px;
+    }
+    
+    .travel-btn {
+        border-width: 2px;
+        font-weight: 600;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .travel-card,
+    .travel-modal {
+        background-color: #1e293b;
+        color: #f1f5f9;
+    }
+    
+    .travel-input,
+    .travel-select,
+    .travel-textarea {
+        background-color: #334155;
+        color: #f1f5f9;
+        border-color: #475569;
+    }
+}
+
+/* Utility classes for responsive behavior */
+.hide-mobile {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .hide-mobile {
+        display: block;
+    }
+    
+    .hide-desktop {
+        display: none;
+    }
+}
+
+.show-mobile {
+    display: block;
+}
+
+@media (min-width: 768px) {
+    .show-mobile {
+        display: none;
+    }
+}
+
+/* Responsive spacing utilities */
+.space-mobile-2 {
+    margin-bottom: 0.5rem;
+}
+
+@media (min-width: 768px) {
+    .space-mobile-2 {
+        margin-bottom: 0;
+    }
+}
+
+/* Responsive grid utilities */
+.grid-responsive {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .grid-responsive {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .grid-responsive {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Responsive flex utilities */
+.flex-responsive {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+    .flex-responsive {
+        flex-direction: row;
+        align-items: center;
+    }
+}

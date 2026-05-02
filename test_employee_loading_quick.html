@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Loading Test</title>
+</head>
+<body>
+    <h1>Employee Loading Test</h1>
+    <p>This is a quick test to verify the employee loading fix.</p>
+    
+    <h2>Test Steps:</h2>
+    <ol>
+        <li>Go to SDM > Absensi page</li>
+        <li>Open browser console (F12)</li>
+        <li>Look for these messages:
+            <ul>
+                <li>✅ Loaded outlets: X</li>
+                <li>✅ Default outlet selected: [...]</li>
+                <li>🔄 Fetching employees for outlets: [...]</li>
+                <li>✅ Loaded employees: X</li>
+            </ul>
+        </li>
+        <li>WITHOUT changing any filters, click + (Add) button on any employee</li>
+        <li>Employee dropdown should show data immediately</li>
+    </ol>
+    
+    <h2>Expected Results:</h2>
+    <ul>
+        <li>✅ Employee dropdown populated on first modal open</li>
+        <li>✅ No need to change outlet filter first</li>
+        <li>✅ Smooth user experience</li>
+    </ul>
+    
+    <h2>Debug Commands:</h2>
+    <p>In browser console, you can run:</p>
+    <code>checkEmployeeStatus()</code>
+    
+    <script>
+        console.log("🧪 Employee loading test page loaded");
+        console.log("📋 Follow the test steps above");
+    </script>
+</body>
+</html>

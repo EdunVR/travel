@@ -1,0 +1,111 @@
+/* FORCE 24-HOUR FORMAT - GLOBAL CSS */
+/* This CSS file aggressively hides AM/PM selectors in all browsers */
+
+/* WebKit browsers (Chrome, Safari, Edge) - Hide AM/PM field */
+input[type="time"]::-webkit-datetime-edit-ampm-field,
+input[type="time"]::-webkit-datetime-edit-meridiem-field {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    z-index: -1 !important;
+}
+
+/* Hide any text elements that might contain AM/PM */
+input[type="time"]::-webkit-datetime-edit-text {
+    display: none !important;
+}
+
+/* Force appearance to remove browser styling */
+input[type="time"] {
+    -webkit-appearance: none !important;
+    -moz-appearance: textfield !important;
+    appearance: none !important;
+}
+
+/* Firefox - Hide AM/PM picker */
+input[type="time"]::-moz-time-picker-ampm {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Microsoft Edge specific */
+input[type="time"]::-ms-clear {
+    display: none !important;
+}
+
+/* Remove any pseudo-elements that might show AM/PM */
+input[type="time"]::after,
+input[type="time"]::before {
+    content: "" !important;
+    display: none !important;
+}
+
+/* Style the visible hour and minute fields */
+input[type="time"]::-webkit-datetime-edit-hour-field,
+input[type="time"]::-webkit-datetime-edit-minute-field {
+    color: inherit !important;
+    background: transparent !important;
+}
+
+/* Force container to not show AM/PM */
+input[type="time"]::-webkit-datetime-edit {
+    padding: 0 !important;
+}
+
+/* Hide any elements with AM/PM related classes or IDs */
+input[type="time"] *[class*="ampm"],
+input[type="time"] *[class*="meridiem"],
+input[type="time"] *[class*="am-pm"],
+input[type="time"] *[id*="ampm"],
+input[type="time"] *[id*="meridiem"],
+input[type="time"] *[id*="am-pm"] {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Additional selectors for different frameworks */
+.time-picker *[class*="ampm"],
+.time-picker *[class*="meridiem"],
+.datetime-picker *[class*="ampm"],
+.datetime-picker *[class*="meridiem"] {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Bootstrap time picker overrides */
+.bootstrap-timepicker .meridian,
+.bootstrap-timepicker .ampm {
+    display: none !important;
+}
+
+/* jQuery UI time picker overrides */
+.ui-timepicker-ampm {
+    display: none !important;
+}
+
+/* Generic AM/PM hiding */
+*[class*="ampm"],
+*[class*="meridiem"],
+*[class*="am-pm"] {
+    display: none !important;
+}
+
+/* Force all time inputs to use 24-hour format attributes */
+input[type="time"] {
+    /* These don't directly affect display but help with validation */
+    min: "00:00" !important;
+    max: "23:59" !important;
+}
+
+/* Ensure no AM/PM text appears anywhere near time inputs */
+input[type="time"] + *:contains("AM"),
+input[type="time"] + *:contains("PM"),
+input[type="time"] ~ *:contains("AM"),
+input[type="time"] ~ *:contains("PM") {
+    display: none !important;
+}

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kontra Bon - Panduan Fitur Hapus</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        h2 {
+            color: #1e40af;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        h3 {
+            color: #374151;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .badge.success {
+            background: #10b981;
+            color: white;
+        }
+        .step {
+            background: #f9fafb;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #2563eb;
+            border-radius: 5px;
+        }
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: #2563eb;
+            color: white;
+            text-align: center;
+            line-height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .button-demo {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        .btn-delete {
+            background: white;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        .btn-delete:hover {
+            background: #fef2f2;
+        }
+        .btn-detail {
+            background: white;
+            color: #2563eb;
+            border: 1px solid #bfdbfe;
+        }
+        .btn-print {
+            background: white;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+        }
+        .btn-lunasi {
+            background: white;
+            color: #ea580c;
+            border: 1px solid #fed7aa;
+        }
+        .icon {
+            font-size: 18px;
+        }
+        .alert {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .alert.info {
+            background: #eff6ff;
+            border-color: #2563eb;
+            color: #1e40af;
+        }
+        .alert.warning {
+            background: #fffbeb;
+            border-color: #f59e0b;
+            color: #92400e;
+        }
+        .alert.success {
+            background: #f0fdf4;
+            border-color: #10b981;
+            color: #065f46;
+        }
+        .code {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .table-demo {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+        .table-demo th,
+        .table-demo td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .table-demo th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            font-size: 0.75em;
+            letter-spacing: 0.05em;
+        }
+        .table-demo tr:hover {
+            background: #f9fafb;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .status-lunas {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        ul {
+            margin: 10px 0 10px 30px;
+        }
+        li {
+            margin: 5px 0;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .feature-card {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        .feature-card h4 {
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        .checkmark {
+            color: #10b981;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗑️ Kontra Bon - Fitur Hapus</h1>
+        <span class="badge success">✅ SELESAI</span>
+        
+        <div class="alert info">
+            <strong>📋 Ringkasan:</strong> Fitur hapus kontra bon telah berhasil ditambahkan pada halaman List Kontra Bon dengan permission check dan restore status piutang otomatis.
+        </div>
+
+        <h2>🎯 Fitur Utama</h2>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>🔘 Tombol Hapus</h4>
+                <p>Icon trash merah di kolom Aksi, hanya muncul untuk user dengan permission</p>
+            </div>
+            <div class="feature-card">
+                <h4>🔄 Restore Piutang</h4>
+                <p>Status piutang otomatis dikembalikan ke "belum lunas" saat kontra bon dihapus</p>
+            </div>
+            <div class="feature-card">
+                <h4>🔒 Permission Check</h4>
+                <p>Hanya user dengan permission sales.kontrabon.delete yang bisa hapus</p>
+            </div>
+            <div class="feature-card">
+                <h4>⚡ Transaction Safe</h4>
+                <p>Menggunakan DB transaction untuk memastikan data consistency</p>
+            </div>
+        </div>
+
+        <h2>📊 Tampilan Tabel</h2>
+        
+        <table class="table-demo">
+            <thead>
+                <tr>
+                    <th>Tanggal</th>
+                    <th>No. Kontra Bon</th>
+                    <th>Customer</th>
+                    <th>Total</th>
+                    <th>Jatuh Tempo</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>09/02/2026</td>
+                    <td>KB202602001</td>
+                    <td>PT. Contoh</td>
+                    <td>Rp 5.000.000</td>
+                    <td>16/02/2026</td>
+                    <td><span class="status-badge status-pending">Pending</span></td>
+                    <td>
+                        <button class="button-demo btn-detail" title="Detail">
+                            <span class="icon">👁️</span>
+                        </button>
+                        <button class="button-demo btn-print" title="Print">
+                            <span class="icon">🖨️</span>
+                        </button>
+                        <button class="button-demo btn-lunasi" title="Lunasi">
+                            <span class="icon">✅</span>
+                        </button>
+                        <button class="button-demo btn-delete" title="Hapus">
+                            <span class="icon">🗑️</span>
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>08/02/2026</td>
+                    <td>KB202602002</td>
+                    <td>CV. Example</td>
+                    <td>Rp 3.500.000</td>
+                    <td>15/02/2026</td>
+                    <td><span class="status-badge status-lunas">Lunas</span></td>
+                    <td>
+                        <button class="button-demo btn-detail" title="Detail">
+                            <span class="icon">👁️</span>
+                        </button>
+                        <button class="button-demo btn-print" title="Print">
+                            <span class="icon">🖨️</span>
+                        </button>
+                        <button class="button-demo btn-delete" title="Hapus">
+                            <span class="icon">🗑️</span>
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>📝 Cara Menggunakan</h2>
+
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Login</strong>
+            <p>Login sebagai super_admin atau user dengan permission <code>sales.kontrabon.delete</code></p>
+        </div>
+
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Buka Halaman Kontra Bon</strong>
+            <p>Navigasi ke: <code>/admin/penjualan/kontrabon</code></p>
+        </div>
+
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Pilih Tab "List Kontra Bon"</strong>
+            <p>Klik tab "List Kontra Bon" untuk melihat daftar kontra bon</p>
+        </div>
+
+        <div class="step">
+            <span class="step-number">4</span>
+            <strong>Klik Tombol Hapus</strong>
+            <p>Klik icon trash (🗑️) merah di kolom Aksi pada kontra bon yang ingin dihapus</p>
+        </div>
+
+        <div class="step">
+            <span class="step-number">5</span>
+            <strong>Konfirmasi</strong>
+            <p>Konfirmasi dengan klik "OK" pada dialog konfirmasi</p>
+        </div>
+
+        <div class="step">
+            <span class="step-number">6</span>
+            <strong>Selesai</strong>
+            <p>Kontra bon terhapus dan status piutang otomatis dikembalikan</p>
+        </div>
+
+        <h2>⚙️ Deployment</h2>
+
+        <h3>Windows:</h3>
+        <div class="code">
+deploy_kontrabon_delete_feature.bat
+        </div>
+
+        <h3>Manual:</h3>
+        <div class="code">
+php artisan tinker --execute="include 'create_kontrabon_delete_permission.php';"
+php artisan route:clear
+php artisan route:cache
+        </div>
+
+        <h2>🔐 Permission</h2>
+
+        <div class="alert info">
+            <strong>Permission Name:</strong> <code>sales.kontrabon.delete</code><br>
+            <strong>Display Name:</strong> Hapus Kontra Bon<br>
+            <strong>Group:</strong> sales<br>
+            <strong>Auto-assigned to:</strong> super_admin
+        </div>
+
+        <h3>Assign ke Role Lain:</h3>
+        <div class="code">
+php artisan tinker
+$roleName = 'admin'; // Ganti dengan nama role
+include 'assign_kontrabon_delete_to_role.php';
+        </div>
+
+        <h2>🔄 Apa yang Terjadi Saat Hapus?</h2>
+
+        <ol>
+            <li><span class="checkmark">✓</span> System cek permission user</li>
+            <li><span class="checkmark">✓</span> Ambil data kontra bon dengan details</li>
+            <li><span class="checkmark">✓</span> Loop setiap detail kontra bon:
+                <ul>
+                    <li>Cari piutang terkait</li>
+                    <li>Kembalikan jumlah_dibayar (dikurangi)</li>
+                    <li>Kembalikan sisa_piutang (ditambah)</li>
+                    <li>Update status ke 'belum_lunas'</li>
+                </ul>
+            </li>
+            <li><span class="checkmark">✓</span> Hapus semua detail kontra bon</li>
+            <li><span class="checkmark">✓</span> Hapus kontra bon</li>
+            <li><span class="checkmark">✓</span> Commit transaction</li>
+            <li><span class="checkmark">✓</span> Reload tabel</li>
+        </ol>
+
+        <h2>⚠️ Catatan Penting</h2>
+
+        <div class="alert warning">
+            <strong>Perhatian:</strong>
+            <ul>
+                <li>Saat kontra bon dihapus, status piutang akan dikembalikan ke "belum lunas"</li>
+                <li>Jumlah dibayar pada piutang akan dikurangi sesuai pembayaran di kontra bon</li>
+                <li>Sisa piutang akan bertambah sesuai pembayaran di kontra bon</li>
+                <li>Proses ini menggunakan transaction, jika error semua akan di-rollback</li>
+            </ul>
+        </div>
+
+        <h2>✅ Checklist Testing</h2>
+
+        <ul>
+            <li><span class="checkmark">✓</span> Tombol hapus muncul untuk user dengan permission</li>
+            <li><span class="checkmark">✓</span> Tombol hapus TIDAK muncul untuk user tanpa permission</li>
+            <li><span class="checkmark">✓</span> Konfirmasi muncul sebelum hapus</li>
+            <li><span class="checkmark">✓</span> Kontra bon berhasil dihapus</li>
+            <li><span class="checkmark">✓</span> Status piutang dikembalikan ke belum lunas</li>
+            <li><span class="checkmark">✓</span> Sisa piutang bertambah sesuai pembayaran</li>
+            <li><span class="checkmark">✓</span> Tabel reload otomatis setelah hapus</li>
+            <li><span class="checkmark">✓</span> Error handling berfungsi dengan baik</li>
+        </ul>
+
+        <h2>📚 Dokumentasi</h2>
+
+        <ul>
+            <li><strong>KONTRABON_DELETE_FEATURE_COMPLETE.md</strong> - Dokumentasi lengkap</li>
+            <li><strong>KONTRABON_DELETE_QUICK_TEST.md</strong> - Panduan testing cepat</li>
+            <li><strong>KONTRABON_DELETE_SUMMARY.md</strong> - Ringkasan fitur</li>
+            <li><strong>create_kontrabon_delete_permission.php</strong> - Script buat permission</li>
+            <li><strong>test_kontrabon_delete.php</strong> - Script test</li>
+            <li><strong>assign_kontrabon_delete_to_role.php</strong> - Script assign permission</li>
+        </ul>
+
+        <div class="alert success">
+            <strong>🎉 Status: READY TO USE</strong><br>
+            Fitur hapus kontra bon sudah siap digunakan di production!
+        </div>
+    </div>
+</body>
+</html>

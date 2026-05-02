@@ -1,0 +1,480 @@
+/**
+ * ========================================
+ * DESKTOP RESPONSIVE SCALING SYSTEM
+ * ========================================
+ * 
+ * Sistem ini membuat tampilan desktop menyesuaikan secara proporsional
+ * dengan ukuran window browser tanpa merusak layout mobile.
+ * 
+ * Fitur:
+ * - Auto-scaling font, spacing, dan komponen
+ * - Menjaga rasio proporsional
+ * - Tidak ada horizontal scroll
+ * - Iframe height otomatis
+ * - Konsisten di semua halaman admin.blade.php
+ */
+
+/* ========================================
+   BASE SCALING VARIABLES
+   ======================================== */
+:root {
+    /* Base font size untuk scaling (16px default) */
+    --base-font-size: 16px;
+    
+    /* Viewport width breakpoints */
+    --desktop-min: 768px;    /* Mulai dari tablet landscape */
+    --desktop-base: 1440px;  /* Ukuran referensi optimal */
+    --desktop-max: 2560px;
+    
+    /* Scaling factors */
+    --scale-factor: 1;
+    --min-scale: 0.6;   /* Minimum 40% untuk ukuran kecil */
+    --max-scale: 1.25;  /* Maximum 125% dari ukuran normal */
+    
+    /* Sidebar width variable */
+    --sidebar-width: 320px;
+}
+
+/* ========================================
+   DESKTOP ONLY - RESPONSIVE SCALING
+   ======================================== */
+@media (min-width: 768px) {
+    
+    /* CRITICAL: Reset untuk menghilangkan blank space di kiri */
+    html,
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100vw !important;
+        overflow-x: hidden !important;
+    }
+    
+    /* Root font size scaling berdasarkan viewport width */
+    html {
+        /* Formula: scale dari 1024px sampai 2560px */
+        font-size: clamp(
+            calc(var(--base-font-size) * var(--min-scale)),
+            calc(var(--base-font-size) * (0.5 + (100vw / var(--desktop-base) * 0.5))),
+            calc(var(--base-font-size) * var(--max-scale))
+        );
+    }
+    
+    /* Container scaling */
+    .container,
+    [class*="container"] {
+        max-width: min(100%, calc(100vw - 2rem));
+    }
+    
+    /* Main content area scaling */
+    main {
+        padding-left: clamp(1rem, 2vw, 2rem);
+        padding-right: clamp(1rem, 2vw, 2rem);
+        padding-top: clamp(1rem, 2vh, 2rem);
+        padding-bottom: clamp(1rem, 2vh, 2rem);
+    }
+    
+    /* Card dan komponen scaling */
+    .card,
+    [class*="card"],
+    [class*="shadow-card"] {
+        padding: clamp(1rem, 1.5vw, 2rem);
+        border-radius: clamp(0.5rem, 0.75vw, 1rem);
+    }
+    
+    /* Button scaling */
+    button,
+    .btn,
+    [class*="btn-"] {
+        padding: clamp(0.5rem, 0.75vw, 1rem) clamp(1rem, 1.5vw, 2rem);
+        font-size: clamp(0.875rem, 1vw, 1rem);
+        border-radius: clamp(0.375rem, 0.5vw, 0.5rem);
+    }
+    
+    /* Input dan form elements scaling */
+    input,
+    select,
+    textarea {
+        padding: clamp(0.5rem, 0.75vw, 0.75rem) clamp(0.75rem, 1vw, 1rem);
+        font-size: clamp(0.875rem, 1vw, 1rem);
+        border-radius: clamp(0.375rem, 0.5vw, 0.5rem);
+    }
+    
+    /* Table scaling */
+    table {
+        font-size: clamp(0.75rem, 0.9vw, 0.875rem);
+        width: 100% !important;
+        table-layout: auto !important;
+        overflow-x: hidden !important;
+    }
+    
+    table th,
+    table td {
+        padding: clamp(0.5rem, 0.75vw, 1rem);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+    }
+    
+    /* Table wrapper - prevent horizontal scroll */
+    .table-responsive,
+    .dataTables_wrapper {
+        width: 100% !important;
+        overflow-x: hidden !important;
+    }
+    
+    /* DataTables specific */
+    .dataTables_wrapper table {
+        width: 100% !important;
+    }
+    
+    .dataTables_scrollBody {
+        overflow-x: hidden !important;
+    }
+    
+    /* Heading scaling */
+    h1 { font-size: clamp(1.5rem, 2.5vw, 2.5rem); }
+    h2 { font-size: clamp(1.25rem, 2vw, 2rem); }
+    h3 { font-size: clamp(1.125rem, 1.5vw, 1.5rem); }
+    h4 { font-size: clamp(1rem, 1.25vw, 1.25rem); }
+    h5 { font-size: clamp(0.875rem, 1.125vw, 1.125rem); }
+    h6 { font-size: clamp(0.75rem, 1vw, 1rem); }
+    
+    /* Spacing utilities scaling */
+    .space-y-1 > * + * { margin-top: clamp(0.25rem, 0.5vh, 0.5rem); }
+    .space-y-2 > * + * { margin-top: clamp(0.5rem, 0.75vh, 0.75rem); }
+    .space-y-3 > * + * { margin-top: clamp(0.75rem, 1vh, 1rem); }
+    .space-y-4 > * + * { margin-top: clamp(1rem, 1.5vh, 1.5rem); }
+    .space-y-6 > * + * { margin-top: clamp(1.5rem, 2vh, 2rem); }
+    
+    /* Gap utilities scaling */
+    .gap-1 { gap: clamp(0.25rem, 0.5vw, 0.5rem); }
+    .gap-2 { gap: clamp(0.5rem, 0.75vw, 0.75rem); }
+    .gap-3 { gap: clamp(0.75rem, 1vw, 1rem); }
+    .gap-4 { gap: clamp(1rem, 1.5vw, 1.5rem); }
+    .gap-6 { gap: clamp(1.5rem, 2vw, 2rem); }
+    
+    /* Icon scaling */
+    i[class*="bx"],
+    .icon {
+        font-size: clamp(1rem, 1.5vw, 1.5rem);
+    }
+    
+    /* Modal scaling */
+    .modal-dialog {
+        max-width: clamp(500px, 50vw, 800px);
+        margin: clamp(1rem, 2vh, 2rem) auto;
+    }
+    
+    .modal-content {
+        border-radius: clamp(0.5rem, 0.75vw, 1rem);
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: clamp(1rem, 1.5vw, 1.5rem);
+    }
+}
+
+/* ========================================
+   IFRAME RESPONSIVE BEHAVIOR
+   ======================================== */
+@media (min-width: 768px) {
+    
+    /* Iframe container */
+    .iframe-container,
+    [class*="iframe"] {
+        width: 100%;
+        overflow: hidden;
+    }
+    
+    /* Iframe scaling */
+    iframe {
+        width: 100%;
+        border: none;
+        display: block;
+        
+        /* Smooth scaling transition */
+        transition: transform 0.3s ease, height 0.3s ease;
+        transform-origin: top left;
+    }
+    
+    /* Prevent horizontal scroll in iframe */
+    iframe body {
+        overflow-x: hidden !important;
+        max-width: 100% !important;
+    }
+    
+    /* Tab content area */
+    .tab-content,
+    [class*="tab-content"] {
+        width: 100%;
+        overflow-x: hidden;
+    }
+}
+
+/* ========================================
+   SIDEBAR SCALING (untuk admin-with-tabs)
+   ======================================== */
+@media (min-width: 768px) {
+    
+    aside,
+    .sidebar {
+        /* Dynamic width dengan CSS variable - lebih kecil untuk tablet */
+        --sidebar-width: clamp(200px, 18vw, 320px);
+        width: var(--sidebar-width);
+        
+        /* CRITICAL: Pastikan sidebar fit left tanpa blank space */
+        left: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        transform: translateX(0) !important;
+    }
+    
+    /* Logo scaling - responsive */
+    aside img[alt="MORRA"],
+    .sidebar img[alt="MORRA"] {
+        max-height: clamp(3rem, 4vw, 4rem) !important;
+        width: auto !important;
+        object-fit: contain !important;
+    }
+    
+    /* Header logo area */
+    aside > div:first-child,
+    .sidebar > div:first-child {
+        height: clamp(4rem, 6vh, 6rem) !important;
+        padding: clamp(0.5rem, 1vw, 1rem) !important;
+    }
+    
+    /* Padding internal sidebar - MINIMAL */
+    aside nav,
+    .sidebar nav {
+        padding: 0.5rem !important;
+    }
+    
+    /* Spacing antar menu items */
+    aside nav > *,
+    .sidebar nav > * {
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Menu card container - kurangi margin horizontal */
+    aside [data-menu-parent],
+    .sidebar [data-menu-parent] {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    
+    aside .menu-item,
+    .sidebar .menu-item {
+        padding: 0.5rem !important;
+        font-size: clamp(0.875rem, 1vw, 1rem);
+        border-radius: clamp(0.375rem, 0.5vw, 0.5rem);
+    }
+    
+    aside .menu-item i,
+    .sidebar .menu-item i {
+        font-size: clamp(1.25rem, 1.5vw, 1.5rem);
+    }
+    
+    /* Main content area adjustment - sesuaikan dengan sidebar width */
+    .lg\:pl-80 {
+        padding-left: clamp(200px, 18vw, 320px) !important;
+    }
+    
+    /* Pastikan tidak ada blank space di kiri */
+    body {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+    
+    html {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+}
+
+/* ========================================
+   TOPBAR/HEADER SCALING
+   ======================================== */
+@media (min-width: 768px) {
+    
+    header {
+        padding: clamp(0.75rem, 1vw, 1rem) clamp(1rem, 1.5vw, 1.5rem);
+    }
+    
+    header .logo {
+        height: clamp(2rem, 3vw, 3rem);
+    }
+    
+    header .user-menu {
+        gap: clamp(0.5rem, 0.75vw, 1rem);
+    }
+}
+
+/* ========================================
+   TAB BAR SCALING
+   ======================================== */
+@media (min-width: 768px) {
+    
+    .tab-bar {
+        padding: clamp(0.5rem, 0.75vw, 0.75rem) clamp(1rem, 1.5vw, 1.5rem);
+        gap: clamp(0.5rem, 0.75vw, 0.75rem);
+    }
+    
+    .tab-item {
+        padding: clamp(0.5rem, 0.75vw, 0.75rem) clamp(0.75rem, 1vw, 1rem);
+        font-size: clamp(0.875rem, 1vw, 1rem);
+        border-radius: clamp(0.375rem, 0.5vw, 0.5rem);
+        max-width: clamp(150px, 15vw, 200px);
+    }
+    
+    .tab-item i {
+        font-size: clamp(1rem, 1.25vw, 1.25rem);
+    }
+    
+    /* Tab content area - responsive scaling */
+    .tab-content,
+    [x-show*="activeTab"],
+    [class*="tab-pane"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+    
+    /* Tab content iframe container */
+    .tab-content iframe,
+    [x-show*="activeTab"] iframe {
+        width: 100% !important;
+        max-width: 100% !important;
+        border: none !important;
+        display: block !important;
+    }
+}
+
+/* ========================================
+   DATATABLE SCALING
+   ======================================== */
+@media (min-width: 768px) {
+    
+    .dataTables_wrapper {
+        font-size: clamp(0.75rem, 0.9vw, 0.875rem);
+    }
+    
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter,
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+        padding: clamp(0.5rem, 0.75vw, 0.75rem);
+    }
+    
+    .dataTables_wrapper select,
+    .dataTables_wrapper input {
+        padding: clamp(0.25rem, 0.5vw, 0.5rem) clamp(0.5rem, 0.75vw, 0.75rem);
+        font-size: clamp(0.75rem, 0.9vw, 0.875rem);
+    }
+}
+
+/* ========================================
+   CHART SCALING
+   ======================================== */
+@media (min-width: 768px) {
+    
+    .chart-container,
+    canvas {
+        max-width: 100%;
+        height: auto !important;
+    }
+    
+    .chart-wrapper {
+        padding: clamp(1rem, 1.5vw, 1.5rem);
+    }
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+@media (min-width: 768px) {
+    
+    /* Prevent horizontal overflow */
+    .no-overflow-x {
+        overflow-x: hidden !important;
+        max-width: 100% !important;
+    }
+    
+    /* Responsive width */
+    .responsive-width {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Responsive padding */
+    .responsive-padding {
+        padding: clamp(1rem, 2vw, 2rem) !important;
+    }
+    
+    /* Responsive margin */
+    .responsive-margin {
+        margin: clamp(1rem, 2vw, 2rem) !important;
+    }
+    
+    /* CRITICAL: Prevent ALL horizontal scroll */
+    * {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    /* Ensure tables fit */
+    table,
+    .table,
+    .dataTables_wrapper,
+    .table-responsive {
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+    
+    /* Ensure images fit */
+    img,
+    svg,
+    canvas,
+    video {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+}
+
+/* ========================================
+   SMOOTH TRANSITIONS
+   ======================================== */
+@media (min-width: 768px) {
+    
+    * {
+        transition-property: font-size, padding, margin, width, height, gap;
+        transition-duration: 0.2s;
+        transition-timing-function: ease-in-out;
+    }
+    
+    /* Exclude animations from transition */
+    *[class*="animate"],
+    *[class*="transition"] {
+        transition: all 0.3s ease;
+    }
+}
+
+/* ========================================
+   MOBILE - TETAP TIDAK BERUBAH
+   ======================================== */
+@media (max-width: 767px) {
+    /* Mobile styling tetap menggunakan ukuran fixed */
+    html {
+        font-size: 16px !important;
+    }
+    
+    /* Tidak ada scaling di mobile */
+    * {
+        transition: none !important;
+    }
+}

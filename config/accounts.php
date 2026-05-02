@@ -1,0 +1,1422 @@
+<?php
+
+return [
+    'accounts' => [
+    [
+        'code' => '1',
+        'name' => 'ASET',
+        'type' => 'asset',
+        'is_active' => true,
+        'children' => [
+            [
+                'code' => '1.01',
+                'name' => 'Aset Lancar',
+                'type' => 'asset',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '1.01.01',
+                        'name' => 'Kas dan Setara Kas',
+                        'type' => 'asset',
+                        'is_active' => true,
+                        'children' => [
+                            [
+                                'code' => '1.01.01.01',
+                                'name' => 'Kas',
+                                'type' => 'asset',
+                                'is_active' => true,
+                                'children' => [
+                                    [
+                                        'code' => '1.01.01.01.01',
+                                        'name' => 'BNI',
+                                        'type' => 'asset',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '1.01.01.01.02',
+                                        'name' => 'Mandiri',
+                                        'type' => 'asset',
+                                        'is_active' => true,
+                                        'children' => [
+                                            [
+                                                'code' => '1.01.01.01.02.01',
+                                                'name' => 'Mega Syariah',
+                                                'type' => 'asset',
+                                                'is_active' => true,
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'code' => '1.01.02',
+                        'name' => 'Investasi Sementara',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '1.01.03',
+                        'name' => 'Piutang Usaha Pihak Ketiga',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '1.01.04',
+                        'name' => 'Piutang Usaha Hub. Istimewa',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '1.01.05',
+                        'name' => 'Piutang Lain Pihak Ketiga',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '1.01.06',
+                        'name' => 'Piutang Lain Hub. Istimewa',
+                        'type' => 'asset',
+                        'is_active' => true,
+                        'children' => [
+                            [
+                                'code' => '1.01.06.01',
+                                'name' => 'Piutang Pemegang Saham',
+                                'type' => 'asset',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '1.01.06.02',
+                                'name' => 'Piutang Direksi dan Komisaris',
+                                'type' => 'asset',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '1.01.06.03',
+                                'name' => 'Piutang Karyawan',
+                                'type' => 'asset',
+                                'is_active' => true,
+                                'children' => [
+                                    [
+                                        'code' => '1.01.06.03.01',
+                                        'name' => 'Piutang usaha',
+                                        'type' => 'asset',
+                                        'is_active' => true,
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'code' => '1.01.07',
+                        'name' => 'Penyisihan Piutang Ragu2',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '1.01.08',
+                        'name' => 'Persediaan',
+                        'type' => 'asset',
+                        'is_active' => true,
+                        'children' => [
+                            [
+                                'code' => '1.01.08.01',
+                                'name' => 'Persediaan B. Perlengkapan',
+                                'type' => 'asset',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '1.01.08.02',
+                                'name' => 'Persediaan B. Dagang',
+                                'type' => 'asset',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '1.01.08.03',
+                                'name' => 'Persediaan Akhir',
+                                'type' => 'asset',
+                                'is_active' => true,
+                            ],
+                        ],
+                    ],
+                    [
+                        'code' => '1.01.09',
+                        'name' => 'Beban Dibayar Dimuka',
+                        'type' => 'asset',
+                        'is_active' => true,
+                        'children' => [
+                            [
+                                'code' => '1.01.09.01',
+                                'name' => 'B. Pajak Dimuka',
+                                'type' => 'asset',
+                                'is_active' => true,
+                                'children' => [
+                                    [
+                                        'code' => '1.01.09.01.01',
+                                        'name' => 'B. Dimuka PPh',
+                                        'type' => 'asset',
+                                        'is_active' => true,
+                                        'children' => [
+                                            [
+                                                'code' => '1.01.09.01.01.01',
+                                                'name' => 'PPh 22 Di Muka',
+                                                'type' => 'asset',
+                                                'is_active' => true,
+                                            ],
+                                            [
+                                                'code' => '1.01.09.01.01.02',
+                                                'name' => 'PPh 23 Di Muka',
+                                                'type' => 'asset',
+                                                'is_active' => true,
+                                            ],
+                                            [
+                                                'code' => '1.01.09.01.01.03',
+                                                'name' => 'PPh 25 Di Muka',
+                                                'type' => 'asset',
+                                                'is_active' => true,
+                                            ],
+                                        ],
+                                    ],
+                                    [
+                                        'code' => '1.01.09.01.02',
+                                        'name' => 'B. Dimuka PPN',
+                                        'type' => 'asset',
+                                        'is_active' => true,
+                                        'children' => [
+                                            [
+                                                'code' => '1.01.09.01.02.01',
+                                                'name' => 'PPN Masukan',
+                                                'type' => 'asset',
+                                                'is_active' => true,
+                                            ],
+                                            [
+                                                'code' => '1.01.09.01.02.02',
+                                                'name' => 'Beban Subsidi',
+                                                'type' => 'expense',
+                                                'is_active' => true,
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                            [
+                                'code' => '1.01.09.02',
+                                'name' => 'B. Dimuka',
+                                'type' => 'asset',
+                                'is_active' => true,
+                                'children' => [
+                                    [
+                                        'code' => '1.01.09.02.01',
+                                        'name' => 'Biaya Sewa Dimuka',
+                                        'type' => 'asset',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '1.01.09.02.02',
+                                        'name' => 'Biaya Dimuka Lainnya',
+                                        'type' => 'asset',
+                                        'is_active' => true,
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'code' => '1.01.10',
+                        'name' => 'Uang Muka Pembelian',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '1.01.11',
+                        'name' => 'Aktiva Lancar Lainnya',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+            [
+                'code' => '1.02',
+                'name' => 'Aset Tidak Lancar',
+                'type' => 'asset',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '1.02.01',
+                        'name' => 'Piutang Jangka Panjang',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '1.02.02',
+                        'name' => 'Tanah dan Bangunan',
+                        'type' => 'asset',
+                        'is_active' => true,
+                        'children' => [
+                            [
+                                'code' => '1.02.02.01',
+                                'name' => 'Tanah',
+                                'type' => 'asset',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '1.02.02.02',
+                                'name' => 'Bangunan',
+                                'type' => 'asset',
+                                'is_active' => true,
+                            ],
+                        ],
+                    ],
+                    [
+                        'code' => '1.02.03',
+                        'name' => 'Aktiva Tetap Lainnya',
+                        'type' => 'asset',
+                        'is_active' => true,
+                        'children' => [
+                            [
+                                'code' => '1.02.03.01',
+                                'name' => 'Inventaris',
+                                'type' => 'asset',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '1.02.03.02',
+                                'name' => 'Kendaraan',
+                                'type' => 'asset',
+                                'is_active' => true,
+                            ],
+                        ],
+                    ],
+                    [
+                        'code' => '1.02.04',
+                        'name' => 'Akumulasi Penyusutan',
+                        'type' => 'asset',
+                        'is_active' => true,
+                        'children' => [
+                            [
+                                'code' => '1.02.04.01',
+                                'name' => 'Akum. Peny. Bangunan',
+                                'type' => 'asset',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '1.02.04.02',
+                                'name' => 'Akum. Peny. Aktiva Tetap Lainnya',
+                                'type' => 'asset',
+                                'is_active' => true,
+                                'children' => [
+                                    [
+                                        'code' => '1.02.04.02.01',
+                                        'name' => 'Akum. Peny. Inventaris',
+                                        'type' => 'asset',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '1.02.04.02.02',
+                                        'name' => 'Akum. Peny. Kendaraan',
+                                        'type' => 'asset',
+                                        'is_active' => true,
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'code' => '1.02.05',
+                        'name' => 'Investasi Pada Perus. Asosiasi',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '1.02.06',
+                        'name' => 'Investasi JP. Lainnya',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+            [
+                'code' => '1.03',
+                'name' => 'Aset Lainnya',
+                'type' => 'asset',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '1.03.01',
+                        'name' => 'Aset Tidak Berwujud',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '1.03.02',
+                        'name' => 'Aktiva Pajak Tangguhan',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '1.03.03',
+                        'name' => 'Aktiva Tidak Lancar Lainnya',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '1.03.04',
+                        'name' => 'Investasi Saham',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+            [
+                'code' => '1.04',
+                'name' => 'Asset Tidak Berwujud',
+                'type' => 'asset',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '1.04.01',
+                        'name' => 'Hak Paten',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '1.04.02',
+                        'name' => 'Goodwill',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '1.04.03',
+                        'name' => 'Lisensi',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+            [
+                'code' => '1.05',
+                'name' => 'Piutang Jangka Panjang',
+                'type' => 'asset',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '1.05.01',
+                        'name' => 'Pinjaman ke pihak ketiga dengan jangka > 1 tahun',
+                        'type' => 'asset',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+        ],
+    ],
+    [
+        'code' => '2',
+        'name' => 'LIABILITAS',
+        'type' => 'liability',
+        'is_active' => true,
+        'children' => [
+            [
+                'code' => '2.01',
+                'name' => 'Liabilitas Lancar',
+                'type' => 'liability',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '2.01.01',
+                        'name' => 'Utang Usaha Pihak Ketiga',
+                        'type' => 'liability',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '2.01.02',
+                        'name' => 'Utang Usaha Hub. Istimewa',
+                        'type' => 'liability',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '2.01.03',
+                        'name' => 'Utang Bunga',
+                        'type' => 'liability',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '2.01.04',
+                        'name' => 'Utang Pajak',
+                        'type' => 'liability',
+                        'is_active' => true,
+                        'children' => [
+                            [
+                                'code' => '2.01.04.01',
+                                'name' => 'Utang PPh',
+                                'type' => 'liability',
+                                'is_active' => true,
+                                'children' => [
+                                    [
+                                        'code' => '2.01.04.01.01',
+                                        'name' => 'Utang PPh 21',
+                                        'type' => 'liability',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '2.01.04.01.02',
+                                        'name' => 'Utang PPh 23',
+                                        'type' => 'liability',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '2.01.04.01.03',
+                                        'name' => 'Utang PPh 4 (2)/Final',
+                                        'type' => 'liability',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '2.01.04.01.04',
+                                        'name' => 'Utang PPh 25',
+                                        'type' => 'liability',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '2.01.04.01.05',
+                                        'name' => 'Utang PPh 29',
+                                        'type' => 'liability',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '2.01.04.01.06',
+                                        'name' => 'Utang PPh Lainnya',
+                                        'type' => 'liability',
+                                        'is_active' => true,
+                                    ],
+                                ],
+                            ],
+                            [
+                                'code' => '2.01.04.02',
+                                'name' => 'Utang PPN',
+                                'type' => 'liability',
+                                'is_active' => true,
+                                'children' => [
+                                    [
+                                        'code' => '2.01.04.02.01',
+                                        'name' => 'PPN Keluaran',
+                                        'type' => 'liability',
+                                        'is_active' => true,
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'code' => '2.01.05',
+                        'name' => 'Utang Dividen',
+                        'type' => 'liability',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '2.01.06',
+                        'name' => 'Biaya Yang Masih Harus Dibayar',
+                        'type' => 'liability',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '2.01.07',
+                        'name' => 'Utang Bank',
+                        'type' => 'liability',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '2.01.08',
+                        'name' => 'Bag. Utang JP. Jatuh Tempo',
+                        'type' => 'liability',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '2.01.09',
+                        'name' => 'Uang Muka Pelanggan',
+                        'type' => 'liability',
+                        'is_active' => true,
+                        'children' => [
+                            [
+                                'code' => '2.01.09.01',
+                                'name' => 'Pend. Diterima Di Muka',
+                                'type' => 'liability',
+                                'is_active' => true,
+                            ],
+                        ],
+                    ],
+                    [
+                        'code' => '2.01.10',
+                        'name' => 'Kewajiban Lancar Lainnya',
+                        'type' => 'liability',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+            [
+                'code' => '2.02',
+                'name' => 'Liabilitas Tidak Lancar',
+                'type' => 'liability',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '2.02.01',
+                        'name' => 'Utang Bank Jangka Panjang',
+                        'type' => 'liability',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '2.02.02',
+                        'name' => 'Utang Usaha JP. Pihak Lain',
+                        'type' => 'liability',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '2.02.03',
+                        'name' => 'Utang Usaha JP. Hub. Istimewa',
+                        'type' => 'liability',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '2.02.04',
+                        'name' => 'Kewajiban Pajak Tangguhan',
+                        'type' => 'liability',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '2.02.05',
+                        'name' => 'Kewajiban Tidak Lancar Lainnya',
+                        'type' => 'liability',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+        ],
+    ],
+    [
+        'code' => '3',
+        'name' => 'MODAL',
+        'type' => 'equity',
+        'is_active' => true,
+        'children' => [
+            [
+                'code' => '3.01',
+                'name' => 'Modal Awal',
+                'type' => 'equity',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '3.01.01',
+                        'name' => 'Modal Pemegang Saham',
+                        'type' => 'equity',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '3.01.02',
+                        'name' => 'Agio Saham (Tamb. Modal Disetor)',
+                        'type' => 'equity',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+            [
+                'code' => '3.02',
+                'name' => 'Perubahan Modal',
+                'type' => 'equity',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '3.02.01',
+                        'name' => 'Laba Rugi Tahun2 Sebelumnya',
+                        'type' => 'equity',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '3.02.02',
+                        'name' => 'Dividen',
+                        'type' => 'equity',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '3.02.03',
+                        'name' => 'Ekuitas Lain-lain',
+                        'type' => 'equity',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '3.02.04',
+                        'name' => 'Investasi',
+                        'type' => 'equity',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+            [
+                'code' => '3.03',
+                'name' => 'PRIVE',
+                'type' => 'equity',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '3.03.01',
+                        'name' => 'Prive Pemilik',
+                        'type' => 'equity',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+        ],
+    ],
+    [
+        'code' => '4',
+        'name' => 'PENDAPATAN',
+        'type' => 'revenue',
+        'is_active' => true,
+        'children' => [
+            [
+                'code' => '4.01',
+                'name' => 'Penjualan B. Dagang',
+                'type' => 'revenue',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '4.01.01',
+                        'name' => 'Pendapatan BD.-1',
+                        'type' => 'revenue',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '4.01.02',
+                        'name' => 'Pendapatan BD.-2',
+                        'type' => 'revenue',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '4.01.03',
+                        'name' => 'Pendapatan BD.-3',
+                        'type' => 'revenue',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '4.01.04',
+                        'name' => 'pnptn tt',
+                        'type' => 'revenue',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+            [
+                'code' => '4.02',
+                'name' => 'Retur Penj. B. Dagang',
+                'type' => 'revenue',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '4.02.01',
+                        'name' => 'Retur Pend. BD.-1',
+                        'type' => 'revenue',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '4.02.02',
+                        'name' => 'Retur Pend. BD.-2',
+                        'type' => 'revenue',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '4.02.03',
+                        'name' => 'Retur Pend. BD.-3',
+                        'type' => 'revenue',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+            [
+                'code' => '4.03',
+                'name' => 'Potongan Penj. B. Dagang',
+                'type' => 'revenue',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '4.03.01',
+                        'name' => 'Potongan Pend. BD.-1',
+                        'type' => 'revenue',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '4.03.02',
+                        'name' => 'Potongan Pend. BD.-2',
+                        'type' => 'revenue',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '4.03.03',
+                        'name' => 'Potongan Pend. BD.-3',
+                        'type' => 'revenue',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+        ],
+    ],
+    [
+        'code' => '5',
+        'name' => 'HARGA POKOK PENJUALAN',
+        'type' => 'expense',
+        'is_active' => true,
+        'children' => [
+            [
+                'code' => '5.01',
+                'name' => 'HPP Barang Dagang',
+                'type' => 'expense',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '5.01.01',
+                        'name' => 'HPP B.D.-1',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '5.01.02',
+                        'name' => 'HPP B.D.-2',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '5.01.03',
+                        'name' => 'HPP B.D.-3',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+        ],
+    ],
+    [
+        'code' => '6',
+        'name' => 'BIAYA USAHA LAINNYA',
+        'type' => 'expense',
+        'is_active' => true,
+        'children' => [
+            [
+                'code' => '6.01',
+                'name' => 'Biaya Umum dan Administrasi',
+                'type' => 'expense',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '6.01.01',
+                        'name' => 'B. Gaji, Upah, Bonus, THR, dsb.',
+                        'type' => 'expense',
+                        'is_active' => true,
+                        'children' => [
+                            [
+                                'code' => '6.01.01.01',
+                                'name' => 'B. Gaji',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '6.01.01.02',
+                                'name' => 'Tunjangan PPh',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '6.01.01.03',
+                                'name' => 'Tunjangan Lain, Lembur, dsb.',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '6.01.01.04',
+                                'name' => 'Honorarium dan Imbalan Lain Sejenis',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '6.01.01.05',
+                                'name' => 'Premi Asuransi dibayar Perusahaan',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '6.01.01.06',
+                                'name' => 'Natura dan Kenikmatan Lainnya',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '6.01.01.07',
+                                'name' => 'THR dan Bonus',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                        ],
+                    ],
+                    [
+                        'code' => '6.01.02',
+                        'name' => 'B. Transportasi',
+                        'type' => 'expense',
+                        'is_active' => true,
+                        'children' => [
+                            [
+                                'code' => '6.01.02.01',
+                                'name' => 'B. Parkir',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '6.01.02.02',
+                                'name' => 'B. BBM',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '6.01.02.03',
+                                'name' => 'B. Tol',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '6.01.02.04',
+                                'name' => 'B. Transport Lainnya',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                        ],
+                    ],
+                    [
+                        'code' => '6.01.03',
+                        'name' => 'B. Penyusutan dan Amortisasi',
+                        'type' => 'expense',
+                        'is_active' => true,
+                        'children' => [
+                            [
+                                'code' => '6.01.03.01',
+                                'name' => 'B. Penyusutan',
+                                'type' => 'expense',
+                                'is_active' => true,
+                                'children' => [
+                                    [
+                                        'code' => '6.01.03.01.01',
+                                        'name' => 'B. Peny. Bangunan',
+                                        'type' => 'expense',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '6.01.03.01.02',
+                                        'name' => 'B. Peny. Aktiva Tetap Lainnya',
+                                        'type' => 'expense',
+                                        'is_active' => true,
+                                        'children' => [
+                                            [
+                                                'code' => '6.01.03.01.02.01',
+                                                'name' => 'B. Peny. Inventaris',
+                                                'type' => 'expense',
+                                                'is_active' => true,
+                                            ],
+                                            [
+                                                'code' => '6.01.03.01.02.02',
+                                                'name' => 'B. Peny. Kendaraan',
+                                                'type' => 'expense',
+                                                'is_active' => true,
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                            [
+                                'code' => '6.01.03.02',
+                                'name' => 'B. Amortisasi',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                        ],
+                    ],
+                    [
+                        'code' => '6.01.04',
+                        'name' => 'B. Sewa',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '6.01.05',
+                        'name' => 'B. Bunga Pinjaman',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '6.01.06',
+                        'name' => 'B. Sehubungan dengan Jasa',
+                        'type' => 'expense',
+                        'is_active' => true,
+                        'children' => [
+                            [
+                                'code' => '6.01.06.01',
+                                'name' => 'B. Operasional Kantor',
+                                'type' => 'expense',
+                                'is_active' => true,
+                                'children' => [
+                                    [
+                                        'code' => '6.01.06.01.01',
+                                        'name' => 'B. Rapat dan RUPS',
+                                        'type' => 'expense',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '6.01.06.01.02',
+                                        'name' => 'B. Makan dan Minum',
+                                        'type' => 'expense',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '6.01.06.01.03',
+                                        'name' => 'B. Adm. Kantor',
+                                        'type' => 'expense',
+                                        'is_active' => true,
+                                        'children' => [
+                                            [
+                                                'code' => '6.01.06.01.03.01',
+                                                'name' => 'B. Perlengkapan Kantor',
+                                                'type' => 'expense',
+                                                'is_active' => true,
+                                            ],
+                                            [
+                                                'code' => '6.01.06.01.03.02',
+                                                'name' => 'B. Fotokopi/Cetak',
+                                                'type' => 'expense',
+                                                'is_active' => true,
+                                            ],
+                                            [
+                                                'code' => '6.01.06.01.03.03',
+                                                'name' => 'B. Ekspedisi',
+                                                'type' => 'expense',
+                                                'is_active' => true,
+                                            ],
+                                            [
+                                                'code' => '6.01.06.01.03.04',
+                                                'name' => 'B. Adm. Kantor Lainnya',
+                                                'type' => 'expense',
+                                                'is_active' => true,
+                                            ],
+                                        ],
+                                    ],
+                                    [
+                                        'code' => '6.01.06.01.04',
+                                        'name' => 'B. Kantor Lainnya',
+                                        'type' => 'expense',
+                                        'is_active' => true,
+                                        'children' => [
+                                            [
+                                                'code' => '6.01.06.01.04.01',
+                                                'name' => 'B. Seragam',
+                                                'type' => 'expense',
+                                                'is_active' => true,
+                                            ],
+                                            [
+                                                'code' => '6.01.06.01.04.02',
+                                                'name' => 'B. Medical',
+                                                'type' => 'expense',
+                                                'is_active' => true,
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                            [
+                                'code' => '6.01.06.02',
+                                'name' => 'B. Listr, Telp, Internet, PAM',
+                                'type' => 'expense',
+                                'is_active' => true,
+                                'children' => [
+                                    [
+                                        'code' => '6.01.06.02.01',
+                                        'name' => 'B. Listrik',
+                                        'type' => 'expense',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '6.01.06.02.02',
+                                        'name' => 'B. Telpon',
+                                        'type' => 'expense',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '6.01.06.02.03',
+                                        'name' => 'B. Internet',
+                                        'type' => 'expense',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '6.01.06.02.04',
+                                        'name' => 'B. PAM',
+                                        'type' => 'expense',
+                                        'is_active' => true,
+                                    ],
+                                ],
+                            ],
+                            [
+                                'code' => '6.01.06.03',
+                                'name' => 'B. Pemeliharaan',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '6.01.06.04',
+                                'name' => 'B. Jasa Pihak Ketiga',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '6.01.06.05',
+                                'name' => 'B. Legal',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '6.01.06.06',
+                                'name' => 'B. Angkut Penjualan',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                        ],
+                    ],
+                    [
+                        'code' => '6.01.07',
+                        'name' => 'B. Piutang Tak Tertagih',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '6.01.08',
+                        'name' => 'B. Royalti',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '6.01.09',
+                        'name' => 'B. Lainnya dari Usaha',
+                        'type' => 'expense',
+                        'is_active' => true,
+                        'children' => [
+                            [
+                                'code' => '6.01.09.01',
+                                'name' => 'B. Team Building',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '6.01.09.02',
+                                'name' => 'B. Raker dan Perjalanan Dinas',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '6.01.09.03',
+                                'name' => 'B. Litbang Perusahaan',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '6.01.09.04',
+                                'name' => 'B. Beasiswa dan Magang',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '6.01.09.05',
+                                'name' => 'B. Pelatihan dan Seminar',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'code' => '6.02',
+                'name' => 'B. Penjualan (Pemasaran/Promosi)',
+                'type' => 'expense',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '6.02.01',
+                        'name' => 'B. Iklan dan Pemasaran',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '6.02.02',
+                        'name' => 'B. Entertaint',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+        ],
+    ],
+    [
+        'code' => '7',
+        'name' => 'PENDAPATAN DARI LUAR USAHA (PDLU)',
+        'type' => 'revenue',
+        'is_active' => true,
+        'children' => [
+            [
+                'code' => '7.01',
+                'name' => 'PDLU Objek Pajak',
+                'type' => 'revenue',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '7.01.01',
+                        'name' => 'Pend. Hasil Investasi',
+                        'type' => 'revenue',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '7.01.02',
+                        'name' => 'Keuntungan Penj. Aset',
+                        'type' => 'revenue',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '7.01.03',
+                        'name' => 'PDLU Lainnya',
+                        'type' => 'revenue',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '7.01.04',
+                        'name' => 'Pendapatan ditangguhkan',
+                        'type' => 'liability',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+            [
+                'code' => '7.02',
+                'name' => 'PDLU Objek Final',
+                'type' => 'revenue',
+                'is_active' => true,
+            ],
+            [
+                'code' => '7.03',
+                'name' => 'PDLU Non Objek Pajak',
+                'type' => 'revenue',
+                'is_active' => true,
+            ],
+            [
+                'code' => '7.04',
+                'name' => 'Pendapatan ditangguhkan',
+                'type' => 'liability',
+                'is_active' => true,
+            ],
+        ],
+    ],
+    [
+        'code' => '8',
+        'name' => 'BIAYA DARI LUAR USAHA (BDLU)',
+        'type' => 'expense',
+        'is_active' => true,
+        'children' => [
+            [
+                'code' => '8.01',
+                'name' => 'B. Transportasi - DLU',
+                'type' => 'expense',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '8.01.01',
+                        'name' => 'B. Parkir - DLU',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '8.01.02',
+                        'name' => 'B. BBM - DLU',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '8.01.03',
+                        'name' => 'B. Tol - DLU',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '8.01.04',
+                        'name' => 'B. Transport Lainnya - DLU',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+            [
+                'code' => '8.02',
+                'name' => 'B. Sehub. Dengan Jasa - DLU',
+                'type' => 'expense',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '8.02.01',
+                        'name' => 'B. Kerugian',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '8.02.02',
+                        'name' => 'B. Adm. Transfer Bank',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '8.02.03',
+                        'name' => 'B. Pajak',
+                        'type' => 'expense',
+                        'is_active' => true,
+                        'children' => [
+                            [
+                                'code' => '8.02.03.01',
+                                'name' => 'B. Pajak Potput (Non Gross Up)',
+                                'type' => 'expense',
+                                'is_active' => true,
+                                'children' => [
+                                    [
+                                        'code' => '8.02.03.01.01',
+                                        'name' => 'B. PPh Pasal 21/23/26',
+                                        'type' => 'expense',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '8.02.03.01.02',
+                                        'name' => 'B. PPh 4(2)/Final',
+                                        'type' => 'expense',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '8.02.03.01.03',
+                                        'name' => 'B. PPh Lainnya',
+                                        'type' => 'expense',
+                                        'is_active' => true,
+                                    ],
+                                ],
+                            ],
+                            [
+                                'code' => '8.02.03.02',
+                                'name' => 'B. Pajak Non PPh (PBB, PKB, lainnya)',
+                                'type' => 'expense',
+                                'is_active' => true,
+                                'children' => [
+                                    [
+                                        'code' => '8.02.03.02.01',
+                                        'name' => 'B. Pajak Bumi dan Bangunan (PBB)',
+                                        'type' => 'expense',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '8.02.03.02.02',
+                                        'name' => 'B. Pajak Kendaraan Bermotor (PKB)',
+                                        'type' => 'expense',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '8.02.03.02.03',
+                                        'name' => 'B. Meterai',
+                                        'type' => 'expense',
+                                        'is_active' => true,
+                                    ],
+                                    [
+                                        'code' => '8.02.03.02.04',
+                                        'name' => 'B. Pajak Non PPh Lainnya',
+                                        'type' => 'expense',
+                                        'is_active' => true,
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'code' => '8.02.04',
+                        'name' => 'B. Atas Pend. Final/Non Objek Pajak',
+                        'type' => 'expense',
+                        'is_active' => true,
+                        'children' => [
+                            [
+                                'code' => '8.02.04.01',
+                                'name' => 'B. Adm. Rekening dan Pajak Bank',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                            [
+                                'code' => '8.02.04.02',
+                                'name' => 'B. Final dan Non Objek Pajak Lainnya',
+                                'type' => 'expense',
+                                'is_active' => true,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'code' => '8.03',
+                'name' => 'B. Lainnya - DLU',
+                'type' => 'expense',
+                'is_active' => true,
+                'children' => [
+                    [
+                        'code' => '8.03.01',
+                        'name' => 'B. Corporate Social Responsibility (CSR)',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '8.03.02',
+                        'name' => 'B. Sumbangan Keagamaan',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '8.03.03',
+                        'name' => 'B. Hibah',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                    [
+                        'code' => '8.03.04',
+                        'name' => 'BDLU Lainnya',
+                        'type' => 'expense',
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+        ],
+    ],
+    [
+        'code' => '9',
+        'name' => 'Pajak Penghasilan',
+        'type' => 'expense',
+        'is_active' => true,
+        'children' => [
+            [
+                'code' => '9.01',
+                'name' => 'PPh Dipotong Pihak Lain',
+                'type' => 'expense',
+                'is_active' => true,
+            ],
+            [
+                'code' => '9.02',
+                'name' => 'PPh Disetor Sendiri',
+                'type' => 'expense',
+                'is_active' => true,
+            ],
+            [
+                'code' => '9.03',
+                'name' => 'PPh Kurang Bayar (Psl. 29)',
+                'type' => 'expense',
+                'is_active' => true,
+            ],
+        ],
+    ],
+],
+];

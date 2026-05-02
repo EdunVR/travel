@@ -1,0 +1,161 @@
+/**
+ * Resolution Settings CSS
+ * Responsive styles based on user preferences
+ */
+
+:root {
+    --app-scale: 1;
+    --sidebar-width: 320px;
+    --base-font-size: 14px;
+    --spacing-multiplier: 1;
+}
+
+/* Apply scale to main content areas */
+body.resolution-settings-applied {
+    font-size: var(--base-font-size);
+}
+
+/* Sidebar width adjustments */
+body[data-sidebar-width="compact"] aside {
+    width: 240px !important;
+}
+
+body[data-sidebar-width="normal"] aside {
+    width: 320px !important;
+}
+
+body[data-sidebar-width="wide"] aside {
+    width: 400px !important;
+}
+
+/* Adjust main content margin based on sidebar width */
+body[data-sidebar-width="compact"] .lg\:pl-80 {
+    padding-left: 240px !important;
+}
+
+body[data-sidebar-width="normal"] .lg\:pl-80 {
+    padding-left: 320px !important;
+}
+
+body[data-sidebar-width="wide"] .lg\:pl-80 {
+    padding-left: 400px !important;
+}
+
+/* Font size adjustments */
+body[data-font-size="small"] {
+    font-size: 13px;
+}
+
+body[data-font-size="small"] .text-sm {
+    font-size: 0.8125rem;
+}
+
+body[data-font-size="small"] .text-base {
+    font-size: 0.875rem;
+}
+
+body[data-font-size="small"] .text-lg {
+    font-size: 1rem;
+}
+
+body[data-font-size="large"] {
+    font-size: 16px;
+}
+
+body[data-font-size="large"] .text-sm {
+    font-size: 0.9375rem;
+}
+
+body[data-font-size="large"] .text-base {
+    font-size: 1.0625rem;
+}
+
+body[data-font-size="large"] .text-lg {
+    font-size: 1.25rem;
+}
+
+/* Spacing adjustments */
+body[data-spacing="compact"] .space-y-2 > * + * {
+    margin-top: calc(0.5rem * var(--spacing-multiplier));
+}
+
+body[data-spacing="compact"] .space-y-4 > * + * {
+    margin-top: calc(1rem * var(--spacing-multiplier));
+}
+
+body[data-spacing="compact"] .space-y-6 > * + * {
+    margin-top: calc(1.5rem * var(--spacing-multiplier));
+}
+
+body[data-spacing="compact"] .p-4 {
+    padding: calc(0.75rem * var(--spacing-multiplier));
+}
+
+body[data-spacing="compact"] .p-6 {
+    padding: calc(1.25rem * var(--spacing-multiplier));
+}
+
+body[data-spacing="comfortable"] .space-y-2 > * + * {
+    margin-top: calc(0.625rem * var(--spacing-multiplier));
+}
+
+body[data-spacing="comfortable"] .space-y-4 > * + * {
+    margin-top: calc(1.25rem * var(--spacing-multiplier));
+}
+
+body[data-spacing="comfortable"] .space-y-6 > * + * {
+    margin-top: calc(1.875rem * var(--spacing-multiplier));
+}
+
+body[data-spacing="comfortable"] .p-4 {
+    padding: calc(1.25rem * var(--spacing-multiplier));
+}
+
+body[data-spacing="comfortable"] .p-6 {
+    padding: calc(1.75rem * var(--spacing-multiplier));
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 1024px) {
+    body[data-sidebar-width="wide"] aside {
+        width: 320px !important;
+    }
+    
+    body[data-sidebar-width="wide"] .lg\:pl-80 {
+        padding-left: 320px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* On mobile, ignore sidebar width settings */
+    body[data-sidebar-width] aside {
+        width: 100% !important;
+    }
+    
+    body[data-sidebar-width] .lg\:pl-80 {
+        padding-left: 0 !important;
+    }
+}
+
+/* Smooth transitions */
+aside,
+.lg\:pl-80 {
+    transition: width 0.3s ease, padding-left 0.3s ease;
+}
+
+/* Print styles - reset to normal */
+@media print {
+    body {
+        zoom: 100% !important;
+        font-size: 14px !important;
+    }
+    
+    aside {
+        width: 0 !important;
+        display: none !important;
+    }
+    
+    .lg\:pl-80 {
+        padding-left: 0 !important;
+    }
+}

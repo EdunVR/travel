@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>POS Alpine.js Test</title>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+<body>
+    <div class="p-4">
+        <h1 class="text-2xl font-bold mb-4">POS Alpine.js Test</h1>
+        
+        <div id="test-results" class="space-y-2">
+            <div id="alpine-test" class="p-2 border rounded">
+                <span class="font-medium">Alpine.js:</span> 
+                <span class="text-yellow-600">Testing...</span>
+            </div>
+            <div id="posapp-test" class="p-2 border rounded">
+                <span class="font-medium">posApp function:</span> 
+                <span class="text-yellow-600">Testing...</span>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <button onclick="runTests()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                🧪 Run Tests
+            </button>
+            <button onclick="window.location.href='/admin/penjualan/pos'" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 ml-2">
+                🏪 Go to POS
+            </button>
+        </div>
+    </div>
+
+    <script>
+    function updateTestResult(id, status, message) {
+        const element = document.getElementById(id);
+        const span = element.querySelector("span:last-child");
+        span.className = status === "success" ? "text-green-600" : "text-red-600";
+        span.textContent = message;
+    }
+
+    function runTests() {
+        console.log("🧪 Running POS Alpine.js tests...");
+        
+        // Test 1: Alpine.js availability
+        if (typeof Alpine !== "undefined") {
+            updateTestResult("alpine-test", "success", "✅ Available");
+            console.log("✅ Alpine.js is available");
+            
+            // Test 2: posApp function (simulate)
+            try {
+                // This is a basic test - in real POS page, posApp would be registered
+                if (Alpine.data && typeof Alpine.data === "function") {
+                    updateTestResult("posapp-test", "success", "✅ Alpine.data available (posApp should work)");
+                    console.log("✅ Alpine.data is available");
+                } else {
+                    updateTestResult("posapp-test", "error", "❌ Alpine.data not available");
+                    console.error("❌ Alpine.data not available");
+                }
+            } catch (error) {
+                updateTestResult("posapp-test", "error", "❌ Error: " + error.message);
+                console.error("❌ posApp test error:", error);
+            }
+        } else {
+            updateTestResult("alpine-test", "error", "❌ Not available");
+            updateTestResult("posapp-test", "error", "❌ Cannot test (Alpine.js not available)");
+            console.error("❌ Alpine.js not available");
+        }
+    }
+
+    // Auto-run tests when Alpine is ready
+    document.addEventListener("alpine:init", () => {
+        console.log("🏔️ Alpine.js initialized");
+        setTimeout(runTests, 500);
+    });
+
+    // Fallback auto-run
+    document.addEventListener("DOMContentLoaded", () => {
+        setTimeout(() => {
+            if (typeof Alpine !== "undefined") {
+                runTests();
+            }
+        }, 2000);
+    });
+    </script>
+</body>
+</html>

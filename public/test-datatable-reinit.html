@@ -1,0 +1,71 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DataTable Test</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="datatable-helper.js"></script>
+</head>
+<body>
+    <h1>DataTable Reinitialization Test</h1>
+    
+    <button onclick="initTable()">Initialize Table</button>
+    <button onclick="destroyTable()">Destroy Table</button>
+    <button onclick="reinitTable()">Reinitialize Table</button>
+    
+    <table id="test-table" class="display">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Office</th>
+                <th>Age</th>
+                <th>Start date</th>
+                <th>Salary</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Tiger Nixon</td>
+                <td>System Architect</td>
+                <td>Edinburgh</td>
+                <td>61</td>
+                <td>2011/04/25</td>
+                <td>$320,800</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <script>
+        function initTable() {
+            console.log('Initializing table...');
+            window.DataTableManager.init('#test-table', {
+                serverSide: false,
+                data: [
+                    ['Tiger Nixon', 'System Architect', 'Edinburgh', '61', '2011/04/25', '$320,800'],
+                    ['Garrett Winters', 'Accountant', 'Tokyo', '63', '2011/07/25', '$170,750']
+                ]
+            });
+        }
+        
+        function destroyTable() {
+            console.log('Destroying table...');
+            window.DataTableManager.destroy('#test-table');
+        }
+        
+        function reinitTable() {
+            console.log('Reinitializing table...');
+            destroyTable();
+            setTimeout(initTable, 200);
+        }
+        
+        // Auto test
+        $(document).ready(function() {
+            console.log('Page ready, testing DataTable...');
+            initTable();
+        });
+    </script>
+</body>
+</html>

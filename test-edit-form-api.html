@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Edit Form API</title>
+</head>
+<body>
+    <h1>Test Edit Form API Calls</h1>
+    
+    <h2>Test 1: Flight Data</h2>
+    <button onclick="testFlightData()">Test Flight Data API</button>
+    <pre id="flight-result"></pre>
+    
+    <h2>Test 2: Hotel Data</h2>
+    <button onclick="testHotelData()">Test Hotel Data API</button>
+    <pre id="hotel-result"></pre>
+    
+    <h2>Test 3: Hotel Room Types</h2>
+    <input type="number" id="hotel-id" placeholder="Hotel ID" value="1">
+    <button onclick="testRoomTypes()">Test Room Types API</button>
+    <pre id="roomtype-result"></pre>
+    
+    <script>
+        const baseUrl = window.location.origin;
+        
+        async function testFlightData() {
+            const resultEl = document.getElementById('flight-result');
+            resultEl.textContent = 'Loading...';
+            
+            try {
+                const url = `${baseUrl}/admin/inventaris/flight-data`;
+                console.log('Fetching:', url);
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                resultEl.textContent = JSON.stringify(data, null, 2);
+                console.log('Flight data:', data);
+            } catch (error) {
+                resultEl.textContent = 'Error: ' + error.message;
+                console.error('Error:', error);
+            }
+        }
+        
+        async function testHotelData() {
+            const resultEl = document.getElementById('hotel-result');
+            resultEl.textContent = 'Loading...';
+            
+            try {
+                const url = `${baseUrl}/admin/inventaris/hotel-data`;
+                console.log('Fetching:', url);
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                resultEl.textContent = JSON.stringify(data, null, 2);
+                console.log('Hotel data:', data);
+            } catch (error) {
+                resultEl.textContent = 'Error: ' + error.message;
+                console.error('Error:', error);
+            }
+        }
+        
+        async function testRoomTypes() {
+            const resultEl = document.getElementById('roomtype-result');
+            const hotelId = document.getElementById('hotel-id').value;
+            resultEl.textContent = 'Loading...';
+            
+            try {
+                const url = `${baseUrl}/admin/inventaris/hotel/${hotelId}/room-types`;
+                console.log('Fetching:', url);
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                resultEl.textContent = JSON.stringify(data, null, 2);
+                console.log('Room types data:', data);
+            } catch (error) {
+                resultEl.textContent = 'Error: ' + error.message;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

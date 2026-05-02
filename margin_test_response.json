@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="refresh" content="0;url='https://localhost/tofu/login'" />
+
+        <title>Redirecting to https://localhost/tofu/login</title>
+    </head>
+    <body>
+        Redirecting to <a href="https://localhost/tofu/login">https://localhost/tofu/login</a>.
+    </body>
+</html>

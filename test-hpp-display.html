@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test HPP Display</title>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-box { border: 1px solid #ccc; padding: 15px; margin: 10px 0; }
+        .result { font-weight: bold; }
+        .detail { font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <h1>Test HPP Display Calculation</h1>
+    
+    <div x-data="{
+        selectedPackage: {
+            capacity: 4,
+            price: 100000
+        },
+        hppForm: {
+            flight_cost: 70000,
+            hotel_cost: 50000,
+            transportation_cost: 30000,
+            meal_cost: 40000,
+            visa_cost: 20000,
+            guide_cost: 15000,
+            insurance_cost: 10000,
+            operational_overhead: 12500,
+            contingency: 7500
+        },
+        
+        calculateTotalHpp() {
+            const capacity = this.selectedPackage?.capacity || 1;
+            return ((this.hppForm.flight_cost || 0) +
+                   (this.hppForm.hotel_cost || 0) +
+                   (this.hppForm.transportation_cost || 0) +
+                   (this.hppForm.meal_cost || 0) +
+                   (this.hppForm.visa_cost || 0) +
+                   (this.hppForm.guide_cost || 0) +
+                   (this.hppForm.insurance_cost || 0) +
+                   (this.hppForm.operational_overhead || 0) +
+                   (this.hppForm.contingency || 0)) * capacity;
+        },
+        
+        formatCurrency(amount) {
+            return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount || 0);
+        }
+    }">
+        <div class="test-box">
+            <h3>Data Input:</h3>
+            <p>Kapasitas: <span x-text="selectedPackage.capacity"></span> jamaah</p>
+            <p>Biaya Penerbangan (per orang): <span x-text="formatCurrency(hppForm.flight_cost)"></span></p>
+            <p>Biaya Hotel (per orang): <span x-text="formatCurrency(hppForm.hotel_cost)"></span></p>
+        </div>
+        
+        <div class="test-box">
+            <h3>Hasil Perhitungan:</h3>
+            
+            <div style="margin: 10px 0;">
+                <div>Biaya Penerbangan:</div>
+                <div class="result" x-text="formatCurrency((hppForm.flight_cost || 0) * (selectedPackage?.capacity || 0))"></div>
+                <div class="detail" x-text="formatCurrency(hppForm.flight_cost || 0) + ' × ' + (selectedPackage?.capacity || 0)"></div>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <div>Biaya Hotel:</div>
+                <div class="result" x-text="formatCurrency((hppForm.hotel_cost || 0) * (selectedPackage?.capacity || 0))"></div>
+                <div class="detail" x-text="formatCurrency(hppForm.hotel_cost || 0) + ' × ' + (selectedPackage?.capacity || 0)"></div>
+            </div>
+            
+            <hr>
+            
+            <div style="margin: 10px 0;">
+                <div>Total HPP:</div>
+                <div class="result" x-text="formatCurrency(calculateTotalHpp())"></div>
+            </div>
+        </div>
+        
+        <div class="test-box">
+            <h3>Expected Results:</h3>
+            <p>Biaya Penerbangan: Rp 280.000 (Rp 70.000 × 4)</p>
+            <p>Biaya Hotel: Rp 200.000 (Rp 50.000 × 4)</p>
+            <p>Total HPP: Rp 1.020.000</p>
+        </div>
+    </div>
+</body>
+</html>

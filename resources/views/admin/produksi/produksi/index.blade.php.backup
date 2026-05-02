@@ -1,0 +1,1174 @@
+<x-layouts.admin :title="'Produksi'">
+  <div x-data="productionCrud()" x-init="init()" class="space-y-4 overflow-x-hidden">
+    <!-- Header -->
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold">Data Produksi</h1>
+        <p class="text-slate-600 text-sm">Kelola rencana & realisasi produksi.</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button x-on:click="openCreate()" class="inline-flex items-center gap-2 rounded-xl bg-primary-600 text-white px-4 py-2 hover:bg-primary-700">
+          <i class='bx bx-plus-circle text-lg'></i> Buat Produksi Baru
+        </button>
+        
+        <button x-on:click="exportPdf()" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 hover:bg-slate-50">
+          <i class='bx bx-export text-lg'></i> Export PDF
+        </button>
+        <button x-on:click="exportExcel()" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 hover:bg-slate-50">
+          <i class='bx bx-export text-lg'></i> Export Excel
+        </button>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="grid grid-cols-1 gap-3">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <!-- Search -->
+        <div class="lg:col-span-4">
+          <div class="relative">
+            <i class='bx bx-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400'></i>
+            <input x-model="search" x-on:input.debounce.500ms="fetchData()" placeholder="Cari kode produksi, produk, lini…" 
+                   class="w-full pl-10 pr-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-200">
+          </div>
+        </div>
+        <!-- Filter Outlet -->
+        <div class="lg:col-span-3">
+          <select x-model="outletFilter" x-on:change="fetchData()" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
+            <option value="ALL">Outlet: Semua</option>
+            <template x-for="outlet in outlets" :key="outlet.id">
+              <option :value="outlet.id" x-text="'Outlet: ' + outlet.name"></option>
+            </template>
+          </select>
+        </div>
+        <!-- Filter Status -->
+        <div class="lg:col-span-2">
+          <select x-model="statusFilter" x-on:change="fetchData()" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
+            <option value="ALL">Status: Semua</option>
+            <option value="draft">Draft</option>
+            <option value="approved">Disetujui</option>
+            <option value="in_progress">Berjalan</option>
+            <option value="completed">Selesai</option>
+            <option value="cancelled">Dibatalkan</option>
+          </select>
+        </div>
+        <!-- Filter Lini -->
+        <div class="lg:col-span-3">
+          <select x-model="lineFilter" x-on:change="fetchData()" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
+            <option value="ALL">Lini: Semua</option>
+            <option value="Lini A">Lini A</option>
+            <option value="Lini B">Lini B</option>
+            <option value="Lini C">Lini C</option>
+            <option value="Lini D">Lini D</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-2">
+        <!-- Sort -->
+        <div class="grid grid-cols-2 gap-2 lg:col-span-4">
+          <select x-model="sortKey" x-on:change="fetchData()" class="rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
+            <option value="created_at">Tanggal Dibuat</option>
+            <option value="production_code">Kode Produksi</option>
+            <option value="start_date">Tanggal Mulai</option>
+            <option value="target_quantity">Target</option>
+          </select>
+          <select x-model="sortDir" x-on:change="fetchData()" class="rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
+            <option value="desc">Terbaru</option><option value="asc">Terlama</option>
+          </select>
+        </div>
+
+        <!-- Stats -->
+        <div class="lg:col-span-6 grid grid-cols-3 gap-2">
+          <div class="bg-primary-50 rounded-xl p-3 border border-primary-100 text-center">
+            <div x-text="stats.active" class="text-lg font-bold text-primary-700">0</div>
+            <div class="text-xs text-primary-600">Produksi Aktif</div>
+          </div>
+          <div class="bg-green-50 rounded-xl p-3 border border-green-100 text-center">
+            <div x-text="stats.completed" class="text-lg font-bold text-green-700">0</div>
+            <div class="text-xs text-green-600">Selesai</div>
+          </div>
+          <div class="bg-yellow-50 rounded-xl p-3 border border-yellow-100 text-center">
+            <div x-text="stats.progress + '%'" class="text-lg font-bold text-yellow-700">0%</div>
+            <div class="text-xs text-yellow-600">Rata-rata Progress</div>
+          </div>
+        </div>
+
+        <!-- Toggle View -->
+        <div class="lg:col-span-2">
+          <div class="flex rounded-xl border border-slate-200 overflow-hidden">
+            <button x-on:click="view='grid'"  :class="view==='grid'  ? 'bg-primary-600 text-white' : 'bg-white text-slate-700'" class="flex-1 px-3 py-2 text-sm">Grid</button>
+            <button x-on:click="view='table'" :class="view==='table' ? 'bg-primary-600 text-white' : 'bg-white text-slate-700'" class="flex-1 px-3 py-2 text-sm">Tabel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div x-show="loading" class="text-center py-8">
+      <div class="inline-flex items-center gap-2 text-slate-600">
+        <i class='bx bx-loader-alt bx-spin text-xl'></i>
+        <span>Memuat data...</span>
+      </div>
+    </div>
+
+    <!-- GRID -->
+    <div x-show="view==='grid' && !loading">
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <template x-for="p in productions" :key="p.id">
+          <div class="rounded-2xl border border-slate-200 bg-white shadow-card hover:shadow-[0_14px_40px_rgba(15,23,42,.10)] transition p-4">
+            <div class="flex items-start gap-3">
+              <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-primary-50 text-primary-700 border border-primary-100 shrink-0">
+                <i class='bx bx-factory text-2xl'></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="font-semibold truncate" x-text="p.production_code"></div>
+                  <span class="text-[11px] px-2 py-0.5 rounded-full"
+                        :class="getStatusClass(p.status)"
+                        x-text="getStatusText(p.status)"></span>
+                </div>
+                <div class="text-[12px] text-slate-500 mt-0.5">
+                  <span x-text="p.product_name"></span> • <span x-text="p.production_line"></span>
+                </div>
+                <div class="mt-2">
+                  <!-- Progress Bar -->
+                  <div class="flex items-center justify-between text-xs mb-1">
+                    <span class="text-slate-600">Progress</span>
+                    <span class="font-medium" x-text="p.progress + '%'"></span>
+                  </div>
+                  <div class="w-full bg-slate-200 rounded-full h-2">
+                    <div class="bg-primary-600 h-2 rounded-full transition-all" :style="'width: ' + Math.min(p.progress, 100) + '%'"></div>
+                  </div>
+                </div>
+                <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span class="text-slate-500">Target:</span>
+                    <div class="font-medium" x-text="formatNumber(p.target_quantity)"></div>
+                  </div>
+                  <div>
+                    <span class="text-slate-500">Realisasi:</span>
+                    <div class="font-medium" x-text="formatNumber(p.realized_quantity)"></div>
+                  </div>
+                  <div>
+                    <span class="text-slate-500">HPP/Unit:</span>
+                    <div class="font-medium text-xs" x-text="p.hpp_per_unit_formatted"></div>
+                  </div>
+                  <div>
+                    <span class="text-slate-500">Total Biaya:</span>
+                    <div class="font-medium text-xs" x-text="p.total_cost_formatted"></div>
+                  </div>
+                </div>
+                
+                <!-- Date Information -->
+                <div class="mt-2 pt-2 border-t border-slate-100">
+                  
+                  <div class="text-center text-xs text-slate-400">
+                    <span x-text="formatDate(p.start_date) && formatDate(p.end_date) ? formatDate(p.start_date) + ' s/d ' + formatDate(p.end_date) : 'Tanggal belum ditentukan'"></span>
+                    <template x-if="formatDate(p.expiry_date)">
+                      <span class="block text-red-500 mt-1">
+                        Kadaluarsa: <span x-text="formatDate(p.expiry_date)"></span>
+                      </span>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Action Buttons - Icon Only -->
+            <div class="mt-3 flex gap-1 justify-center">
+              <!-- View button - always available -->
+              <button x-on:click="viewProduction(p)" class="w-8 h-8 rounded-lg bg-primary-600 text-white hover:bg-primary-700 flex items-center justify-center" title="Lihat Detail">
+                <i class='bx bx-show text-sm'></i>
+              </button>
+              
+              <!-- Edit button for draft status -->
+              <template x-if="p.status === 'draft'">
+                <button x-on:click="editProduction(p)" class="w-8 h-8 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50 flex items-center justify-center" title="Edit">
+                  <i class='bx bx-edit-alt text-sm'></i>
+                </button>
+              </template>
+              
+              <!-- Approve button for draft status -->
+              <template x-if="p.status === 'draft'">
+                <button x-on:click="approveProduction(p)" class="w-8 h-8 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 flex items-center justify-center" title="Approve">
+                  <i class='bx bx-check text-sm'></i>
+                </button>
+              </template>
+              
+              <!-- Start button for approved status -->
+              <template x-if="p.status === 'approved'">
+                <button x-on:click="startProduction(p)" class="w-8 h-8 rounded-lg border border-yellow-200 text-yellow-700 hover:bg-yellow-50 flex items-center justify-center" title="Mulai Produksi">
+                  <i class='bx bx-play text-sm'></i>
+                </button>
+              </template>
+              
+              <!-- Realization button for in_progress status -->
+              <template x-if="p.status === 'in_progress'">
+                <button x-on:click="showRealizationModal(p)" class="w-8 h-8 rounded-lg border border-yellow-200 text-yellow-700 hover:bg-yellow-50 flex items-center justify-center" title="Tambah Realisasi">
+                  <i class='bx bx-plus text-sm'></i>
+                </button>
+              </template>
+              
+              <!-- Complete button for in_progress with 100% progress -->
+              <template x-if="p.status === 'in_progress' && p.progress >= 100">
+                <button x-on:click="completeProduction(p)" class="w-8 h-8 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 flex items-center justify-center" title="Selesaikan">
+                  <i class='bx bx-check-circle text-sm'></i>
+                </button>
+              </template>
+              
+              <!-- Delete button for draft status -->
+              <template x-if="p.status === 'draft'">
+                <button x-on:click="deleteProduction(p)" class="w-8 h-8 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 flex items-center justify-center" title="Hapus">
+                  <i class='bx bx-trash text-sm'></i>
+                </button>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+      <div x-show="productions.length===0" class="text-center text-slate-500 py-8">Belum ada data produksi.</div>
+    </div>
+
+    <!-- TABLE -->
+    <div x-show="view==='table' && !loading">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-card overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm min-w-[1200px]">
+          <thead class="bg-slate-50 text-slate-700">
+            <tr>
+              <th class="text-left px-4 py-3 w-12">No</th>
+              <th class="text-left px-4 py-3">Kode Produksi</th>
+              <th class="text-left px-4 py-3">Produk</th>
+              <th class="text-left px-4 py-3">Lini</th>
+              <th class="text-right px-4 py-3">Target</th>
+              <th class="text-right px-4 py-3">Realisasi</th>
+              <th class="text-center px-4 py-3">Progress</th>
+              <th class="text-center px-4 py-3">Status</th>
+              <th class="text-right px-4 py-3">HPP/Unit</th>
+              <th class="text-right px-4 py-3">Total Cost</th>
+              <th class="text-center px-4 py-3">Tanggal Produksi</th>
+              <th class="text-center px-4 py-3">Tanggal Kadaluarsa</th>
+              <th class="text-center px-4 py-3">Prioritas</th>
+              <th class="text-center px-4 py-3">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="(p,i) in productions" :key="p.id">
+              <tr class="border-t border-slate-100">
+                <td class="px-4 py-3" x-text="i+1"></td>
+                <td class="px-4 py-3">
+                  <span class="px-2 py-0.5 rounded bg-primary-600 text-white text-xs" x-text="p.production_code"></span>
+                </td>
+                <td class="px-4 py-3" x-text="p.product_name"></td>
+                <td class="px-4 py-3" x-text="p.production_line"></td>
+                <td class="px-4 py-3 text-right" x-text="formatNumber(p.target_quantity)"></td>
+                <td class="px-4 py-3 text-right" x-text="formatNumber(p.realized_quantity)"></td>
+                <td class="px-4 py-3 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <div class="w-16 bg-slate-200 rounded-full h-2">
+                      <div class="bg-primary-600 h-2 rounded-full" :style="'width: ' + Math.min(p.progress, 100) + '%'"></div>
+                    </div>
+                    <span class="text-xs font-medium" x-text="p.progress + '%'"></span>
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="getStatusClass(p.status)" x-text="getStatusText(p.status)"></span>
+                </td>
+                <td class="px-4 py-3 text-right" x-text="p.hpp_per_unit_formatted"></td>
+                <td class="px-4 py-3 text-right" x-text="p.total_cost_formatted"></td>
+                <td class="px-4 py-3 text-center">
+                  <div class="text-sm" x-text="formatDate(p.start_date) || '-'"></div>
+                  <div class="text-xs text-slate-500" x-text="formatDate(p.end_date) ? 's/d ' + formatDate(p.end_date) : ''"></div>
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <div class="text-sm" x-text="formatDate(p.expiry_date) || '-'"></div>
+                  <template x-if="formatDate(p.expiry_date)">
+                    <div class="text-xs text-red-500">Kadaluarsa</div>
+                  </template>
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="getPriorityClass(p.priority)" x-text="getPriorityText(p.priority)"></span>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex gap-1 justify-center">
+                    <!-- View button - always available -->
+                    <button x-on:click="viewProduction(p)" class="w-7 h-7 rounded-lg bg-primary-600 text-white hover:bg-primary-700 flex items-center justify-center" title="Lihat Detail">
+                      <i class='bx bx-show text-sm'></i>
+                    </button>
+                    
+                    <!-- Edit button for draft -->
+                    <template x-if="p.status === 'draft'">
+                      <button x-on:click="editProduction(p)" class="w-7 h-7 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50 flex items-center justify-center" title="Edit">
+                        <i class='bx bx-edit-alt text-sm'></i>
+                      </button>
+                    </template>
+                    
+                    <!-- Approve button for draft -->
+                    <template x-if="p.status === 'draft'">
+                      <button x-on:click="approveProduction(p)" class="w-7 h-7 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 flex items-center justify-center" title="Approve">
+                        <i class='bx bx-check text-sm'></i>
+                      </button>
+                    </template>
+                    
+                    <!-- Start button for approved -->
+                    <template x-if="p.status === 'approved'">
+                      <button x-on:click="startProduction(p)" class="w-7 h-7 rounded-lg border border-yellow-200 text-yellow-700 hover:bg-yellow-50 flex items-center justify-center" title="Mulai Produksi">
+                        <i class='bx bx-play text-sm'></i>
+                      </button>
+                    </template>
+                    
+                    <!-- Realization button for in_progress -->
+                    <template x-if="p.status === 'in_progress'">
+                      <button x-on:click="showRealizationModal(p)" class="w-7 h-7 rounded-lg border border-yellow-200 text-yellow-700 hover:bg-yellow-50 flex items-center justify-center" title="Tambah Realisasi">
+                        <i class='bx bx-plus text-sm'></i>
+                      </button>
+                    </template>
+                    
+                    <!-- Complete button for in_progress with 100% progress -->
+                    <template x-if="p.status === 'in_progress' && p.progress >= 100">
+                      <button x-on:click="completeProduction(p)" class="w-7 h-7 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 flex items-center justify-center" title="Selesaikan">
+                        <i class='bx bx-check-circle text-sm'></i>
+                      </button>
+                    </template>
+                    
+                    <!-- Delete button for draft -->
+                    <template x-if="p.status === 'draft'">
+                      <button x-on:click="deleteProduction(p)" class="w-7 h-7 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 flex items-center justify-center" title="Hapus">
+                        <i class='bx bx-trash text-sm'></i>
+                      </button>
+                    </template>
+                  </div>
+                </td>
+              </tr>
+            </template>
+            <tr x-show="productions.length===0"><td colspan="14" class="px-4 py-8 text-center text-slate-500">Belum ada data produksi.</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div x-show="showToast" x-transition.opacity class="fixed top-4 right-4 z-50">
+      <div :class="toastType === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'" 
+           class="px-4 py-3 rounded-xl border shadow-lg max-w-sm">
+        <div class="flex items-center gap-2">
+          <i :class="toastType === 'success' ? 'bx bx-check-circle text-green-600' : 'bx bx-error-circle text-red-600'"></i>
+          <span x-text="toastMessage"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Production Modal -->
+  <div id="createModal" class="fixed inset-0 z-50 items-start justify-center bg-black/40 p-2 hidden overflow-y-auto" style="display: none;">
+    <div class="w-full max-w-4xl bg-white rounded-2xl shadow-float my-2 flex flex-col">
+      <!-- Modal Header - Fixed -->
+      <div class="px-4 sm:px-6 py-4 border-b border-slate-200 flex items-center justify-between shrink-0 bg-white rounded-t-2xl">
+        <div class="font-semibold text-lg">Buat Produksi Baru</div>
+        <button onclick="closeCreateModal()" class="p-2 -m-2 hover:bg-slate-100 rounded-lg transition-colors">
+          <i class='bx bx-x text-xl'></i>
+        </button>
+      </div>
+      
+      <!-- Modal Content - Scrollable -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-5">
+        <form id="productionForm" class="space-y-4">
+          @csrf
+          
+          <!-- Outlet Selection -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Outlet</label>
+              <select id="outletSelect" name="outlet_id" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200" required>
+                <option value="">Pilih Outlet</option>
+                @foreach($outlets as $outlet)
+                  <option value="{{ $outlet->id_outlet }}" {{ $selectedOutlet == $outlet->id_outlet ? 'selected' : '' }}>
+                    {{ $outlet->nama_outlet }}
+                  </option>
+                @endforeach
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Kode Produksi</label>
+              <input type="text" name="production_code" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200" placeholder="Otomatis" readonly>
+            </div>
+          </div>
+
+          <!-- Product Selection -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Produk</label>
+              <div class="relative">
+                <input type="text" id="productSearch" placeholder="Cari produk..." class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
+                <input type="hidden" id="productId" name="product_id" required>
+                <div id="productResults" class="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl mt-1 max-h-48 overflow-y-auto z-10 hidden"></div>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Lini Produksi</label>
+              <select name="production_line" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200" required>
+                <option value="">Pilih Lini</option>
+                <option value="Lini A">Lini A</option>
+                <option value="Lini B">Lini B</option>
+                <option value="Lini C">Lini C</option>
+                <option value="Lini D">Lini D</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Production Details -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Target Quantity</label>
+              <input type="number" name="target_quantity" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200" min="1" required>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Tanggal Mulai</label>
+              <input type="date" name="start_date" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200" required>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Tanggal Selesai</label>
+              <input type="date" name="end_date" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200" required>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Tanggal Kadaluarsa</label>
+              <input type="date" name="expiry_date" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
+            </div>
+          </div>
+
+          <!-- Priority -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Prioritas</label>
+            <select name="priority" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
+              <option value="normal">Normal</option>
+              <option value="high">Tinggi</option>
+              <option value="urgent">Mendesak</option>
+            </select>
+          </div>
+
+          <!-- Material Requirements -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <label class="block text-sm font-medium text-slate-700">Kebutuhan Bahan</label>
+              <button type="button" onclick="addMaterial()" class="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700">
+                <i class='bx bx-plus'></i> Tambah Bahan
+              </button>
+            </div>
+            <div id="materialRequirements" class="space-y-2">
+              <!-- Material rows will be added here -->
+            </div>
+          </div>
+
+          <!-- Labor Costs -->
+          <div class="bg-slate-50 rounded-xl p-4">
+            <h3 class="font-medium text-slate-700 mb-3">Biaya Tenaga Kerja</h3>
+            
+            <div class="mb-3">
+              <label class="flex items-center gap-2">
+                <input type="checkbox" id="fromAttendance" onchange="toggleAttendanceDate()" class="rounded border-slate-300">
+                <span class="text-sm">Ambil dari data absensi</span>
+              </label>
+            </div>
+
+            <div id="attendanceDateSection" class="hidden mb-3">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Tanggal Absensi</label>
+                  <input type="date" id="attendanceDate" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
+                </div>
+                <div class="flex items-end">
+                  <button type="button" onclick="getAttendanceCount()" class="px-4 py-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700">
+                    Ambil Data
+                  </button>
+                </div>
+              </div>
+              <div id="attendanceResult" class="mt-2 text-sm text-slate-600"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Jumlah Pekerja</label>
+                <input type="number" name="labor_costs[worker_count]" onchange="calculateLaborCost()" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200" min="0">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Biaya per Pekerja</label>
+                <input type="number" name="labor_costs[cost_per_worker]" onchange="calculateLaborCost(); updateLaborCostDisplay(this)" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200" min="0">
+                <div class="text-xs text-slate-500 mt-1" id="costPerWorkerDisplay">Format: Rp 0</div>
+              </div>
+            </div>
+            
+            <div class="mt-3">
+              <label class="block text-sm font-medium text-slate-700 mb-1">Total Biaya Tenaga Kerja</label>
+              <input type="text" id="totalLaborCost" class="w-full rounded-xl border border-slate-200 px-3 py-2 bg-slate-100" readonly>
+              <input type="hidden" name="labor_costs[total_cost]" id="laborCostHidden">
+            </div>
+          </div>
+
+          <!-- Operational Costs -->
+          <div class="bg-slate-50 rounded-xl p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-medium text-slate-700">Biaya Operasional</h3>
+              <button type="button" onclick="addOperationalCost()" class="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700">
+                <i class='bx bx-plus'></i> Tambah Biaya
+              </button>
+            </div>
+            <div id="operationalCosts" class="space-y-2">
+              <!-- Operational cost rows will be added here -->
+            </div>
+          </div>
+
+          <!-- HPP Preview -->
+          <div class="bg-primary-50 rounded-xl p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-medium text-primary-700">Preview HPP (Realtime)</h3>
+              <div class="text-xs text-slate-500">Otomatis terhitung saat input berubah</div>
+            </div>
+            <div id="hppPreview" class="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm mb-4">
+              <div class="bg-white rounded-lg p-3 text-center">
+                <div class="text-xs text-slate-500 mb-1">Biaya Material</div>
+                <div id="previewMaterialCost" class="font-semibold text-slate-700">Rp 0</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 text-center">
+                <div class="text-xs text-slate-500 mb-1">Biaya Tenaga Kerja</div>
+                <div id="previewLaborCost" class="font-semibold text-slate-700">Rp 0</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 text-center">
+                <div class="text-xs text-slate-500 mb-1">Biaya Operasional</div>
+                <div id="previewOperationalCost" class="font-semibold text-slate-700">Rp 0</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 text-center">
+                <div class="text-xs text-slate-500 mb-1">Total Biaya</div>
+                <div id="previewTotalCost" class="font-semibold text-primary-700">Rp 0</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 text-center">
+                <div class="text-xs text-slate-500 mb-1">HPP per Unit</div>
+                <div id="previewHppPerUnit" class="font-semibold text-primary-700">Rp 0</div>
+              </div>
+            </div>
+            
+            <!-- Material Details Breakdown -->
+            <div id="materialBreakdown" class="hidden">
+              <div class="bg-white rounded-lg p-3 border border-slate-200">
+                <h4 class="text-sm font-medium text-slate-700 mb-2">Detail Biaya Material (FIFO)</h4>
+                <div id="materialBreakdownContent" class="space-y-2 text-xs">
+                  <!-- Material breakdown will be populated here -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          </div>
+        </form>
+        
+        <!-- Submit Buttons - At bottom of content -->
+        <div class="flex gap-3 pt-6 pb-4">
+          <button type="button" onclick="closeCreateModal()" class="flex-1 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors">
+            Batal
+          </button>
+          <button type="submit" form="productionForm" class="flex-1 px-4 py-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors">
+            Simpan Produksi
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Realization Modal -->
+  <div id="realizationModal" class="fixed inset-0 z-50 items-center justify-center bg-black/40 p-4 hidden" style="display: none;">
+    <div class="w-full max-w-2xl bg-white rounded-2xl shadow-float">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div class="font-semibold text-lg">Tambah Realisasi Produksi</div>
+        <button onclick="closeRealizationModal()" class="p-2 -m-2 hover:bg-slate-100 rounded-lg transition-colors">
+          <i class='bx bx-x text-xl'></i>
+        </button>
+      </div>
+      
+      <!-- Modal Content -->
+      <div class="p-6">
+        <form id="realizationForm" class="space-y-4">
+          @csrf
+          
+          <!-- Production Info -->
+          <div class="bg-slate-50 rounded-xl p-4">
+            <h3 class="font-medium text-slate-700 mb-3">Informasi Produksi</h3>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span class="text-slate-500">Kode Produksi:</span>
+                <div id="realizationProductionCode" class="font-medium">-</div>
+              </div>
+              <div>
+                <span class="text-slate-500">Produk:</span>
+                <div id="realizationProductName" class="font-medium">-</div>
+              </div>
+              <div>
+                <span class="text-slate-500">Target:</span>
+                <div id="realizationTarget" class="font-medium">-</div>
+              </div>
+              <div>
+                <span class="text-slate-500">Sudah Diproduksi:</span>
+                <div id="realizationCurrent" class="font-medium">-</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Realization Input -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Jumlah Diproduksi</label>
+              <input type="number" name="quantity_produced" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200" min="1" required>
+              <div class="text-xs text-slate-500 mt-1">Jumlah produk yang berhasil diproduksi</div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Jumlah Reject (Opsional)</label>
+              <input type="number" name="quantity_rejected" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200" min="0">
+              <div class="text-xs text-slate-500 mt-1">Jumlah produk yang gagal/reject</div>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Catatan (Opsional)</label>
+            <textarea name="notes" rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200" placeholder="Catatan realisasi produksi..."></textarea>
+          </div>
+
+          <!-- Warning -->
+          <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <div class="flex items-start gap-3">
+              <i class='bx bx-info-circle text-yellow-600 text-lg mt-0.5'></i>
+              <div class="text-sm text-yellow-800">
+                <div class="font-medium mb-1">Perhatian:</div>
+                <ul class="space-y-1 text-xs">
+                  <li>• Stok bahan akan berkurang sesuai dengan jumlah yang diproduksi</li>
+                  <li>• Stok produk akan bertambah sesuai jumlah yang berhasil diproduksi</li>
+                  <li>• HPP akan dihitung berdasarkan FIFO method</li>
+                  <li>• Pastikan stok bahan mencukupi sebelum menambah realisasi</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </form>
+        
+        <!-- Submit Buttons -->
+        <div class="flex gap-3 pt-6">
+          <button type="button" onclick="closeRealizationModal()" class="flex-1 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors">
+            Batal
+          </button>
+          <button type="submit" form="realizationForm" class="flex-1 px-4 py-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors">
+            Tambah Realisasi
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function productionCrud(){
+      return {
+        // State management
+        productions: [],
+        outlets: [],
+        loading: false,
+        
+        // Filters and search
+        search: '',
+        outletFilter: '{{ $selectedOutlet ?? "" }}',
+        statusFilter: 'ALL',
+        lineFilter: 'ALL',
+        sortKey: 'created_at',
+        sortDir: 'desc',
+        view: 'grid',
+        
+        // Stats
+        stats: {
+          active: 0,
+          completed: 0,
+          progress: 0
+        },
+        
+        // Toast notification
+        showToast: false,
+        toastMessage: '',
+        toastType: 'success',
+
+        async init(){
+          console.log('🚀 [INIT] Alpine.js component initializing...');
+          console.log('🚀 [INIT] Initial state:', {
+            outletFilter: this.outletFilter,
+            statusFilter: this.statusFilter,
+            lineFilter: this.lineFilter,
+            view: this.view,
+            loading: this.loading
+          });
+          
+          try {
+            console.log('🚀 [INIT] Starting parallel data fetch...');
+            await Promise.all([
+              this.fetchData(),
+              this.fetchOutlets(),
+              this.fetchStats()
+            ]);
+            console.log('✅ [INIT] All data fetched successfully');
+          } catch (error) {
+            console.error('💥 [INIT] Error during initialization:', error);
+          }
+        },
+
+        async fetchData(){
+          console.log('🔄 [FETCH DATA] Starting fetchData...');
+          console.log('🔄 [FETCH DATA] Current state:', {
+            outletFilter: this.outletFilter,
+            search: this.search,
+            statusFilter: this.statusFilter,
+            lineFilter: this.lineFilter,
+            sortKey: this.sortKey,
+            sortDir: this.sortDir,
+            loading: this.loading
+          });
+          
+          this.loading = true;
+          try {
+            const params = new URLSearchParams({
+              outlet_id: this.outletFilter,
+              search: this.search,
+              status: this.statusFilter,
+              production_line: this.lineFilter,
+              sort_key: this.sortKey,
+              sort_dir: this.sortDir,
+              for_grid: 'true'
+            });
+
+            const url = `{{ route('admin.produksi.produksi.data') }}?${params}`;
+            console.log('🌐 [FETCH DATA] Request URL:', url);
+            console.log('🌐 [FETCH DATA] Request params:', Object.fromEntries(params));
+
+            const response = await fetch(url);
+            console.log('📡 [FETCH DATA] Response status:', response.status);
+            console.log('📡 [FETCH DATA] Response headers:', Object.fromEntries(response.headers));
+            
+            if (!response.ok) {
+              console.error('❌ [FETCH DATA] HTTP Error:', response.status, response.statusText);
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log('📦 [FETCH DATA] Response data:', data);
+            console.log('📦 [FETCH DATA] Data structure:', {
+              success: data.success,
+              dataType: typeof data.data,
+              dataLength: Array.isArray(data.data) ? data.data.length : 'not array',
+              message: data.message || 'no message',
+              error: data.error || 'no error'
+            });
+            
+            if (data.success) {
+              console.log('✅ [FETCH DATA] Success! Data items:', data.data.length);
+              if (data.data.length > 0) {
+                console.log('📋 [FETCH DATA] First item sample:', data.data[0]);
+              } else {
+                console.log('⚠️ [FETCH DATA] No data items returned');
+              }
+              this.productions = data.data;
+              console.log('✅ [FETCH DATA] Productions updated, current count:', this.productions.length);
+            } else {
+              console.error('❌ [FETCH DATA] Server returned error:', data.message || 'Unknown error');
+              this.showToastMessage(data.message || 'Gagal memuat data', 'error');
+            }
+          } catch (error) {
+            console.error('💥 [FETCH DATA] Exception caught:', error);
+            console.error('💥 [FETCH DATA] Error details:', {
+              name: error.name,
+              message: error.message,
+              stack: error.stack
+            });
+            this.showToastMessage('Gagal memuat data: ' + error.message, 'error');
+          } finally {
+            this.loading = false;
+            console.log('🏁 [FETCH DATA] Finished, loading set to false');
+            console.log('🏁 [FETCH DATA] Final productions count:', this.productions.length);
+          }
+        },
+
+        async fetchOutlets(){
+          console.log('🏢 [FETCH OUTLETS] Starting fetchOutlets...');
+          try {
+            const outletsData = @json($outlets->map(function($outlet) {
+              return ['id' => $outlet->id_outlet, 'name' => $outlet->nama_outlet];
+            }));
+            console.log('🏢 [FETCH OUTLETS] Outlets data from server:', outletsData);
+            this.outlets = outletsData;
+            console.log('✅ [FETCH OUTLETS] Outlets loaded:', this.outlets.length, 'items');
+          } catch (error) {
+            console.error('💥 [FETCH OUTLETS] Error fetching outlets:', error);
+          }
+        },
+
+        async fetchStats(){
+          console.log('📊 [FETCH STATS] Starting fetchStats...');
+          console.log('📊 [FETCH STATS] Using outlet:', this.outletFilter);
+          
+          try {
+            const url = `{{ route('admin.produksi.produksi.statistics') }}?outlet_id=${this.outletFilter}`;
+            console.log('🌐 [FETCH STATS] Request URL:', url);
+            
+            const response = await fetch(url);
+            console.log('📡 [FETCH STATS] Response status:', response.status);
+            
+            if (!response.ok) {
+              console.error('❌ [FETCH STATS] HTTP Error:', response.status, response.statusText);
+              return;
+            }
+            
+            const data = await response.json();
+            console.log('📦 [FETCH STATS] Response data:', data);
+            
+            if (data.success) {
+              this.stats = {
+                active: data.data.active || 0,
+                completed: data.data.completed || 0,
+                progress: data.data.average_progress || 0
+              };
+              console.log('✅ [FETCH STATS] Stats updated:', this.stats);
+            } else {
+              console.error('❌ [FETCH STATS] Server returned error:', data.message);
+            }
+          } catch (error) {
+            console.error('💥 [FETCH STATS] Exception caught:', error);
+          }
+        },
+
+        // Helper methods
+        formatNumber(num) {
+          return new Intl.NumberFormat('id-ID').format(num || 0);
+        },
+
+        formatDate(dateString) {
+          console.log('formatDate called with:', dateString, typeof dateString);
+          
+          if (!dateString || dateString === 'null' || dateString === 'undefined' || dateString === null) {
+            console.log('formatDate returning - for null/empty date');
+            return '-';
+          }
+          
+          try {
+            const date = new Date(dateString);
+            
+            // Check if date is valid
+            if (isNaN(date.getTime())) {
+              console.warn('Invalid date:', dateString);
+              return '-';
+            }
+            
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const formatted = `${day}/${month}/${year}`;
+            console.log('formatDate returning:', formatted);
+            return formatted;
+          } catch (error) {
+            console.error('Error formatting date:', dateString, error);
+            return '-';
+          }
+        },
+
+        getStatusClass(status) {
+          const classes = {
+            'draft': 'bg-slate-100 text-slate-700',
+            'approved': 'bg-blue-100 text-blue-700',
+            'in_progress': 'bg-yellow-100 text-yellow-700',
+            'completed': 'bg-green-100 text-green-700',
+            'cancelled': 'bg-red-100 text-red-700'
+          };
+          return classes[status] || 'bg-slate-100 text-slate-700';
+        },
+
+        getStatusText(status) {
+          const texts = {
+            'draft': 'Draft',
+            'approved': 'Disetujui',
+            'in_progress': 'Berjalan',
+            'completed': 'Selesai',
+            'cancelled': 'Dibatalkan'
+          };
+          return texts[status] || status;
+        },
+
+        getPriorityClass(priority) {
+          const classes = {
+            'normal': 'bg-slate-100 text-slate-600',
+            'high': 'bg-orange-100 text-orange-600',
+            'urgent': 'bg-red-100 text-red-600'
+          };
+          return classes[priority] || 'bg-slate-100 text-slate-600';
+        },
+
+        getPriorityText(priority) {
+          const texts = {
+            'normal': 'Normal',
+            'high': 'Tinggi',
+            'urgent': 'Mendesak'
+          };
+          return texts[priority] || 'Normal';
+        },
+
+        // Actions
+        openCreate() {
+          // Use the existing modal system
+          if (typeof openCreateModal === 'function') {
+            openCreateModal();
+          } else {
+            // Fallback: trigger the modal directly
+            const modal = document.getElementById('createModal');
+            if (modal) {
+              modal.classList.remove('hidden');
+              modal.style.display = 'flex';
+              document.body.style.overflow = 'hidden';
+              
+              // Initialize product search after modal is shown
+              setTimeout(() => {
+                if (typeof initializeProductSearch === 'function') {
+                  initializeProductSearch();
+                }
+              }, 100);
+            }
+          }
+        },
+
+        viewProduction(production) {
+          // Open PDF view
+          const url = `{{ route('admin.produksi.produksi.pdf', ':id') }}`.replace(':id', production.id);
+          
+          // Create iframe for PDF streaming
+          const iframe = document.createElement('iframe');
+          iframe.src = url;
+          iframe.style.width = '100%';
+          iframe.style.height = '80vh';
+          iframe.style.border = 'none';
+          
+          // Create PDF modal
+          const pdfModal = document.createElement('div');
+          pdfModal.id = 'pdfModal';
+          pdfModal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2';
+          pdfModal.innerHTML = `
+            <div class="w-full max-w-6xl bg-white rounded-2xl shadow-float max-h-[95vh] flex flex-col overflow-hidden">
+              <div class="px-4 sm:px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                <div class="font-semibold">Detail Produksi - ${production.production_code}</div>
+                <button onclick="this.closest('#pdfModal').remove(); document.body.style.overflow = 'auto';" class="p-2 -m-2 hover:bg-slate-100 rounded-lg">
+                  <i class='bx bx-x text-xl'></i>
+                </button>
+              </div>
+              <div class="flex-1 overflow-hidden" style="height: 80vh;">
+                ${iframe.outerHTML}
+              </div>
+            </div>
+          `;
+          
+          document.body.appendChild(pdfModal);
+          document.body.style.overflow = 'hidden';
+        },
+
+        editProduction(production) {
+          // Use existing edit function
+          if (typeof editProduction === 'function') {
+            editProduction(production.id);
+          } else {
+            console.log('Edit production:', production.id);
+            this.showToastMessage('Fitur edit sedang dalam pengembangan', 'info');
+          }
+        },
+
+        async approveProduction(production) {
+          if (confirm(`Apakah Anda yakin ingin menyetujui produksi ${production.production_code}?`)) {
+            try {
+              const url = `{{ route('admin.produksi.produksi.approve', ':id') }}`.replace(':id', production.id);
+              const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+              });
+              
+              const data = await response.json();
+              if (data.success) {
+                this.showToastMessage('Produksi berhasil disetujui', 'success');
+                await this.fetchData(); // Auto reload data
+                await this.fetchStats(); // Update statistics
+              } else {
+                this.showToastMessage(data.message || 'Gagal menyetujui produksi', 'error');
+              }
+            } catch (error) {
+              console.error('Error:', error);
+              this.showToastMessage('Terjadi kesalahan saat menyetujui produksi', 'error');
+            }
+          }
+        },
+
+        async startProduction(production) {
+          if (confirm(`Apakah Anda yakin ingin memulai produksi ${production.production_code}?`)) {
+            try {
+              const url = `{{ route('admin.produksi.produksi.start', ':id') }}`.replace(':id', production.id);
+              const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+              });
+              
+              const data = await response.json();
+              if (data.success) {
+                this.showToastMessage('Produksi berhasil dimulai', 'success');
+                await this.fetchData(); // Auto reload data
+                await this.fetchStats(); // Update statistics
+              } else {
+                this.showToastMessage(data.message || 'Gagal memulai produksi', 'error');
+              }
+            } catch (error) {
+              console.error('Error:', error);
+              this.showToastMessage('Terjadi kesalahan saat memulai produksi', 'error');
+            }
+          }
+        },
+
+        async completeProduction(production) {
+          if (confirm(`Apakah Anda yakin ingin menyelesaikan produksi ${production.production_code}?`)) {
+            try {
+              const url = `{{ route('admin.produksi.produksi.complete', ':id') }}`.replace(':id', production.id);
+              const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+              });
+              
+              const data = await response.json();
+              if (data.success) {
+                this.showToastMessage('Produksi berhasil diselesaikan', 'success');
+                await this.fetchData(); // Auto reload data
+                await this.fetchStats(); // Update statistics
+              } else {
+                this.showToastMessage(data.message || 'Gagal menyelesaikan produksi', 'error');
+              }
+            } catch (error) {
+              console.error('Error:', error);
+              this.showToastMessage('Terjadi kesalahan saat menyelesaikan produksi', 'error');
+            }
+          }
+        },
+
+        async deleteProduction(production) {
+          if (confirm(`Apakah Anda yakin ingin menghapus produksi ${production.production_code}? Tindakan ini tidak dapat dibatalkan.`)) {
+            try {
+              const url = `{{ route('admin.produksi.produksi.destroy', ':id') }}`.replace(':id', production.id);
+              const response = await fetch(url, {
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+              });
+              
+              const data = await response.json();
+              if (data.success) {
+                this.showToastMessage('Produksi berhasil dihapus', 'success');
+                await this.fetchData(); // Auto reload data
+                await this.fetchStats(); // Update statistics
+              } else {
+                this.showToastMessage(data.message || 'Gagal menghapus produksi', 'error');
+              }
+            } catch (error) {
+              console.error('Error:', error);
+              this.showToastMessage('Terjadi kesalahan saat menghapus produksi', 'error');
+            }
+          }
+        },
+
+        showRealizationModal(production) {
+          // Use existing realization function
+          if (typeof showRealizationModal === 'function') {
+            showRealizationModal(production);
+          } else {
+            // Open realization modal directly
+            const modal = document.getElementById('realizationModal');
+            if (modal) {
+              // Populate production info
+              document.getElementById('realizationProductionCode').textContent = production.production_code;
+              document.getElementById('realizationProductName').textContent = production.product_name;
+              document.getElementById('realizationTarget').textContent = this.formatNumber(production.target_quantity) + ' unit';
+              document.getElementById('realizationCurrent').textContent = this.formatNumber(production.realized_quantity) + ' unit';
+              
+              // Store production ID for form submission
+              const form = document.getElementById('realizationForm');
+              if (form) {
+                form.dataset.productionId = production.id;
+              }
+              
+              // Show modal
+              modal.classList.remove('hidden');
+              modal.style.display = 'flex';
+              document.body.style.overflow = 'hidden';
+            }
+          }
+        },
+
+        exportPdf(){
+          const params = new URLSearchParams({
+            outlet_id: this.outletFilter,
+            status: this.statusFilter !== 'ALL' ? this.statusFilter : '',
+            production_line: this.lineFilter !== 'ALL' ? this.lineFilter : ''
+          });
+          window.open(`{{ route('admin.produksi.produksi.export.pdf') }}?${params}`, '_blank');
+        },
+
+        exportExcel(){
+          const params = new URLSearchParams({
+            outlet_id: this.outletFilter,
+            status: this.statusFilter !== 'ALL' ? this.statusFilter : '',
+            production_line: this.lineFilter !== 'ALL' ? this.lineFilter : ''
+          });
+          window.open(`{{ route('admin.produksi.produksi.export.excel') }}?${params}`, '_blank');
+        },
+
+        showToastMessage(message, type = 'success') {
+          this.toastMessage = message;
+          this.toastType = type;
+          this.showToast = true;
+          
+          setTimeout(() => {
+            this.showToast = false;
+          }, 3000);
+        }
+      };
+    }
+  </script>
+
+  <!-- Include existing modal and JavaScript for compatibility -->
+  <script src="{{ asset('js/production.js') }}?v={{ time() }}&debug=1"></script>
+  <script>
+    // Define URLs for existing JavaScript compatibility
+    const productionDataUrl = "{{ route('admin.produksi.produksi.data') }}";
+    const storeUrl = "{{ route('admin.produksi.produksi.store') }}";
+    const updateUrl = "{{ route('admin.produksi.produksi.update', ':id') }}";
+    const showUrl = "{{ route('admin.produksi.produksi.show', ':id') }}";
+    const deleteUrl = "{{ route('admin.produksi.produksi.destroy', ':id') }}";
+    const approveUrl = "{{ route('admin.produksi.produksi.approve', ':id') }}";
+    const startUrl = "{{ route('admin.produksi.produksi.start', ':id') }}";
+    const productsUrl = "{{ route('admin.produksi.produksi.products') }}";
+    const materialsUrl = "{{ route('admin.produksi.produksi.materials') }}";
+    const materialsFifoUrl = "{{ route('admin.produksi.produksi.materials.fifo', ':id') }}";
+    const statisticsUrl = "{{ route('admin.produksi.produksi.statistics') }}";
+    const addRealizationUrl = "{{ route('admin.produksi.produksi.realization', ':id') }}";
+    const attendanceCountUrl = "{{ route('admin.produksi.produksi.attendance.count') }}";
+    const hppPreviewUrl = "{{ route('admin.produksi.produksi.hpp.preview') }}";
+    const pdfUrl = "{{ route('admin.produksi.produksi.pdf', ':id') }}";
+  </script>
+</x-layouts.admin>

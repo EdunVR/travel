@@ -1,0 +1,177 @@
+.elementor-widget-tripgo_elementor_testimonial_3{
+	.elementor-widget-container{
+		min-height: 1px;
+	}
+}
+.ova-testimonial{
+	&.version-3{
+
+
+		.owl-stage-outer{
+			padding: 0px;
+			padding-bottom: 60px;
+		}
+
+		.owl-carousel.owl-drag{
+		}
+
+		.owl-carousel .owl-stage-outer {
+	       	margin-right: -30px;
+	       	margin-left: -30px;
+		    padding-left: 30px;
+		    padding-right: 30px;
+		    width: calc(100% + 60px);
+		}
+
+		.slide-testimonials{
+
+			width: 100%;
+			padding-right: 0;
+			.owl-item{
+
+				&.active{
+					box-shadow: 0px 4px 40px rgba(43, 89, 255, 0.08);
+					background: #FFFFFF;
+					border-radius: 10px;
+
+					.item{
+						.quote{
+							display: block;
+							position: absolute;
+							right: 20px;
+							bottom: 20px;
+							
+							font-size: 147px;
+							
+							i{
+								color: var(--primary);
+								opacity: 0.05;
+							}
+						}
+						.line1{
+							opacity: 1;
+							@include transaction( all, .3s, ease);
+						}
+						.line2{
+							opacity: 1;
+							@include transaction( all, .6s, ease);
+						}
+					}
+				}
+
+				.item{
+					
+					position: relative;
+					
+					padding: 60px 80px;
+					@media(max-width: 500px){
+				    	padding: 15px 30px;
+				    }
+					.evaluate{
+						margin: 0;
+						margin-bottom: 40px;
+					}
+
+					.info-content{
+						display: flex;
+						justify-content: center;
+						align-items: center;
+
+						@media(max-width: 371px){
+						   display: block;
+						}
+						.client-info{
+							display: inline-flex;
+						    align-items: center;
+						    justify-content: center;
+						    gap: 20px;
+
+						    @media(max-width: 830px){
+						    	flex-direction: unset;
+						    }
+							@media(max-width: 479px){
+								align-items: start;
+							}
+
+							.client{
+								@media(max-width: 830px){
+							    	margin-bottom: 0;
+							    }
+								img{
+									width: 70px;
+									height: 70px;
+								}
+							}
+							.name-job{
+								.name{
+									margin: 0;
+									font-size: 20px;
+									font-weight: 700;
+								}
+								.job{
+									margin: 0;
+									font-size: 14px;
+								}
+							}
+						}
+					}
+
+					.quote{
+						display: none;
+					}
+					.line1{
+						opacity: 0;
+						@include transaction( all, .3s, ease);
+						content: '';
+						width: calc(100% - 40px);
+						height: 15px;
+						position: absolute;
+						top: 100%;
+						left: 20px;
+						background: #FFFFFF;
+						box-shadow: 0px 4px 40px rgba(43, 89, 255, 0.08);
+						border-radius: 0px 0px 10px 10px;
+					}
+					.line2{
+						opacity: 0;
+						@include transaction( all, .6s, ease);
+						content: '';
+						width: calc(100% - 80px);
+						height: 15px;
+						position: absolute;
+						top: calc(100% + 15px);
+						left: 40px;
+						background: #FFFFFF;
+						box-shadow: 0px 4px 40px rgba(43, 89, 255, 0.08);
+						border-radius: 0px 0px 10px 10px;
+					}
+				}
+			}
+		
+			.owl-dots{
+				text-align: center;
+				margin-top: 2px;
+				.owl-dot{
+					outline: none;
+					span{
+						width: 10px;
+						height: 10px;
+						margin: 9px;
+						background-color: var(--primary);
+						opacity: 0.2;
+						display: block;
+						-webkit-backface-visibility: visible;
+						transition: all .2s ease;
+						border-radius: 50%;
+					}
+					&.active{
+						span{
+							opacity: 1;
+							background-color: var(--primary);
+						}
+					}
+				}
+			}
+		}
+	}
+}

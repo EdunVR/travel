@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="id">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="csrf-token" content="test-token" />
+        <title>Test Finance Components</title>
+
+        <!-- Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+
+        <!-- Boxicons -->
+        <link
+            rel="stylesheet"
+            href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+        />
+
+        <!-- Alpine.js -->
+        <script
+            defer
+            src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+        ></script>
+
+        <!-- Finance Components -->
+        <script src="./js/finance-components.js"></script>
+    </head>
+    <body class="bg-slate-50 p-8">
+        <div class="max-w-4xl mx-auto space-y-8">
+            <h1 class="text-3xl font-bold">Finance Components Test</h1>
+
+            <!-- Notification Test -->
+            <div class="bg-white rounded-xl p-6 shadow-lg">
+                <h2 class="text-xl font-semibold mb-4">
+                    Notification System Test
+                </h2>
+                <div class="flex flex-wrap gap-2">
+                    <button
+                        onclick="showNotification('success', 'This is a success message!')"
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    >
+                        Show Success
+                    </button>
+                    <button
+                        onclick="showNotification('error', 'This is an error message!')"
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                    >
+                        Show Error
+                    </button>
+                    <button
+                        onclick="showNotification('info', 'This is an info message!')"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                        Show Info
+                    </button>
+                    <button
+                        onclick="showNotification('warning', 'This is a warning message!')"
+                        class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+                    >
+                        Show Warning
+                    </button>
+                </div>
+            </div>
+
+            <!-- Export Mixin Test -->
+            <div
+                x-data="testExportComponent()"
+                class="bg-white rounded-xl p-6 shadow-lg"
+            >
+                <h2 class="text-xl font-semibold mb-4">Export Mixin Test</h2>
+                <div class="space-y-4">
+                    <div class="flex gap-2">
+                        <button
+                            @click="testExportXLSX()"
+                            :disabled="isExporting"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            <i
+                                class="bx"
+                                :class="isExporting ? 'bx-loader-alt animate-spin' : 'bx-file'"
+                            ></i>
+                            <span
+                                x-text="isExporting ? 'Exporting...' : 'Test Export XLSX'"
+                            ></span>
+                        </button>
+                        <button
+                            @click="testExportPDF()"
+                            :disabled="isExporting"
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                        >
+                            <i
+                                class="bx"
+                                :class="isExporting ? 'bx-loader-alt animate-spin' : 'bxs-file-pdf'"
+                            ></i>
+                            <span
+                                x-text="isExporting ? 'Exporting...' : 'Test Export PDF'"
+                            ></span>
+                        </button>
+                    </div>
+                    <div
+                        x-show="exportError"
+                        class="p-4 bg-red-50 border border-red-200 rounded-lg"
+                    >
+                        <p
+                            class="text-red-800 text-sm"
+                            x-text="exportError"
+                        ></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Import Mixin Test -->
+            <div
+                x-data="testImportComponent()"
+                class="bg-white rounded-xl p-6 shadow-lg"
+            >
+                <h2 class="text-xl font-semibold mb-4">Import Mixin Test</h2>
+                <div class="space-y-4">
+                    <!-- File Upload Area -->
+                    <div
+                        @dragover="handleDragOver($event)"
+                        @dragleave="handleDragLeave()"
+                        @drop="handleFileDrop($event)"
+                        :class="isDragging ? 'border-blue-500 bg-blue-50' : 'border-slate-300'"
+                        class="border-2 border-dashed rounded-xl p-8 text-center"
+                    >
+                        <template x-if="!importFile">
+                            <div>
+                                <i
+                                    class="bx bx-cloud-upload text-4xl text-slate-400 mb-2"
+                                ></i>
+                                <p class="text-sm text-slate-600 mb-2">
+                                    Drag & drop file or
+                                </p>
+                                <label
+                                    class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700"
+                                >
+                                    Select File
+                                    <input
+                                        type="file"
+                                        @change="handleFileSelect($event)"
+                                        accept=".xlsx,.xls,.csv"
+                                        class="hidden"
+                                    />
+                                </label>
+                            </div>
+                        </template>
+
+                        <template x-if="importFile">
+                            <div>
+                                <i
+                                    class="bx bx-file text-4xl text-green-600 mb-2"
+                                ></i>
+                                <p
+                                    class="text-sm font-medium"
+                                    x-text="importFile.name"
+                                ></p>
+                                <p
+                                    class="text-xs text-slate-500"
+                                    x-text="(importFile.size / 1024).toFixed(2) + ' KB'"
+                                ></p>
+                                <button
+                                    @click="clearImport()"
+                                    class="text-sm text-red-600 hover:underline mt-2"
+                                >
+                                    Remove File
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Upload Progress -->
+                    <div x-show="isUploading" class="space-y-2">
+                        <div class="flex items-center justify-between text-sm">
+                            <span>Uploading...</span>
+                            <span x-text="uploadProgress + '%'"></span>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-2">
+                            <div
+                                class="bg-blue-600 h-2 rounded-full transition-all"
+                                :style="`width: ${uploadProgress}%`"
+                            ></div>
+                        </div>
+                    </div>
+
+                    <!-- Import Results -->
+                    <div
+                        x-show="importResults"
+                        class="p-4 rounded-lg"
+                        :class="importResults?.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'"
+                    >
+                        <template x-if="importResults?.success">
+                            <div>
+                                <p class="text-sm font-medium text-green-800">
+                                    Import Successful!
+                                </p>
+                                <p class="text-sm text-green-700">
+                                    <span
+                                        x-text="importResults.imported_count"
+                                    ></span>
+                                    records imported
+                                </p>
+                            </div>
+                        </template>
+                        <template x-if="!importResults?.success">
+                            <div>
+                                <p class="text-sm font-medium text-red-800">
+                                    Import Failed
+                                </p>
+                                <p
+                                    class="text-sm text-red-700"
+                                    x-text="importError"
+                                ></p>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex gap-2">
+                        <button
+                            @click="testImport()"
+                            :disabled="!importFile || isUploading"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            Test Import
+                        </button>
+                        <button
+                            @click="testDownloadTemplate()"
+                            class="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50"
+                        >
+                            Test Download Template
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Container -->
+        <div
+            x-data
+            x-show="$store.notifications.items.length > 0"
+            class="fixed top-4 right-4 z-50 space-y-2 max-w-sm w-full pointer-events-none"
+        >
+            <template
+                x-for="notification in $store.notifications.items"
+                :key="notification.id"
+            >
+                <div
+                    x-show="notification.visible"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="transform translate-x-full opacity-0"
+                    x-transition:enter-end="transform translate-x-0 opacity-100"
+                    x-transition:leave="transition ease-in duration-200"
+                    x-transition:leave-start="transform translate-x-0 opacity-100"
+                    x-transition:leave-end="transform translate-x-full opacity-0"
+                    class="pointer-events-auto rounded-xl shadow-lg border overflow-hidden"
+                    :class="{
+                   'bg-green-50 border-green-200': notification.type === 'success',
+                   'bg-red-50 border-red-200': notification.type === 'error',
+                   'bg-blue-50 border-blue-200': notification.type === 'info',
+                   'bg-yellow-50 border-yellow-200': notification.type === 'warning'
+                 }"
+                >
+                    <div class="p-4 flex items-start gap-3">
+                        <!-- Icon -->
+                        <div class="flex-shrink-0">
+                            <template x-if="notification.type === 'success'">
+                                <i
+                                    class="bx bx-check-circle text-2xl text-green-600"
+                                ></i>
+                            </template>
+                            <template x-if="notification.type === 'error'">
+                                <i
+                                    class="bx bx-error-circle text-2xl text-red-600"
+                                ></i>
+                            </template>
+                            <template x-if="notification.type === 'info'">
+                                <i
+                                    class="bx bx-info-circle text-2xl text-blue-600"
+                                ></i>
+                            </template>
+                            <template x-if="notification.type === 'warning'">
+                                <i
+                                    class="bx bx-error text-2xl text-yellow-600"
+                                ></i>
+                            </template>
+                        </div>
+
+                        <!-- Message -->
+                        <div class="flex-1 min-w-0">
+                            <p
+                                class="text-sm font-medium"
+                                :class="{
+                             'text-green-800': notification.type === 'success',
+                             'text-red-800': notification.type === 'error',
+                             'text-blue-800': notification.type === 'info',
+                             'text-yellow-800': notification.type === 'warning'
+                           }"
+                                x-text="notification.message"
+                            ></p>
+                        </div>
+
+                        <!-- Close Button -->
+                        <button
+                            @click="$store.notifications.remove(notification.id)"
+                            class="flex-shrink-0 rounded-lg p-1 hover:bg-black/5 transition-colors"
+                            :class="{
+                              'text-green-600': notification.type === 'success',
+                              'text-red-600': notification.type === 'error',
+                              'text-blue-600': notification.type === 'info',
+                              'text-yellow-600': notification.type === 'warning'
+                            }"
+                        >
+                            <i class="bx bx-x text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <script>
+            function testExportComponent() {
+                return {
+                    ...financeExportMixin(),
+
+                    async testExportXLSX() {
+                        // Simulate export (will fail since endpoint doesn't exist)
+                        showNotification(
+                            "info",
+                            "Testing XLSX export... (will fail - no backend)"
+                        );
+                        await this.exportToXLSX(
+                            "journal",
+                            { test: true },
+                            "test.xlsx"
+                        );
+                    },
+
+                    async testExportPDF() {
+                        // Simulate export (will fail since endpoint doesn't exist)
+                        showNotification(
+                            "info",
+                            "Testing PDF export... (will fail - no backend)"
+                        );
+                        await this.exportToPDF(
+                            "journal",
+                            { test: true },
+                            "test.pdf"
+                        );
+                    },
+                };
+            }
+
+            function testImportComponent() {
+                return {
+                    ...financeImportMixin(),
+
+                    async testImport() {
+                        // Simulate import (will fail since endpoint doesn't exist)
+                        showNotification(
+                            "info",
+                            "Testing import... (will fail - no backend)"
+                        );
+                        await this.uploadFile("journal", { test: true });
+                    },
+
+                    async testDownloadTemplate() {
+                        // Simulate template download (will fail since endpoint doesn't exist)
+                        showNotification(
+                            "info",
+                            "Testing template download... (will fail - no backend)"
+                        );
+                        await this.downloadTemplate("journal");
+                    },
+                };
+            }
+        </script>
+    </body>
+</html>

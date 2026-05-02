@@ -1,0 +1,1496 @@
+.ovabrw-form-field{
+	padding: 10px;
+	
+	// Map
+	#admin_show_map {
+		width: 100%;
+		height: 400px;
+		margin-bottom: 10px;
+		
+		.controls {
+			background-color: #fff;
+		    border-radius: 2px;
+		    border: 1px solid transparent;
+		    box-shadow: 0 2px 6px rgba(0,0,0,.3);
+		    box-sizing: border-box;
+		    font-family: Roboto;
+		    font-size: 15px;
+		    font-weight: 300;
+		    height: 29px;
+		    margin-left: 17px;
+		    margin-top: 10px;
+		    outline: none;
+		    padding: 0 11px 0 13px;
+		    text-overflow: ellipsis;
+		    width: 400px;
+		}
+	}
+
+	.admin-map-iframe {
+		width: 100%;
+		height: 250px;
+	}
+
+	#infowindow-content, #map_info {
+		display: none;
+	}
+
+	.widefat td, .widefat th {
+		padding: 8px 5px;
+	}
+
+	.ovabrw-map-type {
+		label.container {
+			display: inline-block;
+			position: relative;
+			padding-left: 35px;
+			margin: 0 10px 10px 0;
+			cursor: pointer;
+			font-size: 16px;
+			-webkit-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
+			left: unset;
+			width: auto;
+
+			.checkmark {
+				position: absolute;
+				top: 0;
+				left: 0;
+				height: 20px;
+				width: 20px;
+				background-color: #eee;
+				border-radius: 50%;
+
+				&:after {
+					content: "";
+					position: absolute;
+					display: none;
+					top: 7px;
+					left: 7px;
+					width: 6px;
+					height: 6px;
+					border-radius: 50%;
+					background: white;
+				}
+			}
+
+			&:hover {
+				input ~ .checkmark {
+					background-color: #ccc;
+				}
+			}
+
+			input {
+				position: absolute;
+				opacity: 0;
+				cursor: pointer;
+
+				&:checked ~ .checkmark {
+					background-color: #00BB98;
+				}
+
+				&:checked ~ .checkmark:after {
+					display: block;
+				}
+			}
+		}
+	}
+
+	.admin-map-iframe {
+		display: none;
+		
+		textarea#map_iframe {
+			width: 100%;
+			height: auto;
+			margin-bottom: 10px;
+		}
+	}
+}
+
+#general_product_data {
+	position: relative;
+
+	.ovabrw-rental-type-loading {
+		display: none;
+		align-items: flex-start;
+		justify-content: center;
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		top: 0;
+		background-color: #1D1729;
+		opacity: 0.6;
+
+		span {
+			margin-top: 100px;
+			color: #FFF;
+			animation: ovabrw_spin 2s linear infinite;
+
+			&:before {
+				font-size: 30px;
+				width: 30px;
+				height: 30px;
+			}
+		}
+	}
+
+	.ovabrw-advanced-settings {
+		border-bottom: 1px solid #f5f5f5;
+		box-shadow: 0 4px 10px 0 rgba( 85, 93, 102, .3);
+		margin-bottom: 10px;
+
+		.advanced-header {
+			transition: all .3s ease; 
+			display: flex;
+		    align-items: center;
+		    justify-content: space-between;
+		    border-right-width: 0;
+		    border-left-width: 0;
+		    padding: 15px 12px;
+		    cursor: pointer;
+		    background-color: #FFF;
+
+		    &.active {
+		    	background-color: #eee;
+		    }
+		    .advanced-label {
+		    	margin: 0;
+		    	font-size: 14px;
+			    margin: 0;
+			    line-height: 1.4;
+		    }
+		    span.dashicons {
+		    	&.dashicons-arrow-up {
+			    	display: none;
+			    }
+		    }
+		    &.active {
+		    	span.dashicons-arrow-up {
+			    	display: inline-block;
+			    }
+			    span.dashicons-arrow-down {
+			    	display: none;
+			    }
+		    }
+		}
+		.advanced-content {
+			background-color: white;
+			display: none;
+			padding: 10px 0;
+
+			.ovabrw-specifications {
+				.specification-radio, .specification-checkbox {
+					label {
+						display: inline-flex;
+						flex-wrap: wrap;
+						align-items: center;
+						width: auto;
+						margin: 0 10px 0 0;
+						float: unset;
+
+						&:last-child {
+							margin: 0;
+						}
+						input {
+							margin-right: 5px;
+						}
+						span {
+							font-size: 14px;
+						}
+					}
+				}
+			}
+			.select2 {
+				width: 50% !important;
+			}
+			.ovabrw-deposit-unit {
+				margin-left: 5px;
+				font-size: 14px;
+				font-weight: 600;
+				vertical-align: middle;
+			}
+		}
+	}	
+
+	table tbody tr td.ovabrw-input-price {
+		position: relative;
+	}
+
+}
+
+.woocommerce_options_panel .show_if_ovabrw_car_rental input[type=email], 
+.woocommerce_options_panel .show_if_ovabrw_car_rental input[type=number], 
+.woocommerce_options_panel .show_if_ovabrw_car_rental input[type=password], 
+.woocommerce_options_panel .show_if_ovabrw_car_rental input[type=text]{
+	width: 100%;
+}
+
+.woocommerce_options_panel {
+	.ovabrw_rt_discount{
+		border: 1px solid #e5e5e5;
+
+		.tr_rt_discount {
+			.ovabrw_rt_discount_duration {
+				width: 45%;
+			}
+		}
+
+		th, tr, td {
+			padding: 8px 5px;
+		}
+	}
+}
+
+.wrap_rt_discount{
+	display: none;
+}
+.ovabrw_rt .ovabrw_rt_price,
+.ovabrw_rt .ovabrw_rt_price_hour,
+.ovabrw_rt .ovabrw_rt_startdate,
+.ovabrw_rt .ovabrw_rt_enddate{
+	width: 100%!important;
+}
+.tr_rt_resource input[type="text"]{
+	width: 100%!important;
+}
+
+.ovabrw_heading_section{
+	text-transform: capitalize;
+	padding-bottom: 5px;
+    display: inline-block;
+}
+.ovabrw_right{
+	float: right;
+}
+.ovabrw_features input[type="text"]{
+	width: 100%!important;
+}
+
+.woocommerce_options_panel input[type=text]::placeholder, 
+.woocommerce_options_panel textarea::placeholder, 
+.woocommerce_options_panel input[type=number]::placeholder  {
+	opacity: 0.3;
+}
+
+.woocommerce_options_panel input[type=text].ovabrw_rt_discount_duration, 
+.woocommerce_options_panel select.ovabrw_rt_discount_duration_type {
+	width: 30%;
+	margin-right: 5px;
+}
+
+.input_per_100{
+	width: 100%!important;
+}
+.tr_rt_resource input.short_dura,
+.tr_rt_resource select.short_dura,
+.tr_rt_service select.short_dura{
+	width: 100%!important;
+}
+
+.wrap_petime_discount,
+.wrap_pehour_discount{
+	display: none;
+}
+
+
+
+.ovabrw_petime input[type="text"],
+.ovabrw_pehour input[type="text"],
+.ovabrw_pehour input[type="number"]{
+	width: 100%!important;
+}
+
+.period_times{
+	display: flex;
+	width: 100%;
+}
+
+.woocommerce_options_panel .row_petime_record input[type=number]{
+	width: 100%;
+}
+.row_petime_record .ovabrw_petime_days{
+	display: block;
+	margin-bottom: 10px;
+	width: 100%;
+}
+.row_petime_record .ovabrw_pehour_start_time{
+	margin-right: 10px;
+}
+
+.woocommerce_options_panel select.ovabrw_package_type{
+	margin-bottom: 10px;
+}
+
+.ova_paid, .ova_pending {
+	text-align: center;
+	display: inline-block;
+	padding: 5px 10px;
+	border-radius: 4px;
+	
+}
+.ova_paid {
+	background: #5cb75c;
+    color: #fff;
+    min-width: 60px;
+}
+.ova_pending {
+	background: #caa865;
+    color: #fff;
+}
+
+.ovabrw_global_discount .row_discount input[type=number].ovabrw-global-duration, 
+.ovabrw_global_discount .row_discount input[type=number].ovabrw-global-duration {
+	width: 48%;
+	margin-right: 5px;
+}
+
+
+.hide-year .ui-datepicker-year{
+ display:none;   
+}
+
+
+#meta-box-id-vehicle .ovabrw-row {
+	display: flex;
+	align-items: center;
+}
+
+#meta-box-id-vehicle .ovabrw-row:not(:last-child) {
+	margin-bottom: 20px;
+}
+#meta-box-id-vehicle .ovabrw-row label {
+	margin-right: 150px;
+    max-width: 130px;
+    width: 100%;
+    &.loc{
+    	margin-right: 180px;
+    }
+}
+
+#meta-box-id-vehicle .ovabrw-row.require_location input{
+	margin-right: 10px;
+}
+
+#meta-box-id-vehicle .ovabrw-row.require_location label.label_radio{
+	flex: 0 0 0;
+	margin-top: -5px;
+    margin-right: 5px;
+}
+
+#meta-box-id-vehicle .ovabrw-row.location_vehicle{
+	display: none;
+}
+
+
+#meta-box-id-vehicle .ovabrw-row input.ova_brw_datepicker:not(:last-child){
+	margin-right: 20px;
+}
+
+#meta-box-id-vehicle .ovabrw-row .from {
+	margin-right: 10px;
+}
+
+#meta-box-id-vehicle .ovabrw-row .to {
+	margin-right: 10px;
+	margin-left: 20px;
+}
+.woocommerce_options_panel .description {
+	float: left;
+}
+
+.ova-list-checkout-field {
+	text-align:left;
+}
+.ova-list-checkout-field table tbody tr td.ova-checkbox {
+	opacity: 1 !important;
+}
+.ova-list-checkout-field table tbody tr.ova-disable td {
+	opacity: 0.4;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-options table.ova-sub-table td {
+	width: 30%;
+	padding-right: 10px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-options table.ova-sub-table td input {
+	width: 100%;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-options table.ova-sub-table td.ova-box{
+	width: 5%;
+	padding-right: 0px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-options table.ova-sub-table td.ova-box a{
+	color: #FFFFFF;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    text-decoration: none;
+    
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-options table.ova-sub-table td.ova-box a.btn-blue {
+	background-color: #00A0D2;
+    border: 1px solid #0073AA;
+}
+
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-options table.ova-sub-table td.ova-box a.btn-red {
+	background-color: #ff6666;
+    border: 1px solid #ff4c4c;
+}
+
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-options {
+	display: none;
+}
+
+.ova-wrap-popup-ckf {
+	.ova-popup-wrapper {
+		select {
+			max-width: 100%;
+		}
+
+		tr.row-radio-options {
+			display: none;
+			
+			table {
+				&.ova-sub-table {
+					td {
+						width: 50%;
+						padding-right: 10px;
+
+						input {
+							width: 100%;
+						}
+
+						&.ova-box {
+							width: auto;
+							padding-right: 5px;
+
+							a {
+								color: #FFFFFF;
+							    padding: 2px 5px;
+							    border-radius: 3px;
+							    font-size: 12px;
+							    text-decoration: none;
+
+							    &.btn-blue {
+							    	background-color: #00A0D2;
+    								border: 1px solid #0073AA;
+							    }
+
+							    &.btn-red {
+						    		background-color: #ff6666;
+									border: 1px solid #ff4c4c;
+							    }
+							}
+						}
+					}
+				}
+			}
+		}
+
+		tr.row-options, tr.row-checkbox-options {
+			display: none;
+
+			table {
+				&.ova-sub-table {
+					td {
+						width: 30%;
+						padding-right: 10px;
+
+						input {
+							width: 100%;
+						}
+
+						&.ova-box {
+							width: auto;
+							padding-right: 5px;
+
+							a {
+								color: #FFFFFF;
+							    padding: 2px 5px;
+							    border-radius: 3px;
+							    font-size: 12px;
+							    text-decoration: none;
+
+							    &.btn-blue {
+							    	background-color: #00A0D2;
+    								border: 1px solid #0073AA;
+							    }
+
+							    &.btn-red {
+						    		background-color: #ff6666;
+									border: 1px solid #ff4c4c;
+							    }
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+/**
+ * Check Product
+ */
+
+.booking_filter{
+	margin-top: 30px;
+	/*display: flex;
+	flex-wrap: wrap;*/
+
+	input, select, button{
+		height: 40px;
+		border: 1px solid #ccc;
+	}
+
+	button.button{
+		height: 40px;
+		padding-left: 20px;
+		padding-right: 20px;
+		background-color: #343434;
+		border: 1px solid #343434;
+		color: #fff;
+		margin-top: 0px;
+	}
+
+	.total_vehicle{
+		width: 100%;
+		margin-top: 30px;
+	}
+
+	.vehicle_id_available{
+		clear: both;
+	    display: block;
+	    position: relative;
+	    width: 100%;
+	    margin-top: 30px;
+	}
+
+	.wrap_calendar{
+		height: 800px;
+		.ovabrw__product_calendar {
+			.fc-daygrid-event-dot {
+				display: none;
+			}
+			
+			.fc-daygrid-dot-event {
+				.fc-event-title {
+					margin-left: 5px;
+				}
+			}
+		}
+		.fc-direction-ltr {
+			.fc-daygrid-event {
+				.fc-event-time {
+					display: none;
+				}
+			}
+		}
+	}
+
+	.ovabrw__product_calendar{
+		
+		margin-top: 30px;
+		width: 100%;
+		max-width: 750px;
+
+		background-color: #fff;
+		padding: 30px;
+
+		&:before{
+			display: none;
+		}
+
+		.fc-event {
+		    background-color: #ddd;
+		    border-color: #ddd;
+		    color: #343434;
+		}
+	}
+
+	/*Calendar*/
+	ul.intruction{
+		position: relative;
+		list-style: none;
+		margin: 25px 0 0 0;
+		padding: 0;
+		
+		li{
+			padding-right: 10px;
+			display: inline-block;
+
+			.available, .unavailable{
+				width: 15px;
+				height: 15px;
+				background-color: #FFFFFF;
+				border: 1px solid #cccccc;
+				display: inline-block;
+				opacity: 0.3;
+			}
+		}
+	}
+
+	
+	#available-vehicle{
+		margin-bottom: 100px;
+		table tr td{
+			border: 1px solid #ccc;
+			padding: 10px;
+		}
+	}
+	
+
+}
+
+p.ovabrw_destination_field {
+	.select2-container .select2-selection--multiple .select2-selection__choice {
+		padding: 2px 6px 2px 0;
+	}
+	.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+		position: relative;
+		left: unset;
+		top: unset;
+	}
+}
+
+p.form-field.ovabrw_enable_deposit_field{
+    margin-top: 15px;
+    padding-top: 20px!important;
+}
+
+p.form-field.ovabrw_manage_store_field{
+	border-top: 1px solid #eaeaea;
+    margin-top: 15px;
+    padding-top: 20px!important;
+}
+
+p.form-field.ovabrw_prepare_vehicle_field {
+	border-top: 1px solid #eaeaea;
+    margin-top: 15px;
+    padding-top: 20px!important;
+}
+input[type=text].ova_brw_datepicker_time {
+	margin-top: 10px;
+	width: 100%;
+}
+
+.wrap .ovabrw-wrap .ovabrw-row.ova-column-3 {
+	display: grid;
+	grid-template-columns: repeat(6, 1fr);
+	grid-gap: 20px;
+
+	@media only screen and (max-width: 1400px) {
+		grid-template-columns: repeat(4, 1fr);
+	}
+	@media only screen and (max-width: 1200px) {
+		grid-template-columns: repeat(3, 1fr);
+	}
+	@media only screen and (max-width: 768px) {
+		grid-template-columns: repeat(2, 1fr);
+	}
+	@media only screen and (max-width: 480px) {
+		grid-template-columns: repeat(1, 1fr);
+	}
+
+	input, select, button {
+		width: 100%;
+		min-width: 100%;
+	}
+}
+
+.wrap .ovabrw-wrap .ovabrw-row {
+	margin-bottom: 20px;
+
+	&.ovabrw-order-currency, &.ovabrw-choose-order-status {
+	    display: inline-block;
+    	margin-left: 20px;
+	}
+}
+
+.wrap .ovabrw-wrap .ovabrw-row.ova-column-3 .item input {
+	width: 100%;
+}
+
+.wrap .ovabrw-wrap .ovabrw-order {
+	position: relative;
+	background: #e3e3e3;
+	padding: 15px;
+	margin-bottom: 20px;
+}
+
+.wrap .ovabrw-wrap .ovabrw-order .item .sub-item.ovabrw-meta {
+	display: none;
+}
+
+.wrap .ovabrw-wrap .ovabrw-order .item .sub-item label{
+    width: 120px;
+    display: inline-block;
+}
+
+.wrap .ovabrw-wrap .ovabrw-order .item .sub-item .rental_item {
+	margin-bottom: 10px;
+
+	select.ovabrw-data-product {
+		max-width: 100%;
+	}
+
+	.loading, .loading-total {
+		display: none;
+		animation: ajax_loading 1.2s linear infinite;
+	}
+
+	input[id="ovabrw_adults"], input[id="ovabrw_childrens"], input[id="ovabrw_babies"] {
+		min-width: 177px;
+	}
+
+	.ovabrw-times {
+		display: inline-block;
+		line-height: 1;
+
+		.duration {
+			display: inline-block;
+			width: auto;
+			position: relative;
+			padding-left: 25px;
+			margin-right: 20px;
+			margin-bottom: 0;
+			cursor: pointer;
+			font-size: 14px;
+			line-height: 18px;
+			-webkit-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
+
+			input.ovabrw_time_from {
+				position: absolute;
+				opacity: 0;
+				cursor: pointer;
+				height: auto;
+			}
+
+			span.checkmark {
+				position: absolute;
+				top: 0;
+				left: 0;
+				height: 18px;
+				width: 18px;
+				border: 1px solid #00BB98;
+				box-sizing: border-box;
+				border-radius: 50%;
+				transition: all, 0.3s, ease;
+
+				&:after {
+					content: "";
+					position: absolute;
+					opacity: 0;
+					visibility: hidden;
+					top: 5px;
+				    left: 5px;
+				    width: 6px;
+				    height: 6px;
+					border-radius: 50%;
+					background-color: #00BB98;
+					transition: all, .25s, ease-in-out;
+				}
+			}
+
+			&:hover {
+				input ~ .checkmark {
+				  	border-color: #00BB98;
+				}
+			}
+
+			input:checked ~ .checkmark {
+			  	border-color: #00BB98;
+			}
+
+			input:checked ~ .checkmark:after {
+			  	opacity: 1;
+			  	visibility: visible;
+			}
+		}
+	}
+
+	.ovabrw-ckf {
+		margin-bottom: 10px;
+
+		.ovabrw-ckf-span {
+		    margin-left: 5px;
+		    display: inline-block;
+		    vertical-align: top;
+
+		    .ovabrw-file {
+		    	label {
+		    		width: auto;
+		    	}
+
+		    	.ovabrw-file-chosen {
+		    		display: inline-block;
+				    border: 1px solid #8c8f94;
+				    font-size: 16px;
+				    font-weight: 400;
+				    height: 30px;
+				    line-height: 28px;
+				    box-sizing: border-box;
+				    border-radius: 4px;
+				    padding: 0 10px;
+				    margin-right: 5px;
+				    background-color: #FFF;
+		    	}
+
+		    	.ovabrw-file-name {
+		    		color: #F00;
+				    font-size: 16px;
+				    font-weight: 400;
+				    font-style: italic;
+		    	}
+
+		    	input[type=file] {
+			    	visibility: hidden;
+		    		position: absolute;
+		    		z-index: 0;
+			    }
+		    }
+
+		    .ovabrw-error {
+		    	display: none;
+		    	color: #F20000;
+		    }
+		}
+	}
+}
+
+.taxonomy-product_cat {
+	form#addtag, form#edittag {
+		.form-field {
+			select {
+				width: 95%;
+			}
+		}
+	}
+}
+
+@keyframes ajax_loading {
+    from {
+        transform:rotate(0deg);
+    }
+    to {
+        transform:rotate(360deg);
+    }
+}
+
+.wrap .ovabrw-wrap .ovabrw-order .item .sub-item .rental_item.ovabrw-error .ovabrw-error-span {
+	color: #F20000;
+}
+
+.wrap .ovabrw-wrap .ovabrw-order .item .sub-item .rental_item.ovabrw-package,
+.wrap .ovabrw-wrap .ovabrw-order .item .sub-item .rental_item.rental_type,
+.wrap .ovabrw-wrap .ovabrw-order .item .sub-item .rental_item.rental_define_day,
+.wrap .ovabrw-wrap .ovabrw-order .item .sub-item .rental_item.ovabrw-resources,
+.wrap .ovabrw-wrap .ovabrw-order .item .sub-item .rental_item.ovabrw-services
+{
+	display: none;
+
+	.item {
+		label {
+			width: auto;
+		}
+		.right {
+			margin-left: 20px;
+
+			& > div {
+				display: flex;
+
+				label {
+					margin-right: 5px;
+				}
+			}
+		}
+	}
+}
+
+.wrap .ovabrw-wrap .ovabrw-order .item .sub-item .rental_item.ovabrw-resources {
+	.ovabrw-resources-span {
+		margin-left: 5px;
+		.resources_order {
+			.item {
+    			margin-bottom: 5px;
+    			.left {
+    				input[type="checkbox"] {
+    					vertical-align: bottom;
+    				}
+    			}
+			}
+		}
+	}
+}
+
+.wrap .ovabrw-wrap .ovabrw-order .item .sub-item .rental_item.ovabrw-services {
+	.ovabrw-services-span {
+		.services_order {
+			.item {
+				.error_item {
+					display: none;
+					color: #F20000;
+				}
+				select {
+					width: 100%;
+				}
+				&:first-child {
+					margin-bottom: 10px;
+				}
+			}
+		}
+	}
+}
+
+.wrap .ovabrw-wrap .ovabrw-order .delete_order {
+	position: absolute;
+	top: 5px;
+    right: 15px;
+    text-decoration: none;
+}
+
+.ova-list-checkout-field table {
+	margin: 0px;
+	width: 100%;
+}
+.ova-list-checkout-field tbody tr:nth-child(odd) {
+	background: #f9f9f9;
+}
+
+.ova-list-checkout-field tbody tr:nth-child(even) {
+	background: #fff;
+}
+.ova-wrap-popup-ckf {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0,0,0,0.3);
+	height: 120vh;
+	display: none;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper .close_popup {
+	font-size: 16px;
+	color: #333;
+	text-decoration: none;
+	position: absolute;
+	top: 10px;
+	right: 10px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper {
+	position: relative;
+    margin: 150px auto;
+    width: 40%;
+    height: auto;
+    background: #fff;
+    padding: 40px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper table {
+	border-spacing: 0 20px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr {
+	margin-bottom: 20px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr td select, .ova-wrap-popup-ckf .ova-popup-wrapper tr td input[type=text] {
+	width: 100%;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr td.label {
+	font-size: 16px;
+	color: #333333;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-required input[type=checkbox] {
+	margin-bottom: 10px;
+    margin-right: 5px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-required label {
+	margin-bottom: 10px;
+	display: inline-block;
+	font-size: 15px;
+	color: #333;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper .ova-sub-table {
+	border-spacing: 0px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper .ova-sub-table tr {
+	display: table;
+	margin-bottom: 10px;
+}
+.wrap_ovabrw_service_group{
+	margin-bottom: 20px;
+}
+.ovabrw_service .ovabrw_service_group{
+    border: 1px solid #ccd0d4;
+    padding: 10px;
+}
+
+.service_input{
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 30px;
+	.ovabrw_label_service{
+		display: flex;
+	    justify-content: space-around;
+	    align-items: baseline;
+	    span{
+	    	margin-right: 10px;
+	    }
+	    input{
+	    	margin-right: 10px;
+	    }
+	}
+
+
+}
+
+/*Edit Category with Custom Taxonomy*/
+.ovabrw_custom_tax_with_cat{
+	width: 100%;
+}
+
+.ova-list-checkout-field{
+	a{
+		text-decoration: none;
+	}
+}
+
+// CSS extra services + resource
+.ovabrw-extra-price {
+	.view {
+		.ovabrw_extra_item {
+			margin: 0;
+			dt {
+				font-weight: 600;
+			}
+			dd {
+				margin: 0;
+    			margin-bottom: 10px;
+			}
+		}
+	}
+}
+
+// CSS button pay full deposit
+.ovabrw_deposit_btn {
+	a {
+		display: inline-block;
+	    padding: 0px 30px;
+	    border: 1px solid #0073aa;
+	    border-radius: 3px;
+	    text-decoration: none;
+	    line-height: 2.5;
+        font-size: 75%;
+    	font-weight: 600;
+    	background-color: #f6f7f7;
+	}
+}
+
+#woocommerce-order-items {
+	.woocommerce_order_items_wrapper {
+		table.woocommerce_order_items {
+			table.display_meta {
+				tr {
+					th {
+						width: 50% !important;
+					}
+				}
+			}
+		}
+	}
+	.wc-order-totals {
+		td.total {
+			width: 15em;
+
+			small.includes_tax {
+				display: block;
+				line-height: 1.5;
+			}
+		}
+	}
+	.wc-order-totals-items {
+		table.wc-order-totals {
+			tr.ovabrw-total-payable + tr {
+				display: none;
+			}
+		}
+	}
+	#order_line_items {
+		.ovabrw-update-insurance {
+			margin-top: 10px;
+
+			.update-insurance-input {
+				display: none;
+				position: relative;
+
+				.ovabrw-input-price {
+					display: inline-flex;
+					flex-direction: column;
+
+					input {
+						width: 100px;
+						height: 30px;
+					}
+					@media screen and (max-width: 782px) {
+						margin-bottom: 4px;
+					}				
+				}
+				button {
+					vertical-align: bottom;
+				}
+			}
+		}
+		.ovabrw_deposit_btn {
+			margin-top: 10px;
+		}
+		td {
+			small.includes_tax {
+				display: block;
+				line-height: 1.5;
+			}
+		}
+	}
+}
+
+// datetimepicker
+.xdsoft_datetimepicker {
+	.xdsoft_label>.xdsoft_select>div>.xdsoft_option {
+
+		&.xdsoft_current {
+			-webkit-transition: all, 0.3s, ease;
+			-moz-transition: all, 0.3s, ease;
+			-ms-transition: all, 0.3s, ease;
+			transition: all, 0.3s, ease;
+			background: #00BB98;
+			box-shadow: 0px 4px 40px rgba(43, 89, 255, 0.08);
+		}
+		
+		&:hover {
+			background: #00BB98;
+		}
+	}
+
+	.xdsoft_calendar {
+		th {
+			color: #111B19;
+		}
+
+		td>div {
+			text-align: center;
+			padding: 0;
+		}
+
+		td {
+			-webkit-transition: all, 0.3s, ease;
+			-moz-transition: all, 0.3s, ease;
+			-ms-transition: all, 0.3s, ease;
+			transition: all, 0.3s, ease;
+			color: #111B19;
+
+			&.xdsoft_disabled {
+				color: #FFFFFF;
+			    opacity: 1 !important;
+    			cursor: not-allowed !important;
+    			background: #FD4C5C;
+
+    			&:hover {
+    				background: #FD4C5C !important;
+    				color: #FFFFFF !important;
+    			}
+			}
+
+			&.xdsoft_other_month {
+				opacity: 1 !important;
+				&.xdsoft_disabled {
+					opacity: 1 !important;
+				}
+			}
+
+			&.xdsoft_current {
+				color: #FFFFFF !important;
+				background: #00BB98;
+				box-shadow: 0px 4px 40px rgba(43, 89, 255, 0.08);
+			}
+
+			&.xdsoft_today {
+				color: #00BB98;
+			}
+
+			&:hover {
+				background: #00BB98 !important;
+			}
+		}
+	}
+}
+
+.ui-state-disabled, .ui-widget-content .ui-state-disabled {
+	cursor: not-allowed !important;
+}
+
+// Fields Style
+#general_product_data {
+	.ovabrw_children_price_field  {
+		margin: 0;
+	}
+	.ovabrw_duration_field {
+		.ovabrw_duration_label {
+			input[name="ovabrw_duration_checkbox"] {
+				display: none;
+			}
+
+			span {
+				position: relative;
+			    display: block;
+			    padding-right: 45px;
+
+			    &:before {
+			    	content: "";
+				    display: block;
+				    height: 16px;
+				    width: 30px;
+				    border: 2px solid #BBBBBB;
+				    background-color: #BBBBBB;
+				    border-radius: 13rem;
+				    box-sizing: content-box;
+				    transition: all ease-in-out .3s;
+				    position: absolute;
+				    top: 0;
+				    right: -30px;
+			    }
+
+			    &:after {
+			    	content: "";
+				    display: block;
+				    width: 14px;
+				    height: 14px;
+				    background: #FFFFFF;
+				    position: absolute;
+				    top: 3px;
+				    right: -14px;
+				    border-radius: 13rem;
+				    transition: all ease-in-out .3s;
+			    }
+			}
+
+			input[type=checkbox]:checked+span::before {
+			    border-color: #00BB98;
+				background-color: #00BB98;
+			}
+
+			input[type=checkbox]:checked+span::after {
+			    right: -26px;
+			}
+		}
+	}
+
+	.ovabrw_number_hours_field {
+		display: none;
+	}
+
+	.ovabrw_schedule {
+		.ovabrw_daily_price {
+			.ovabrw_daily_group {
+				.ovabrw_daily_day {
+					&:not(:last-child) {
+						margin-bottom: 15px;
+					}
+
+					.ovabrw_daily_label {
+					    display: inline-block;
+					    padding: 5px 10px;
+					    background-color: #dcdcde;
+					    color: #50575e;
+					    font-weight: 600;
+					}
+				}
+			}
+		}
+	}
+}
+
+// Create order
+#booking-filter {
+	.booking_filter {
+		display: grid;
+		grid-template-columns: repeat(6, 1fr);
+		grid-gap: 10px;
+		margin-top: 30px;
+
+		@media only screen and (max-width: 1400px) {
+			grid-template-columns: repeat(4, 1fr);
+		}
+		@media only screen and (max-width: 1200px) {
+			grid-template-columns: repeat(3, 1fr);
+		}
+		@media only screen and (max-width: 768px) {
+			grid-template-columns: repeat(2, 1fr);
+		}
+		@media only screen and (max-width: 480px) {
+			grid-template-columns: repeat(1, 1fr);
+		}
+
+		input, select, button {
+			width: 100%;
+			min-width: 100%;
+		}
+	}
+	.create-order-error {
+		display: none;
+		color: #F20000;
+	    margin-left: 20px;
+    	vertical-align: bottom;
+	}
+}
+
+// Woocommerce Settings
+.form-table {
+	input[name="ova_brw_booking_before_x_hours_today"] {
+		& + .description {
+			position: relative;
+			width: 400px;
+			max-width: 100%;
+
+			&:after {
+				position: absolute;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				content: 'x';
+				top: -34px;
+				right: 0;
+				width: 30px;
+				height: 30px;
+				color: #FFF;
+				background-color: #ff6666;
+				border-radius: 4px;
+				cursor: pointer;
+				-webkit-transition: all .3s ease;
+				-moz-transition: all .3s ease;
+				transition: all .3s ease;
+
+				&:hover {
+					background-color: #ff1a1a;
+				}
+			}
+		}
+	}
+}
+
+.form-field {
+	&.ovabrw_book_before_x_hours_field {
+		.ovabrw-product-book-x-hours {
+			position: relative;
+
+			.remove-x-hours {
+				position: absolute;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				top: 0;
+				right: 0;
+				width: 30px;
+				height: 30px;
+				color: #FFF;
+				background-color: #ff6666;
+				border-radius: 4px;
+				cursor: pointer;
+				-webkit-transition: all .3s ease;
+				-moz-transition: all .3s ease;
+				transition: all .3s ease;
+
+				&:hover {
+					background-color: #ff1a1a;
+				}
+			}
+		}
+	}
+
+	&.ovabrw_stock_quantity_by_guests_field {
+		label.ovabrw-qty-by-guests {
+			float: unset;
+			text-align: left;
+			width: auto;
+			margin: 0;
+
+			input {
+				margin-right: 5px;
+			}
+		}
+	}
+}
+
+.ovabrw-order-view {
+	display: block;
+	background: unset;
+	margin-bottom: 5px;
+
+	&:last-child {
+		margin-bottom: 0;
+	}
+	
+	a {
+		word-wrap: break-word;
+		-moz-white-space: normal !important;
+	    white-space: normal !important;
+	}
+}
+.ovabrw-order-status {
+	display: inline-flex;
+    line-height: 2.5em;
+    color: #777;
+    background: #e5e5e5;
+    border-radius: 4px;
+    border-bottom: 1px solid rgba(0, 0, 0, .05);
+    margin: 0 0 5px 0;
+    cursor: inherit !important;
+    white-space: nowrap;
+    max-width: 100%;
+
+    span {
+    	margin: 0 1em;
+	    overflow: hidden;
+	    text-overflow: ellipsis;
+    }
+    &.status-completed {
+	    background: #c8d7e1;
+	    color: #2e4453
+	}
+	&.status-on-hold {
+	    background: #f8dda7;
+	    color: #94660c
+	}
+	&.status-failed {
+	    background: #eba3a3;
+	    color: #761919
+	}
+	&.status-processing {
+	    background: #c6e1c6;
+	    color: #5b841b
+	}
+	&.status-trash {
+	    background: #eba3a3;
+	    color: #761919
+	}
+}
+.wp-list-table {
+	th#ovabrw_deposit_status {
+		width: 130px;
+	}
+	&.bookings {
+		th#id {
+			width: 100px;
+		}
+		th#room-code {
+			width: 100px;
+		}
+		td {
+			select.update_order_status {
+				display: block;
+			}
+		}
+	}
+}

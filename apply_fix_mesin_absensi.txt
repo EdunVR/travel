@@ -1,0 +1,118 @@
+=== PERBAIKAN MESIN_ABSENSI.ino ===
+
+LANGKAH 1: Tambahkan prototype fungsi (sekitar baris 236)
+---------------------------------------------------------
+CARI:
+void connectToWiFi();
+
+TAMBAHKAN SETELAHNYA:
+void sendUIDToForm(const char* uid);
+
+
+LANGKAH 2: Tambahkan fungsi sendUIDToForm (sekitar baris 1250, SEBELUM bool sendDataToServer)
+---------------------------------------------------------
+CARI:
+/* =========================
+   SERVER DATA FUNCTIONS - NON BLOCKING
+========================= */
+
+bool sendDataToServer(const char* uid, const char* name, const char* type, bool isOfflineRetry) {
+
+GANTI MENJADI:
+/* =========================
+   SERVER DATA FUNCTIONS - NON BLOCKING
+========================= */
+
+void sendUIDToForm(const char* uid) {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("❌ WiFi not connected, cannot send UID to form");
+    return;
+  }
+
+  Serial.printf("📤 Sending UID to form: %s\n", uid);
+
+  InsecureWiFiClient client;
+  client.setTimeout(2000);
+  
+  HTTPClient http;
+  
+  char url[128];
+  snprintf(url, sizeof(url), "%s%s/register-uid", serverURL, apiEndpoint.c_str());
+  
+  http.begin(client, url);
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(2000);
+  
+  StaticJsonDocument<128> doc;
+  doc["uid"] = uid;
+  
+  String jsonString;
+  serializeJson(doc, jsonString);
+  
+  Serial.print("📦 JSON: ");
+  Serial.println(jsonString);
+  
+  int httpResponseCode = http.POST(jsonString);
+  
+  Serial.printf("📡 HTTP Response code: %d\n", httpResponseCode);
+  
+  if (httpResponseCode > 0) {
+    String response = http.getString();
+    Serial.print("📨 Response: ");
+    Serial.println(response);
+  }
+  
+  http.end();
+  client.stop();
+  feedWatchdog();
+}
+
+bool sendDataToServer(const char* uid, const char* name, const char* type, bool isOfflineRetry) {
+
+
+LANGKAH 3: Update checkRFID - mode register (sekitar baris 1703)
+---------------------------------------------------------
+CARI:
+      // Simpan sebagai UID terakhir
+      safeStringCopy(lastProcessedUID, uidStr, sizeof(lastProcessedUID));
+      lastUIDTime = millis();
+      
+      // Aktifkan mode input
+
+GANTI MENJADI:
+      // Simpan sebagai UID terakhir
+      safeStringCopy(lastProcessedUID, uidStr, sizeof(lastProcessedUID));
+      lastUIDTime = millis();
+      
+      // KIRIM UID KE FORM LARAVEL
+      sendUIDToForm(uidStr);
+      
+      // Aktifkan mode input
+
+
+LANGKAH 4: Update loop - auto clear (sekitar baris 1873)
+---------------------------------------------------------
+CARI:
+  // Auto-clear status message
+  if (strlen(statusMessage) > 0 && now - statusMessageTime > 3000) {
+    statusMessage[0] = '\0';
+    displayNeedsUpdate = true;
+  }
+
+GANTI MENJADI:
+  // Auto-clear employee info setelah 2 detik
+  if (strlen(lastEmployeeName) > 0 && now - lastTapDisplay >= TAP_DISPLAY_DURATION) {
+    lastEmployeeName[0] = '\0';
+    lastTapTime[0] = '\0';
+    displayNeedsUpdate = true;
+  }
+  
+  // Auto-clear status message
+  if (strlen(statusMessage) > 0 && now - statusMessageTime > 3000) {
+    statusMessage[0] = '\0';
+    displayNeedsUpdate = true;
+  }
+
+
+SELESAI!
+Upload file MESIN_ABSENSI.ino ke ESP32 dan test.

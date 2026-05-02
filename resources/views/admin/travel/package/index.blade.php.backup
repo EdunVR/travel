@@ -1,0 +1,57 @@
+<x-layouts.admin :title="'Travel / Paket Perjalanan'">
+  <div x-data="packageCrud()" x-init="init()" class="space-y-4 overflow-x-hidden">
+    <!-- Header -->
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold">Paket Perjalanan</h1>
+        <p class="text-slate-600 text-sm">Kelola paket Hajj dan Umrah dengan perhitungan HPP.</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        @hasPermission('travel.package.create')
+        <button x-on:click="openCreate()" class="inline-flex items-center gap-2 rounded-xl bg-primary-600 text-white px-4 py-2 hover:bg-primary-700">
+          <i class='bx bx-plus-circle text-lg'></i> Tambah Paket
+        </button>
+        @endhasPermission
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="grid grid-cols-1 gap-3">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <div class="lg:col-span-4">
+          <div class="relative">
+            <i class='bx bx-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400'></i>
+            <input x-model="search" x-on:input.debounce.500ms="fetchData()" placeholder="Cari kode, nama paket…"
+                   class="w-full pl-10 pr-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-200">
+          </div>
+        </div>
+        <div class="lg:col-span-3">
+          <select x-model="typeFilter" x-on:change="fetchData()" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
+            <option value="ALL">Semua Tipe</option>
+            <option value="hajj">Hajj</option>
+            <option value="umrah">Umrah</option>
+          </select>
+        </div>
+        <div class="lg:col-span-3">
+          <select x-model="statusFilter" x-on:change="fetchData()" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
+            <option value="ALL">Semua Status</option>
+            <option value="draft">Draft</option>
+            <option value="active">Active</option>
+            <option value="full">Full</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="lg:col-span-2">
+          <select x-model="sortDir" x-on:change="fetchData()" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
+            <option value="desc">Terbaru</option>
+            <option value="asc">Terlama</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div x-show="loading" class="text-center py-8">
+      <div class="inline-flex items-center gap-2 text-slate-600">
+        <i class='bx bx-loader-alt bx-s

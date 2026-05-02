@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Modal Post Depreciation Debug</title>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Force modal to be visible for debugging */
+        .debug-modal {
+            display: flex !important;
+            position: fixed !important;
+            inset: 0 !important;
+            background-color: rgba(0, 0, 0, 0.5) !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 1rem !important;
+            z-index: 9999 !important;
+        }
+        
+        .debug-modal-content {
+            background-color: white !important;
+            border-radius: 1rem !important;
+            width: 100% !important;
+            max-width: 28rem !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div x-data="{
+        showPostDepreciationModal: false,
+        selectedDepreciationForPost: {
+            id: 202,
+            asset_name: 'Test Asset',
+            date: '2025-02-28',
+            amount: 1000000
+        },
+        availableBooksForPosting: [
+            { id: 1, name: 'Buku Utama', type: 'Main', status: 'active' }
+        ],
+        postDepreciationForm: {
+            book_id: '',
+            notes: ''
+        },
+        
+        openModal() {
+            console.log('🔍 Opening modal...');
+            this.showPostDepreciationModal = true;
+            console.log('✅ showPostDepreciationModal:', this.showPostDepreciationModal);
+        },
+        
+        closeModal() {
+            this.showPostDepreciationModal = false;
+        },
+        
+        formatCurrency(amount) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR'
+            }).format(amount);
+        },
+        
+        getSelectedBookStatus() {
+            const book = this.availableBooksForPosting.find(b => b.id == this.postDepreciationForm.book_id);
+            return book ? book.status : 'active';
+        }
+    }">
+        <h1 class="text-2xl font-bold mb-6">Test Modal Post Depreciation Debug</h1>
+        
+        <!-- Debug Info -->
+        <div class="bg-white p-4 rounded-lg shadow mb-6">
+            <h2 class="text-lg font-semibold mb-3">Debug Info</h2>
+            <div class="space-y-2 text-sm">
+                <div>showPostDepreciationModal: <span x-text="showPostDepreciationModal" class="font-mono bg-gray-100 px-2 py-1 rounded"></span></div>
+                <div>selectedDepreciationForPost: <span x-text="JSON.stringify(selectedDepreciationForPost)" class="font-mono bg-gray-100 px-2 py-1 rounded"></span></div>
+            </div>
+        </div>
+        
+        <!-- Test Buttons -->
+        <div class="space-x-4 mb-6">
+            <button @click="openModal()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Open Modal (Normal)
+            </button>
+            
+            <button @click="showPostDepreciationModal = true" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                Force Show Modal
+            </button>
+            
+            <button @click="showPostDepreciationModal = false" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                Hide Modal
+            </button>
+        </div>
+        
+        <!-- Test Indicator -->
+        <div x-show="showPostDepreciationModal" class="fixed top-4 right-4 bg-green-500 text-white p-3 rounded-lg shadow-lg z-[10000]">
+            ✅ Modal Variable is TRUE!
+        </div>
+        
+        <!-- Original Modal (might not work) -->
+        <div x-show="showPostDepreciationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-2xl w-full max-w-md">
+                <div class="p-6 border-b border-slate-200">
+                    <h3 class="text-lg font-semibold text-slate-800">Posting Penyusutan (Original)</h3>
+                    <p class="text-sm text-slate-600 mt-1">Modal dengan x-show original</p>
+                </div>
+                
+                <div class="p-6">
+                    <p>Jika Anda melihat modal ini, berarti x-show bekerja dengan baik!</p>
+                </div>
+                
+                <div class="p-6 border-t border-slate-200 flex justify-end gap-3">
+                    <button @click="closeModal()" class="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Debug Modal (forced visible) -->
+        <div x-show="showPostDepreciationModal" class="debug-modal">
+            <div class="debug-modal-content">
+                <div class="p-6 border-b border-slate-200">
+                    <h3 class="text-lg font-semibold text-slate-800">Posting Penyusutan (Debug)</h3>
+                    <p class="text-sm text-slate-600 mt-1">Modal dengan CSS debug (forced visible)</p>
+                </div>
+                
+                <div class="p-6 space-y-4">
+                    <!-- Depreciation Info -->
+                    <div class="bg-slate-50 rounded-lg p-4 space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-slate-600">Aset:</span>
+                            <span class="font-semibold" x-text="selectedDepreciationForPost.asset_name"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-600">Periode:</span>
+                            <span class="font-semibold" x-text="selectedDepreciationForPost.date"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-600">Jumlah Penyusutan:</span>
+                            <span class="font-semibold text-red-600" x-text="formatCurrency(selectedDepreciationForPost.amount)"></span>
+                        </div>
+                    </div>
+
+                    <!-- Book Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Pilih Buku Akuntansi *</label>
+                        <select x-model="postDepreciationForm.book_id" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Pilih Buku Akuntansi</option>
+                            <template x-for="book in availableBooksForPosting" :key="book.id">
+                                <option :value="book.id" x-text="book.name + ' (' + book.type + ')'"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Catatan (Opsional)</label>
+                        <textarea x-model="postDepreciationForm.notes" rows="3" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" 
+                                  placeholder="Catatan tambahan untuk posting penyusutan..."></textarea>
+                    </div>
+                </div>
+
+                <div class="p-6 border-t border-slate-200 flex justify-end gap-3">
+                    <button @click="closeModal()" class="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">
+                        Batal
+                    </button>
+                    <button :disabled="!postDepreciationForm.book_id"
+                            :class="!postDepreciationForm.book_id ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'"
+                            class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg">
+                        Posting Penyusutan
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Instructions -->
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
+            <h3 class="font-semibold text-yellow-800 mb-2">Instruksi Debug:</h3>
+            <ol class="list-decimal list-inside space-y-1 text-sm text-yellow-700">
+                <li>Klik "Open Modal (Normal)" - lihat apakah modal muncul</li>
+                <li>Jika tidak muncul, cek apakah indicator hijau di kanan atas muncul</li>
+                <li>Jika indicator muncul tapi modal tidak, ada masalah CSS/z-index</li>
+                <li>Jika indicator tidak muncul, ada masalah Alpine.js</li>
+                <li>Buka Developer Tools (F12) dan cek Console untuk error</li>
+                <li>Cek Elements tab untuk melihat apakah modal ada di DOM</li>
+            </ol>
+        </div>
+    </div>
+    
+    <script>
+        // Additional debugging
+        document.addEventListener('alpine:init', () => {
+            console.log('🚀 Alpine.js initialized');
+        });
+        
+        // Log when modal state changes
+        document.addEventListener('alpine:initialized', () => {
+            const alpineEl = document.querySelector('[x-data]');
+            if (alpineEl) {
+                const data = Alpine.$data(alpineEl);
+                Alpine.effect(() => {
+                    console.log('📊 Modal state changed:', data.showPostDepreciationModal);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

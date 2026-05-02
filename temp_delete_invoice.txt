@@ -1,0 +1,218 @@
+﻿Delete invoice button
+      $(document).on('click', '#btn-delete-invoice', function() {
+        console.log('Delete invoice button clicked');
+        
+        const confirmDelete = typeof Swal !== 'undefined' 
+          ? Swal.fire({
+              title: 'Hapus Invoice?',
+              text: 'Invoice akan dihapus dan booking akan kembali ke status tanpa invoice. Tindakan ini tidak dapat dibatalkan.',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#d33',
+              cancelButtonColor: '#3085d6',
+              confirmButtonText: 'Ya, Hapus!',
+              cancelButtonText: 'Batal'
+            })
+          : Promise.resolve({ isConfirmed: confirm('Hapus Invoice? Invoice akan dihapus dan booking akan kembali ke status tanpa invoice. Tindakan ini tidak dapat dibatalkan.') });
+        
+        confirmDelete.then((result) => {
+          if (result.isConfirmed) {
+            $.ajax({
+              url: '{{ route("admin.inventaris.payment.delete-invoice", $booking->id) }}',
+              method: 'DELETE',
+              data: {
+                _token: '{{ csrf_token() }}'
+              },
+              success: function(response) {
+                console.log('Delete invoice success:', response);
+                if (response.success) {
+                  if (typeof Swal !== 'undefined') {
+                    Swal.fire('Berhasil', response.message, 'success').then(() => {
+                      location.reload();
+                    });
+                  } else {
+                    alert(response.message);
+                    location.reload();
+                  }
+                }
+              },
+              error: function(xhr) {
+                console.error('Delete invoice error:', xhr);
+                const message = xhr.responseJSON?.message || 'Gagal menghapus invoice';
+                if (typeof Swal !== 'undefined') {
+                  Swal.fire('Error', message, 'error');
+                } else {
+                  alert('Error: ' + message);
+                }
+              }
+            });
+          }
+        });
+      });
+
+      // Load communication history
+      function loadCommunicationHistory() {
+        console.log('Loading communication history...');
+        $.get('{{ route("admin.inventaris.travel.communication.member-history", $booking->id_member) }}', function(response) {
+          console.log('Communication history response:', response);
+          if (response.success) {
+            const container = $('#communication-history-container');
+            container.empty();
+            
+            if (response.data.length === 0) {
+              container.append('<p class="text-muted text-center">Belum ada riwayat komunikasi</p>');
+            } else {
+              const timeline = $('<div class="timeline"></div>');
+              
+              response.data.forEach(function(comm) {
+                const methodBadges = {
+                  'phone_call': 'primary',
+                  'whatsapp': 'success',
+                  'email': 'info',
+                  'in_person': 'warning',
+                  'other': 'secondary'
+                };
+                const statusBadges = {
+                  'pending': 'warning',
+                  'contacted': 'info',
+                  'responded': 'success',
+                  'no_response': 'danger'
+                };
+                
+                const methodColor = methodBadges[comm.communication_method] || 'secondary';
+                const statusColor = statusBadges[comm.follow_up_status] || 'secondary';
+                
+                const item = $(`
+                  <div class="timeline-item mb-3">
+                    <div class="d-flex">
+                      <div class="mr-3">
+                        <i class="fas fa-comment-dots text-${methodColor}"></i>
+                      </div>
+                      <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                          <div>
+                            <span class="badge badge-${methodColor}">${comm.communication_method_label}</span>
+                            <span class="badge badge-${statusColor}">${comm.follow_up_status_label}</span>
+                          </div>
+                          <small class="text-muted">${new Date(comm.communication_date).toLocaleString()}</small>
+                        </div>
+                        <p class="mt-2 mb-1">${comm.notes || '<em class="text-muted">Tidak ada catatan</em>'}</p>
+                        ${comm.next_follow_up_date ? `<small class="text-muted"><i class="fas fa-clock"></i> Follow-up: ${comm.next_follow_up_date}</small>` : ''}
+                        <br><small class="text-muted">Oleh: ${comm.contacted_by_user?.name || '-'}</small>
+                      </div>
+                    </div>
+                    <hr>
+                  </div>
+                `);
+                
+                timeline.append(item);
+              });
+              
+              container.append(timeline);
+            }
+          }
+        }).fail(function(xhr) {
+          console.error('Failed to load communication history:', xhr);
+        });
+      }
+
+      // Load communication history on page load
+      loadCommunicationHistory();
+
+      // Add communication button
+      $('#btn-add-communication').on('click', function() {
+        console.log('Add communication button clicked');
+        $('#add-communication-form')[0].reset();
+        $('input[name="communication_date"]').val(new Date().toISOString().slice(0, 16));
+        forceShowModal('#add-communication-modal');
+      });
+
+      // Submit communication form
+      $('#add-communication-form').on('submit', function(e) {
+        e.preventDefault();
+        console.log('Communication form submitted');
+        
+        $.ajax({
+          url: '{{ route("admin.inventaris.travel.communication.store") }}',
+          method: 'POST',
+          data: $(this).serialize() + '&_token={{ csrf_token() }}',
+          success: function(response) {
+            console.log('Communication success:', response);
+            if (response.success) {
+              // Hide modal properly
+              $('#add-communication-modal').modal('hide');
+              
+              // Clean up modal backdrop
+              $('.modal-backdrop').remove();
+              $('body').removeClass('modal-open');
+              $('body').css('padding-right', '');
+              
+              loadCommunicationHistory();
+              if (typeof Swal !== 'undefined') {
+                Swal.fire('Berhasil', response.message, 'success');
+              } else {
+                alert(response.message);
+              }
+            }
+          },
+          error: function(xhr) {
+            console.error('Communication error:', xhr);
+            const message = xhr.responseJSON?.message || 'Gagal menyimpan komunikasi';
+            if (typeof Swal !== 'undefined') {
+              Swal.fire('Error', message, 'error');
+            } else {
+              alert('Error: ' + message);
+            }
+          }
+        });
+      });
+
+      // Clean up any leftover modal backdrops on page load
+      $(document).ready(function() {
+        // Remove any modal-backdrop that might be stuck
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        $('body').css('padding-right', '');
+        
+        // Remove any pointer-events blocking
+        $('body').css('pointer-events', 'auto');
+
+        // Handle receipt view button with window.open
+        $(document).on('click', '.btn-view-receipt', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          const url = $(this).data('url');
+          console.log('Opening receipt in new window:', url);
+          
+          // Open in new window/tab
+          window.open(url, '_blank', 'noopener,noreferrer');
+          
+          // Cleanup backdrop hanya jika tidak ada modal yang terbuka
+          setTimeout(function() {
+            if ($('.modal.show').length === 0 && $('.modal:visible').length === 0) {
+              $('.modal-backdrop').remove();
+              $('body').removeClass('modal-open');
+              $('body').css('padding-right', '');
+              $('body').css('pointer-events', 'auto');
+            }
+          }, 500);
+          
+          return false;
+        });
+
+        // Ensure receipt links work properly (fallback for any remaining <a> tags)
+        $('a[href*="payment.receipt"]').on('click', function(e) {
+          // Don't prevent default - let the link open in new tab
+          console.log('Receipt link clicked:', $(this).attr('href'));
+          
+          // Clean up any modal backdrops immediately
+          setTimeout(function() {
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open');
+            $('body').css('padding-right', '');
+          }, 100);
+        });
+      });
+
+      

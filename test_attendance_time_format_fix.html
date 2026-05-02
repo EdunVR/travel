@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attendance Time Format Fix Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        code { background-color: #f8f9fa; padding: 2px 4px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Attendance Time Format Fix Test</h1>
+    
+    <div class="test-case success">
+        <h2>✅ Problem Fixed</h2>
+        <p><strong>Issue:</strong> "The clock in field must match the format H:i"</p>
+        <p><strong>Cause:</strong> Time picker with <code>step="1"</code> produces HH:MM:SS format</p>
+        <p><strong>Solution:</strong> Removed <code>step="1"</code> and enhanced time formatting</p>
+    </div>
+    
+    <div class="test-case">
+        <h2>🧪 Test Steps</h2>
+        <ol>
+            <li>Go to SDM > Absensi page</li>
+            <li>Click + (Add) button to open modal</li>
+            <li>Fill in time fields (Clock In, Clock Out, etc.)</li>
+            <li>Submit the form</li>
+            <li>✅ Should not get "format H:i" validation error</li>
+        </ol>
+    </div>
+    
+    <div class="test-case">
+        <h2>🔍 What Was Changed</h2>
+        <ul>
+            <li>Removed <code>step="1"</code> from all time input fields</li>
+            <li>Enhanced <code>ensureTimeFormat()</code> function</li>
+            <li>Added time format validation before form submission</li>
+            <li>Time inputs now produce HH:MM format (not HH:MM:SS)</li>
+        </ul>
+    </div>
+    
+    <div class="test-case warning">
+        <h2>⚠️ Expected Behavior</h2>
+        <p><strong>Before Fix:</strong></p>
+        <ul>
+            <li>Time picker shows seconds (HH:MM:SS)</li>
+            <li>Validation error: "must match format H:i"</li>
+            <li>Form submission fails</li>
+        </ul>
+        
+        <p><strong>After Fix:</strong></p>
+        <ul>
+            <li>Time picker shows only hours and minutes (HH:MM)</li>
+            <li>No validation errors</li>
+            <li>Form submission succeeds</li>
+        </ul>
+    </div>
+    
+    <div class="test-case">
+        <h2>🐛 Debug Tips</h2>
+        <p>If you still get validation errors:</p>
+        <ol>
+            <li>Open browser console (F12)</li>
+            <li>Check for time format warnings</li>
+            <li>Verify time values before submission</li>
+            <li>Check Laravel logs for detailed validation errors</li>
+        </ol>
+    </div>
+    
+    <script>
+        console.log("🕐 Time format fix test page loaded");
+        console.log("📋 Follow the test steps above to verify the fix");
+        
+        // Helper function to test time format
+        window.testTimeFormat = function(timeString) {
+            const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+            const isValid = timeRegex.test(timeString);
+            console.log(`Time "${timeString}" is ${isValid ? "valid" : "invalid"} H:i format`);
+            return isValid;
+        };
+        
+        console.log("💡 Use testTimeFormat('14:30') in console to test time formats");
+    </script>
+</body>
+</html>
