@@ -521,10 +521,20 @@ class AffiliateAdminController extends Controller
                 if (!$p['parent']) continue;
                 $key     = $a->id . '_' . $p['parent'];
                 $feeData = $feeMap[$key] ?? null;
-                $setting = $matrix[$slug][$p['to_level']] ?? null;
-                $pct     = $setting['percentage'] ?? 0;
-                $feeType = $setting['fee_type']   ?? 'percentage';
-                $feeVal  = $setting['fee_value']  ?? $pct;
+                
+                // Ambil fee setting spesifik atau global
+                $feeSetting = AffiliateHierarchySetting::getFeeForPair(
+                    $slug,
+                    $p['to_level'],
+                    $a->id,
+                    $p['parent']
+                );
+                
+                $pct     = $feeSetting['percentage'] ?? 0;
+                $feeType = $feeSetting['fee_type']   ?? 'percentage';
+                $feeVal  = $feeSetting['fee_value']  ?? $pct;
+                $isSpecific = $feeSetting['is_specific'] ?? false;
+                
                 $edges[] = [
                     'from'       => $a->id,
                     'to'         => $p['parent'],
@@ -535,6 +545,7 @@ class AffiliateAdminController extends Controller
                     'has_fee'    => $feeData && $feeData->total > 0,
                     'from_level' => $slug,
                     'to_level'   => $p['to_level'],
+                    'is_specific' => $isSpecific,
                 ];
             }
         }
@@ -548,6 +559,7 @@ class AffiliateAdminController extends Controller
 
     /**
      * Simpan fee setting untuk satu pasangan level (dari klik garis)
+     * Bisa untuk setting global atau spesifik per mitra
      */
     public function saveLineFee(Request $request)
     {
@@ -557,6 +569,8 @@ class AffiliateAdminController extends Controller
                 'to_level'   => 'required|string|min:1',
                 'fee_type'   => 'required|in:percentage,flat',
                 'fee_value'  => 'required|numeric|min:0',
+                'from_affiliator_id' => 'nullable|exists:affiliators,id',
+                'to_affiliator_id'   => 'nullable|exists:affiliators,id',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -570,17 +584,28 @@ class AffiliateAdminController extends Controller
         $feeValue = (float) $request->fee_value;
         $pct      = $feeType === 'percentage' ? $feeValue : 0;
 
-        AffiliateHierarchySetting::updateOrCreate(
-            ['from_level' => $request->from_level, 'to_level' => $request->to_level],
-            [
-                'percentage' => $pct,
-                'fee_type'   => $feeType,
-                'fee_value'  => $feeValue,
-                'is_active'  => true,
-            ]
-        );
+        $data = [
+            'percentage' => $pct,
+            'fee_type'   => $feeType,
+            'fee_value'  => $feeValue,
+            'is_active'  => true,
+        ];
 
-        return response()->json(['success' => true, 'message' => 'Fee berhasil disimpan.']);
+        // Tentukan unique key berdasarkan apakah ini setting spesifik atau global
+        $uniqueKey = [
+            'from_level' => $request->from_level,
+            'to_level'   => $request->to_level,
+            'from_affiliator_id' => $request->from_affiliator_id,
+            'to_affiliator_id'   => $request->to_affiliator_id,
+        ];
+
+        AffiliateHierarchySetting::updateOrCreate($uniqueKey, $data);
+
+        $message = $request->from_affiliator_id && $request->to_affiliator_id
+            ? 'Fee spesifik untuk mitra ini berhasil disimpan.'
+            : 'Fee global berhasil disimpan.';
+
+        return response()->json(['success' => true, 'message' => $message]);
     }
 
     /**

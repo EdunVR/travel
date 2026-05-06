@@ -1226,16 +1226,35 @@
                      'slug' => $mySlug, 'isSelf' => true];
 
         foreach ([
-            ['node' => $aff->uplineMaster],
-            ['node' => $aff->uplineLeader],
-            ['node' => $aff->uplinePartner],
+            ['node' => $aff->uplineMaster,  'to_level' => 'hm-master'],
+            ['node' => $aff->uplineLeader,  'to_level' => 'hm-leader'],
+            ['node' => $aff->uplinePartner, 'to_level' => 'hm-partner'],
         ] as $up) {
             if (!$up['node']) continue;
             $jNodes[] = ['id' => $up['node']->id, 'name' => $up['node']->full_name,
                          'program' => $up['node']->partnershipProgram?->name ?? '-',
                          'slug' => $up['node']->partnershipProgram?->slug ?? '', 'isSelf' => false];
-            $jEdges[] = ['from' => $aff->id, 'to' => $up['node']->id,
-                         'has_fee' => false, 'fee_total' => 0];
+            
+            // Ambil fee setting spesifik atau global
+            $feeSetting = \App\Models\AffiliateHierarchySetting::getFeeForPair(
+                $mySlug,
+                $up['to_level'],
+                $aff->id,
+                $up['node']->id
+            );
+            
+            $jEdges[] = [
+                'from' => $aff->id, 
+                'to' => $up['node']->id,
+                'has_fee' => false, 
+                'fee_total' => 0,
+                'from_level' => $mySlug,
+                'to_level' => $up['to_level'],
+                'percentage' => $feeSetting['percentage'] ?? 0,
+                'fee_type' => $feeSetting['fee_type'] ?? 'percentage',
+                'fee_value' => $feeSetting['fee_value'] ?? 0,
+                'is_specific' => $feeSetting['is_specific'] ?? false,
+            ];
         }
 
         $dlNodes = collect();
@@ -1250,12 +1269,32 @@
             ->pluck('total', 'from_affiliator_id');
 
         foreach ($dlNodes as $dl) {
+            $dlSlug = $dl->partnershipProgram?->slug ?? '';
             $jNodes[] = ['id' => $dl->id, 'name' => $dl->full_name,
                          'program' => $dl->partnershipProgram?->name ?? '-',
-                         'slug' => $dl->partnershipProgram?->slug ?? '', 'isSelf' => false];
+                         'slug' => $dlSlug, 'isSelf' => false];
             $dlFee = $feeMap2[$dl->id] ?? 0;
-            $jEdges[] = ['from' => $dl->id, 'to' => $aff->id,
-                         'has_fee' => $dlFee > 0, 'fee_total' => (float)$dlFee];
+            
+            // Ambil fee setting spesifik atau global untuk downline
+            $feeSetting = \App\Models\AffiliateHierarchySetting::getFeeForPair(
+                $dlSlug,
+                $mySlug,
+                $dl->id,
+                $aff->id
+            );
+            
+            $jEdges[] = [
+                'from' => $dl->id, 
+                'to' => $aff->id,
+                'has_fee' => $dlFee > 0, 
+                'fee_total' => (float)$dlFee,
+                'from_level' => $dlSlug,
+                'to_level' => $mySlug,
+                'percentage' => $feeSetting['percentage'] ?? 0,
+                'fee_type' => $feeSetting['fee_type'] ?? 'percentage',
+                'fee_value' => $feeSetting['fee_value'] ?? 0,
+                'is_specific' => $feeSetting['is_specific'] ?? false,
+            ];
         }
     @endphp
 

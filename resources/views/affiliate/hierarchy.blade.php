@@ -106,41 +106,67 @@
 
     // 1 upline langsung
     if ($directUpline) {
+        $uplineSlug = $directUpline->partnershipProgram?->slug ?? '';
         $treeNodes[] = [
             'id'      => $directUpline->id,
             'name'    => $directUpline->full_name,
             'program' => $directUpline->partnershipProgram?->name ?? '-',
-            'slug'    => $directUpline->partnershipProgram?->slug ?? '',
+            'slug'    => $uplineSlug,
             'isSelf'  => false,
         ];
+        
+        // Ambil fee setting spesifik atau global untuk upline
+        $feeSetting = \App\Models\AffiliateHierarchySetting::getFeeForPair(
+            $slug,
+            $uplineSlug,
+            $affiliator->id,
+            $directUpline->id
+        );
+        
         $treeEdges[] = [
             'from'       => $affiliator->id,
             'to'         => $directUpline->id,
             'has_fee'    => false,
             'fee_total'  => 0,
-            'percentage' => 0,
+            'percentage' => $feeSetting['percentage'] ?? 0,
+            'fee_type'   => $feeSetting['fee_type'] ?? 'percentage',
+            'fee_value'  => $feeSetting['fee_value'] ?? 0,
+            'is_specific' => $feeSetting['is_specific'] ?? false,
             'from_level' => $slug,
-            'to_level'   => $directUpline->partnershipProgram?->slug ?? '',
+            'to_level'   => $uplineSlug,
         ];
     }
 
     // Semua downline
     foreach ($downlines as $dl) {
+        $dlSlug = $dl->partnershipProgram?->slug ?? '';
         $treeNodes[] = [
             'id'      => $dl->id,
             'name'    => $dl->full_name,
             'program' => $dl->partnershipProgram?->name ?? '-',
-            'slug'    => $dl->partnershipProgram?->slug ?? '',
+            'slug'    => $dlSlug,
             'isSelf'  => false,
         ];
         $dlFee = $feeReceived->where('from_affiliator_id', $dl->id)->sum('amount');
+        
+        // Ambil fee setting spesifik atau global untuk downline
+        $feeSetting = \App\Models\AffiliateHierarchySetting::getFeeForPair(
+            $dlSlug,
+            $slug,
+            $dl->id,
+            $affiliator->id
+        );
+        
         $treeEdges[] = [
             'from'       => $dl->id,
             'to'         => $affiliator->id,
             'has_fee'    => $dlFee > 0,
             'fee_total'  => (float) $dlFee,
-            'percentage' => 0,
-            'from_level' => $dl->partnershipProgram?->slug ?? '',
+            'percentage' => $feeSetting['percentage'] ?? 0,
+            'fee_type'   => $feeSetting['fee_type'] ?? 'percentage',
+            'fee_value'  => $feeSetting['fee_value'] ?? 0,
+            'is_specific' => $feeSetting['is_specific'] ?? false,
+            'from_level' => $dlSlug,
             'to_level'   => $slug,
         ];
     }

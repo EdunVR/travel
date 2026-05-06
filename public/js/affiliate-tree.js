@@ -459,6 +459,7 @@ class AffiliateTree {
         const tn = this.nodes.find(n => n.id === edge.to);
         const isFlat = (edge.fee_type === 'flat');
         const curVal = isFlat ? (edge.fee_value || 0) : (edge.percentage || 0);
+        const isSpecific = edge.is_specific || false;
 
         // Jika from_level kosong, coba ambil dari node
         const fromLevel = edge.from_level || fn?.slug || '';
@@ -468,12 +469,17 @@ class AffiliateTree {
         const levelInfo  = (fromLevel && toLevel)
             ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px">${levelLabel(fromLevel)} → ${levelLabel(toLevel)}</div>`
             : `<div style="font-size:10px;color:#ef4444;margin-top:2px">⚠ Level tidak terdeteksi — pastikan mitra memiliki program</div>`;
+        
+        const specificBadge = isSpecific
+            ? `<div style="display:inline-block;font-size:9px;padding:2px 6px;background:#fef3c7;color:#92400e;border-radius:4px;margin-top:3px;font-weight:600">⭐ Setting Spesifik</div>`
+            : `<div style="display:inline-block;font-size:9px;padding:2px 6px;background:#f1f5f9;color:#64748b;border-radius:4px;margin-top:3px;font-weight:600">🌐 Setting Global</div>`;
 
         el.innerHTML = `
         <div style="padding:9px 14px 7px;border-bottom:1px solid #f1f5f9">
             <div style="font-weight:700;font-size:12px;color:#1e293b">Setting Fee Jenjang</div>
             <div style="font-size:11px;color:#64748b;margin-top:1px">${fn?.name ?? '?'} → ${tn?.name ?? '?'}</div>
             ${levelInfo}
+            ${specificBadge}
             ${edge.has_fee ? `<div style="font-size:10px;color:#16a34a;margin-top:2px">Fee terdistribusi: Rp ${this._fmt(edge.fee_total)}</div>` : ''}
         </div>
         <div style="padding:10px 14px">
@@ -499,6 +505,9 @@ class AffiliateTree {
                     style="height:32px;padding:0 12px;background:#16a34a;color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;min-width:60px">
                     Simpan
                 </button>
+            </div>
+            <div style="font-size:9px;color:#64748b;margin-top:6px;line-height:1.4">
+                💡 Setting ini akan ${isSpecific ? '<strong>hanya berlaku untuk pasangan mitra ini</strong>' : 'berlaku untuk <strong>semua mitra dengan level yang sama</strong>'}
             </div>
         </div>`;
 
@@ -583,6 +592,12 @@ class AffiliateTree {
         fd.append('to_level',   edge.to_level);
         fd.append('fee_type',   type);
         fd.append('fee_value',  val);
+        
+        // PENTING: Kirim ID mitra untuk setting spesifik
+        if (edge.from && edge.to) {
+            fd.append('from_affiliator_id', edge.from);
+            fd.append('to_affiliator_id',   edge.to);
+        }
 
         try {
             const res = await fetch(this.opts.feeUrl, {
@@ -611,18 +626,19 @@ class AffiliateTree {
                 // Update edge data di treeData agar popup berikutnya pakai nilai terbaru
                 if (window._affTreeData) {
                     const e = window._affTreeData.edges.find(
-                        x => x.from_level === edge.from_level && x.to_level === edge.to_level
+                        x => x.from === edge.from && x.to === edge.to
                     );
                     if (e) {
                         e.fee_type  = type;
                         e.fee_value = val;
                         e.percentage = type === 'percentage' ? val : 0;
+                        e.is_specific = true; // Mark sebagai setting spesifik
                     }
                 }
                 // Tampilkan notifikasi sukses singkat
                 const notif = document.createElement('div');
                 notif.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;background:#16a34a;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,0.15)';
-                notif.textContent = '✓ Fee berhasil disimpan';
+                notif.textContent = '✓ ' + (data.message || 'Fee berhasil disimpan');
                 document.body.appendChild(notif);
                 setTimeout(() => notif.remove(), 2500);
                 document.dispatchEvent(new CustomEvent('affTree:reload'));
