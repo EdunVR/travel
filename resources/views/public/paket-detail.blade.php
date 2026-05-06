@@ -414,7 +414,7 @@ Hubungi Kami
 </div>
 
 {{-- Handling & Lounge Fee --}}
-@if($package->include_handling_lounge_fee && $package->handling_lounge_fee_amount > 0)
+@if($package->handling_fee_enabled && $package->handling_fee_amount > 0)
 <div class="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-xl p-4">
 <div class="flex items-start gap-3">
 <div class="flex-shrink-0 w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center">
@@ -422,14 +422,14 @@ Hubungi Kami
 </div>
 <div class="flex-1">
 <h4 class="font-bold text-gray-900 text-sm mb-1">
-{{ $package->handling_lounge_fee_description ?? 'Handling & Lounge Fee Wajib' }}
+{{ $package->handling_fee_description ?? 'Handling & Lounge Fee Wajib' }}
 </h4>
 <p class="text-xs text-gray-600 mb-2">
-Biaya ini wajib dibayarkan untuk setiap jamaah dan sudah termasuk dalam total harga paket.
+Biaya tambahan wajib yang akan ditambahkan ke total harga paket saat booking.
 </p>
 <div class="flex items-center gap-2">
 <span class="text-2xl font-black text-yellow-700">
-Rp {{ number_format($package->handling_lounge_fee_amount, 0, ',', '.') }}
+Rp {{ number_format($package->handling_fee_amount, 0, ',', '.') }}
 </span>
 <span class="text-xs text-gray-500">per paket</span>
 </div>
