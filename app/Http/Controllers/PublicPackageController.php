@@ -793,9 +793,9 @@ class PublicPackageController extends Controller
         }
 
         // Add Handling & Lounge Fee if enabled in package
-        if ($package && $package->include_handling_lounge_fee && $package->handling_lounge_fee_amount > 0) {
-            $handlingFee = $package->handling_lounge_fee_amount;
-            $description = $package->handling_lounge_fee_description ?? 'Handling & Lounge Fee Wajib';
+        if ($package && $package->handling_fee_enabled && $package->handling_fee_amount > 0) {
+            $handlingFee = $package->handling_fee_amount;
+            $description = $package->handling_fee_description ?? 'Handling & Lounge Fee Wajib';
             $breakdown[] = ['label' => $description, 'amount' => $handlingFee, 'pax' => 1];
             $total += $handlingFee;
         }

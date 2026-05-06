@@ -611,18 +611,31 @@
             $familyDiscountTotal = array_sum(array_column($familyDiscount, 'price'));
             $chargedHotelsTotal = $booking->hotelBookings ? $booking->hotelBookings->where('is_charged', true)->sum('total_cost') : 0;
             $addonsTotal = $booking->addons ? $booking->addons->sum(fn($a) => $a->harga * $a->qty) : 0;
-            $grandTotal = $mainSubtotal + $familyDiscountTotal + ($booking->equipment_cost ?? 0) + ($booking->upgrade_cost ?? 0) + $chargedHotelsTotal + $addonsTotal - $booking->discount_amount;
+            
+            // Add handling fee if enabled
+            $handlingFee = 0;
+            if ($booking->travelPackage && $booking->travelPackage->handling_fee_enabled && $booking->travelPackage->handling_fee_amount > 0) {
+                $handlingFee = $booking->travelPackage->handling_fee_amount;
+            }
+            
+            $grandTotal = $mainSubtotal + $familyDiscountTotal + ($booking->equipment_cost ?? 0) + ($booking->upgrade_cost ?? 0) + $chargedHotelsTotal + $addonsTotal + $handlingFee - $booking->discount_amount;
         @endphp
         <div class="total-section">
             <table>
                 @if(count($familyDiscount) > 0)
                 <tr>
-                    <td colspan="4" class="text-right">Paket Utama ({{ $mainPax }} Pax Ã— Rp {{ number_format($unitPrice, 0, ',', '.') }})</td>
+                    <td colspan="4" class="text-right">Paket Utama ({{ $mainPax }} Pax × Rp {{ number_format($unitPrice, 0, ',', '.') }})</td>
                     <td class="text-right" style="width: 150px;">Rp {{ number_format($mainSubtotal, 0, ',', '.') }}</td>
                 </tr>
                 <tr>
                     <td colspan="4" class="text-right">Anggota Keluarga (Diskon)</td>
                     <td class="text-right">Rp {{ number_format($familyDiscountTotal, 0, ',', '.') }}</td>
+                </tr>
+                @endif
+                @if($handlingFee > 0)
+                <tr>
+                    <td colspan="4" class="text-right">{{ $booking->travelPackage->handling_fee_description ?? 'Handling & Lounge Fee Wajib' }}</td>
+                    <td class="text-right">Rp {{ number_format($handlingFee, 0, ',', '.') }}</td>
                 </tr>
                 @endif
                 <tr>
