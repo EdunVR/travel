@@ -11,10 +11,8 @@
     
     <title>{{ $title ?? 'MORRA ERP' }}</title>
 
-    @if(app()->environment('production'))
-        @vite(['resources/css/app.css'])
-    @else
-        <script src="https://cdn.tailwindcss.com"></script>
+    {{-- Use CDN Tailwind for both dev and production (no Vite manifest needed) --}}
+    <script src="https://cdn.tailwindcss.com"></script>
         <script>
             if (typeof tailwind !== 'undefined') {
                 tailwind.config = {

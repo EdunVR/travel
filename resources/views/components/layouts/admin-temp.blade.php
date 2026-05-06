@@ -7,11 +7,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'MORRA ERP' }}</title>
 
-    {{-- Tailwind CSS - Production Ready --}}
-    @if(app()->environment('production'))
-        @vite(['resources/css/app.css'])
-    @else
-        <script src="https://cdn.tailwindcss.com"></script>
+    {{-- Tailwind CSS - Use CDN for both dev and production (no Vite manifest needed) --}}
+    <script src="https://cdn.tailwindcss.com"></script>
         <script>
             // Only configure Tailwind if CDN is loaded
             if (typeof tailwind !== 'undefined') {

@@ -18,33 +18,29 @@
     <link rel="shortcut icon" type="image/png" href="{{ $faviconPath }}">
     <link rel="apple-touch-icon" href="{{ $faviconPath }}">
 
-    {{-- Tailwind CSS - Production Ready --}}
-    @if(app()->environment('production'))
-        @vite(['resources/css/app.css'])
-    @else
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script>
-            // Only configure Tailwind if CDN is loaded
-            if (typeof tailwind !== 'undefined') {
-                tailwind.config = {
-                    theme: {
-                        container: { center: true, padding: '1rem' },
-                        extend: {
-                            colors: {
-                                primary: {50:'#eef7ff',100:'#daecff',200:'#b6d8ff',300:'#87beff',400:'#55a0ff',500:'#2f86ff',600:'#186ae6',700:'#1354b4',800:'#0f418c',900:'#0c356f'},
-                                ink: { 900:'#0f172a', 700:'#334155', 500:'#64748b' }
-                            },
-                            boxShadow: {
-                                card: '0 6px 20px rgba(15,23,42,.06)',
-                                float: '0 14px 40px rgba(15,23,42,.10)',
-                            },
-                            borderRadius: { '2xl': '1rem' }
-                        }
+    {{-- Tailwind CSS - Use CDN for both dev and production (no Vite manifest needed) --}}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configure Tailwind
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                theme: {
+                    container: { center: true, padding: '1rem' },
+                    extend: {
+                        colors: {
+                            primary: {50:'#eef7ff',100:'#daecff',200:'#b6d8ff',300:'#87beff',400:'#55a0ff',500:'#2f86ff',600:'#186ae6',700:'#1354b4',800:'#0f418c',900:'#0c356f'},
+                            ink: { 900:'#0f172a', 700:'#334155', 500:'#64748b' }
+                        },
+                        boxShadow: {
+                            card: '0 6px 20px rgba(15,23,42,.06)',
+                            float: '0 14px 40px rgba(15,23,42,.10)',
+                        },
+                        borderRadius: { '2xl': '1rem' }
                     }
                 }
             }
-        </script>
-    @endif
+        }
+    </script>
 
     {{-- Resolution Settings CSS --}}
     <link rel="stylesheet" href="{{ asset('css/resolution-settings.css') }}?v={{ time() }}">
