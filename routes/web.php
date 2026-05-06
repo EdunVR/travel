@@ -598,6 +598,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('travel/package/{id}/workflow/progress', [PackageController::class, 'getWorkflowProgress'])->name('travel.package.workflow.progress');
         Route::post('travel/package/{id}/workflow/transition', [PackageController::class, 'transitionWorkflow'])->name('travel.package.workflow.transition');
         Route::get('travel/package/{id}/workflow/tasks', [PackageController::class, 'getWorkflowTasks'])->name('travel.package.workflow.tasks');
+        Route::put('travel/package/{id}/handling-fee', [PackageController::class, 'updateHandlingFee'])->name('travel.package.handling-fee.update');
         Route::resource('travel/package', PackageController::class)->except(['index'])->names([
             'create' => 'travel.package.create',
             'store' => 'travel.package.store',

@@ -1086,6 +1086,20 @@ class AffiliateController extends Controller
         } else {
             // Kirim via Email
             try {
+                // Cek apakah email sudah dikonfigurasi dengan benar
+                $mailConfigured = config('mail.mailers.smtp.username') && 
+                                 config('mail.mailers.smtp.username') !== 'your-email@gmail.com' &&
+                                 config('mail.mailers.smtp.password') && 
+                                 config('mail.mailers.smtp.password') !== 'your-app-password';
+
+                if (!$mailConfigured) {
+                    \Log::warning('Email not configured properly', [
+                        'username' => config('mail.mailers.smtp.username'),
+                        'has_password' => !empty(config('mail.mailers.smtp.password'))
+                    ]);
+                    return back()->withErrors(['error' => 'Email belum dikonfigurasi. Silakan gunakan opsi WhatsApp atau hubungi administrator.']);
+                }
+
                 \Mail::send('emails.reset-password', [
                     'affiliator' => $affiliator,
                     'resetLink' => $resetLink
@@ -1096,8 +1110,12 @@ class AffiliateController extends Controller
 
                 return back()->with('success', 'Link reset password telah dikirim ke email Anda.');
             } catch (\Exception $e) {
-                \Log::error('Email send failed', ['error' => $e->getMessage()]);
-                return back()->withErrors(['error' => 'Gagal mengirim email. Silakan coba lagi atau gunakan opsi WhatsApp.']);
+                \Log::error('Email send failed', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                    'email' => $affiliator->email
+                ]);
+                return back()->withErrors(['error' => 'Gagal mengirim email: ' . $e->getMessage() . '. Silakan coba lagi atau gunakan opsi WhatsApp.']);
             }
         }
     }

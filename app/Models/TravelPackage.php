@@ -62,7 +62,11 @@ class TravelPackage extends Model
         'is_promo',
         'is_best_seller',
         'current_workflow_stage',
-        'id_outlet'
+        'id_outlet',
+        // Handling & Lounge Fee
+        'include_handling_lounge_fee',
+        'handling_lounge_fee_amount',
+        'handling_lounge_fee_description',
     ];
 
     protected $casts = [
@@ -87,7 +91,9 @@ class TravelPackage extends Model
         'hotels' => 'array',
         'thumbnail_crop_settings' => 'array',
         'is_promo' => 'boolean',
-        'is_best_seller' => 'boolean'
+        'is_best_seller' => 'boolean',
+        'include_handling_lounge_fee' => 'boolean',
+        'handling_lounge_fee_amount' => 'decimal:2',
     ];
 
     /**

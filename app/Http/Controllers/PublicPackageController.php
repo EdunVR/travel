@@ -79,7 +79,7 @@ class PublicPackageController extends Controller
         $familyMembers = $validated['family_members'] ?? [];
 
         // Hitung total dengan logika usia
-        [$grandTotal, $priceBreakdown] = $this->calculateTotal($unitPrice, $familyMembers);
+        [$grandTotal, $priceBreakdown] = $this->calculateTotal($unitPrice, $familyMembers, $package);
 
         // Cari member by telepon, atau by nama jika ada
         $member = Member::where('telepon', $validated['telepon'])->first();
@@ -336,7 +336,7 @@ class PublicPackageController extends Controller
         if (is_string($familyMembers)) $familyMembers = json_decode($familyMembers, true);
         if (!is_array($familyMembers)) $familyMembers = [];
 
-        [$grandTotal, $priceBreakdown] = $this->calculateTotal($unitPrice, $familyMembers);
+        [$grandTotal, $priceBreakdown] = $this->calculateTotal($unitPrice, $familyMembers, $package);
         
         // Apply admin discount if exists
         $adminDiscount = $booking->admin_discount ?? 0;
@@ -759,8 +759,9 @@ class PublicPackageController extends Controller
     /**
      * Hitung total harga berdasarkan unit price dan anggota keluarga
      * Logika: infant (<2th) = Rp 18jt, anak (2-8th) = 85% harga, dewasa = full
+     * + Handling & Lounge Fee jika diaktifkan di paket
      */
-    private function calculateTotal(float $unitPrice, array $familyMembers): array
+    private function calculateTotal(float $unitPrice, array $familyMembers, $package = null): array
     {
         $breakdown = [];
         $total = 0;
@@ -789,6 +790,14 @@ class PublicPackageController extends Controller
                 }
                 $total += $price;
             }
+        }
+
+        // Add Handling & Lounge Fee if enabled in package
+        if ($package && $package->include_handling_lounge_fee && $package->handling_lounge_fee_amount > 0) {
+            $handlingFee = $package->handling_lounge_fee_amount;
+            $description = $package->handling_lounge_fee_description ?? 'Handling & Lounge Fee Wajib';
+            $breakdown[] = ['label' => $description, 'amount' => $handlingFee, 'pax' => 1];
+            $total += $handlingFee;
         }
 
         return [$total, $breakdown];

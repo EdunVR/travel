@@ -370,15 +370,14 @@ Hubungi Kami
        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-brand focus:ring-1 focus:ring-green-brand">
 </div>
 
-{{-- Pilih Keberangkatan (opsional) --}}
+{{-- Pilih Keberangkatan --}}
 @if($keberangkatanList->count()>0)
 <div>
-<label class="block text-xs font-bold text-gray-700 mb-1">Pilih Keberangkatan <span class="text-gray-400 font-normal">(opsional)</span></label>
+<label class="block text-xs font-bold text-gray-700 mb-1">Pilih Keberangkatan</label>
 <select name="id_keberangkatan"
         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-brand appearance-none">
-<option value="">-- Pilih jadwal keberangkatan --</option>
-@foreach($keberangkatanList as $kb)
-<option value="{{ $kb->id }}">
+@foreach($keberangkatanList as $index => $kb)
+<option value="{{ $kb->id }}" {{ $index === 0 ? 'selected' : '' }}>
 {{ \Carbon\Carbon::parse($kb->departure_date)->format('d M Y') }}
 {{ $kb->keberangkatan_name ? '— '.$kb->keberangkatan_name : '' }}
 (Sisa: {{ $kb->getAvailableCapacity() }} kursi)
@@ -413,6 +412,31 @@ Hubungi Kami
 <div id="selected-equipment-list" class="space-y-2" style="display:none;"></div>
 <p class="text-xs text-gray-400 mt-1">Tambahkan perlengkapan umrah/haji sesuai kebutuhan</p>
 </div>
+
+{{-- Handling & Lounge Fee --}}
+@if($package->include_handling_lounge_fee && $package->handling_lounge_fee_amount > 0)
+<div class="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-xl p-4">
+<div class="flex items-start gap-3">
+<div class="flex-shrink-0 w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center">
+<i class="fas fa-plane-departure text-white text-lg"></i>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-gray-900 text-sm mb-1">
+{{ $package->handling_lounge_fee_description ?? 'Handling & Lounge Fee Wajib' }}
+</h4>
+<p class="text-xs text-gray-600 mb-2">
+Biaya ini wajib dibayarkan untuk setiap jamaah dan sudah termasuk dalam total harga paket.
+</p>
+<div class="flex items-center gap-2">
+<span class="text-2xl font-black text-yellow-700">
+Rp {{ number_format($package->handling_lounge_fee_amount, 0, ',', '.') }}
+</span>
+<span class="text-xs text-gray-500">per paket</span>
+</div>
+</div>
+</div>
+</div>
+@endif
 
 <div>
 <label class="block text-xs font-bold text-gray-700 mb-2">Opsi Pembayaran *</label>

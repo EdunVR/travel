@@ -544,7 +544,7 @@ class PackageController extends Controller
                     'id_travel_package' => $package->id,
                     'departure_date' => $package->departure_date,
                     'return_date' => $package->return_date,
-                    'total_jamaah' => 0, // Will be updated when bookings are made
+                    'total_jamaah' => $package->capacity, // Set capacity from package
                     'status' => 'planning', // Valid enum: planning, confirmed, departed, completed
                     'id_outlet' => $package->id_outlet,
                 ]);
@@ -1579,6 +1579,55 @@ class PackageController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menyimpan tour plan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update handling & lounge fee settings for a package
+     */
+    public function updateHandlingFee(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'include_handling_lounge_fee' => 'required|boolean',
+                'handling_lounge_fee_amount' => 'nullable|numeric|min:0',
+                'handling_lounge_fee_description' => 'nullable|string|max:500',
+            ]);
+
+            $package = TravelPackage::findOrFail($id);
+
+            // Check outlet access
+            if (Auth::user()->id_outlet && $package->id_outlet != Auth::user()->id_outlet) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access to this package'
+                ], 403);
+            }
+
+            // Update handling fee settings
+            $package->update([
+                'include_handling_lounge_fee' => $validated['include_handling_lounge_fee'],
+                'handling_lounge_fee_amount' => $validated['handling_lounge_fee_amount'] ?? 500000,
+                'handling_lounge_fee_description' => $validated['handling_lounge_fee_description'] ?? 'Handling & Lounge Fee Wajib',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pengaturan handling fee berhasil diperbarui',
+                'data' => [
+                    'include_handling_lounge_fee' => $package->include_handling_lounge_fee,
+                    'handling_lounge_fee_amount' => $package->handling_lounge_fee_amount,
+                    'handling_lounge_fee_description' => $package->handling_lounge_fee_description,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to update handling fee: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui pengaturan handling fee: ' . $e->getMessage()
             ], 500);
         }
     }
