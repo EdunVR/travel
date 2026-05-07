@@ -323,6 +323,13 @@ html{scroll-behavior:smooth}
   } elseif($package->price) {
     $initPrice = $package->price;
   }
+  
+  // Add handling fee to displayed price
+  $handlingFee = 0;
+  if($package->include_handling_lounge_fee && $package->handling_lounge_fee_amount > 0) {
+    $handlingFee = $package->handling_lounge_fee_amount;
+    $initPrice += $handlingFee;
+  }
 ?>
 <?php if($initPrice > 0): ?>
 Rp <?php echo e(number_format($initPrice,0,',','.')); ?>
@@ -341,6 +348,11 @@ Hubungi Kami
 <?php endif; ?>
 <?php endif; ?>
 </div>
+<?php if($handlingFee > 0): ?>
+<div class="text-xs text-gray-600 mt-2 pt-2 border-t border-gray-200">
+<i class='bx bx-info-circle'></i> Sudah termasuk <?php echo e($package->handling_lounge_fee_description ?? 'Handling & Lounge Fee'); ?> (Rp <?php echo e(number_format($handlingFee, 0, ',', '.')); ?>)
+</div>
+<?php endif; ?>
 </div>
 
 
@@ -377,12 +389,11 @@ Hubungi Kami
 
 <?php if($keberangkatanList->count()>0): ?>
 <div>
-<label class="block text-xs font-bold text-gray-700 mb-1">Pilih Keberangkatan <span class="text-gray-400 font-normal">(opsional)</span></label>
+<label class="block text-xs font-bold text-gray-700 mb-1">Pilih Keberangkatan</label>
 <select name="id_keberangkatan"
         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-brand appearance-none">
-<option value="">-- Pilih jadwal keberangkatan --</option>
-<?php $__currentLoopData = $keberangkatanList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $kb): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-<option value="<?php echo e($kb->id); ?>">
+<?php $__currentLoopData = $keberangkatanList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $kb): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+<option value="<?php echo e($kb->id); ?>" <?php echo e($index === 0 ? 'selected' : ''); ?>>
 <?php echo e(\Carbon\Carbon::parse($kb->departure_date)->format('d M Y')); ?>
 
 <?php echo e($kb->keberangkatan_name ? '— '.$kb->keberangkatan_name : ''); ?>
@@ -419,6 +430,33 @@ Hubungi Kami
 <div id="selected-equipment-list" class="space-y-2" style="display:none;"></div>
 <p class="text-xs text-gray-400 mt-1">Tambahkan perlengkapan umrah/haji sesuai kebutuhan</p>
 </div>
+
+
+<?php if($package->include_handling_lounge_fee && $package->handling_lounge_fee_amount > 0): ?>
+<div class="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-xl p-4">
+<div class="flex items-start gap-3">
+<div class="flex-shrink-0 w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center">
+<i class="fas fa-plane-departure text-white text-lg"></i>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-gray-900 text-sm mb-1">
+<?php echo e($package->handling_lounge_fee_description ?? 'Handling & Lounge Fee Wajib'); ?>
+
+</h4>
+<p class="text-xs text-gray-600 mb-2">
+Biaya tambahan wajib yang <strong>sudah termasuk</strong> dalam harga paket yang ditampilkan di atas.
+</p>
+<div class="flex items-center gap-2">
+<span class="text-2xl font-black text-yellow-700">
+Rp <?php echo e(number_format($package->handling_lounge_fee_amount, 0, ',', '.')); ?>
+
+</span>
+<span class="text-xs text-gray-500">per paket</span>
+</div>
+</div>
+</div>
+</div>
+<?php endif; ?>
 
 <div>
 <label class="block text-xs font-bold text-gray-700 mb-2">Opsi Pembayaran *</label>
@@ -614,7 +652,8 @@ function toggleTourDay(dayNumber) {
 
 // ===== Price data dari Blade =====
 var pricePackagesData = <?php echo json_encode($pricePackages, 15, 512) ?>;
-var currentPrice = parseFloat(document.getElementById('f_price').value)||0;
+var handlingFeeAmount = <?php echo e($package->include_handling_lounge_fee && $package->handling_lounge_fee_amount > 0 ? $package->handling_lounge_fee_amount : 0); ?>;
+var currentPrice = (parseFloat(document.getElementById('f_price').value)||0) + handlingFeeAmount;
 var familyRowCount = 0;
 
 // ===== Price Package Selection =====
@@ -639,9 +678,12 @@ function selectVariant(el,e){
   var type  = el.dataset.type||'';
   document.getElementById('f_variant').value = type;
   document.getElementById('f_price').value   = price;
-  currentPrice = price;
+  
+  // Add handling fee to displayed price
+  currentPrice = price + handlingFeeAmount;
+  
   if(price>0){
-    document.getElementById('selected-price-display').textContent = 'Rp '+price.toLocaleString('id-ID');
+    document.getElementById('selected-price-display').textContent = 'Rp '+currentPrice.toLocaleString('id-ID');
   }
   var pkgName = document.getElementById('f_pkg_name').value;
   document.getElementById('selected-pkg-label').textContent = pkgName + (type?' — '+type:'');

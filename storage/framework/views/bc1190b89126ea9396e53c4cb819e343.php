@@ -654,6 +654,106 @@
         </div>
       </div>
 
+      <!-- Handling & Lounge Fee Settings -->
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-card p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
+            <i class="bx bx-plane-departure text-yellow-600 text-xl"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-semibold">Handling & Lounge Fee</h2>
+            <p class="text-sm text-slate-600">Biaya tambahan yang akan ditambahkan ke total harga paket</p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <!-- Toggle Enable/Disable -->
+          <div class="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200">
+            <input type="checkbox" 
+                   x-model="form.include_handling_lounge_fee" 
+                   id="include_handling_lounge_fee"
+                   class="mt-1 w-5 h-5 text-yellow-600 rounded focus:ring-2 focus:ring-yellow-500">
+            <div class="flex-1">
+              <label for="include_handling_lounge_fee" class="font-medium text-slate-900 cursor-pointer">
+                Aktifkan Handling & Lounge Fee
+              </label>
+              <p class="text-sm text-slate-600 mt-1">
+                Jika diaktifkan, biaya ini akan otomatis ditambahkan ke total harga paket dan muncul di semua dokumen (invoice, kwitansi, dll)
+              </p>
+            </div>
+          </div>
+
+          <!-- Fee Settings (shown when enabled) -->
+          <div x-show="form.include_handling_lounge_fee" 
+               x-transition:enter="transition ease-out duration-200"
+               x-transition:enter-start="opacity-0 transform scale-95"
+               x-transition:enter-end="opacity-100 transform scale-100"
+               class="space-y-4 pl-8">
+            
+            <!-- Amount -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">
+                Nominal Fee <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">Rp</span>
+                <input type="number" 
+                       x-model.number="form.handling_lounge_fee_amount"
+                       class="w-full rounded-lg border border-slate-200 pl-10 pr-3 py-2 focus:ring-2 focus:ring-yellow-500"
+                       placeholder="500000"
+                       min="0"
+                       step="1000"
+                       :required="form.include_handling_lounge_fee">
+              </div>
+              <div class="flex items-center justify-between mt-2">
+                <p class="text-xs text-slate-500">
+                  Default: Rp 500.000 per booking (bukan per orang)
+                </p>
+                <p class="text-sm font-semibold text-yellow-700" x-show="form.handling_lounge_fee_amount > 0" x-text="'Rp ' + formatNumber(form.handling_lounge_fee_amount)"></p>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">
+                Deskripsi (Opsional)
+              </label>
+              <textarea x-model="form.handling_lounge_fee_description"
+                        class="w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-yellow-500"
+                        rows="2"
+                        placeholder="Handling & Lounge Fee Wajib"></textarea>
+              <p class="text-xs text-slate-500 mt-1">
+                Kosongkan untuk menggunakan teks default. Deskripsi ini akan muncul di halaman detail paket dan invoice.
+              </p>
+            </div>
+
+            <!-- Preview -->
+            <div class="p-4 rounded-lg bg-white border border-yellow-200">
+              <p class="text-xs font-semibold text-yellow-700 mb-2">📋 Preview Tampilan:</p>
+              <div class="text-sm">
+                <div class="font-medium text-slate-900" x-text="form.handling_lounge_fee_description || 'Handling & Lounge Fee Wajib'"></div>
+                <div class="text-yellow-700 font-bold mt-1" x-text="'Rp ' + formatNumber(form.handling_lounge_fee_amount || 500000)"></div>
+              </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="flex items-start gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200">
+              <i class="bx bx-info-circle text-blue-600 text-lg mt-0.5"></i>
+              <div class="text-xs text-blue-700">
+                <p class="font-semibold mb-1">Informasi Penting:</p>
+                <ul class="list-disc list-inside space-y-0.5">
+                  <li>Fee ini dikenakan <strong>per booking</strong>, bukan per orang</li>
+                  <li>Otomatis muncul di halaman detail paket (homepage)</li>
+                  <li>Otomatis terkalkulasi ke total harga</li>
+                  <li>Otomatis muncul di invoice, kwitansi, dan semua dokumen</li>
+                  <li>Hanya berlaku untuk booking baru setelah pengaturan ini disimpan</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Actions -->
       <div class="flex justify-end gap-3">
         <a href="<?php echo e(route('admin.inventaris.travel.package.index')); ?>"
@@ -764,7 +864,11 @@
               if (raw && Array.isArray(raw) && raw.length > 0) return raw;
             } catch(e) {}
             return [{ name: 'Reguler', variants: [{ type: 'quad', price: 0 }, { type: 'triple', price: 0 }, { type: 'double', price: 0 }] }];
-          })()
+          })(),
+          // Handling & Lounge Fee
+          include_handling_lounge_fee: <?php echo e($package->include_handling_lounge_fee ? 'true' : 'false'); ?>,
+          handling_lounge_fee_amount: <?php echo e($package->handling_lounge_fee_amount ?? 500000); ?>,
+          handling_lounge_fee_description: `<?php echo e($package->handling_lounge_fee_description ?? ''); ?>`
         },
         errors: {},
 

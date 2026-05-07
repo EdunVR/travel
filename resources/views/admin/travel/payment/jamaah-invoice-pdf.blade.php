@@ -614,8 +614,8 @@
             
             // Add handling fee if enabled
             $handlingFee = 0;
-            if ($booking->travelPackage && $booking->travelPackage->handling_fee_enabled && $booking->travelPackage->handling_fee_amount > 0) {
-                $handlingFee = $booking->travelPackage->handling_fee_amount;
+            if ($booking->travelPackage && $booking->travelPackage->include_handling_lounge_fee && $booking->travelPackage->handling_lounge_fee_amount > 0) {
+                $handlingFee = $booking->travelPackage->handling_lounge_fee_amount;
             }
             
             $grandTotal = $mainSubtotal + $familyDiscountTotal + ($booking->equipment_cost ?? 0) + ($booking->upgrade_cost ?? 0) + $chargedHotelsTotal + $addonsTotal + $handlingFee - $booking->discount_amount;
@@ -634,7 +634,7 @@
                 @endif
                 @if($handlingFee > 0)
                 <tr>
-                    <td colspan="4" class="text-right">{{ $booking->travelPackage->handling_fee_description ?? 'Handling & Lounge Fee Wajib' }}</td>
+                    <td colspan="4" class="text-right">{{ $booking->travelPackage->handling_lounge_fee_description ?? 'Handling & Lounge Fee Wajib' }}</td>
                     <td class="text-right">Rp {{ number_format($handlingFee, 0, ',', '.') }}</td>
                 </tr>
                 @endif

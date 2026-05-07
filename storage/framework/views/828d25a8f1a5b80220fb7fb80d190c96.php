@@ -11,31 +11,28 @@
     
     <title><?php echo e($title ?? 'MORRA ERP'); ?></title>
 
-    <?php if(app()->environment('production')): ?>
-        <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css']); ?>
-    <?php else: ?>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script>
-            if (typeof tailwind !== 'undefined') {
-                tailwind.config = {
-                    theme: {
-                        container: { center: true, padding: '1rem' },
-                        extend: {
-                            colors: {
-                                primary: {50:'#eef7ff',100:'#daecff',200:'#b6d8ff',300:'#87beff',400:'#55a0ff',500:'#2f86ff',600:'#186ae6',700:'#1354b4',800:'#0f418c',900:'#0c356f'},
-                                ink: { 900:'#0f172a', 700:'#334155', 500:'#64748b' }
-                            },
-                            boxShadow: {
-                                card: '0 6px 20px rgba(15,23,42,.06)',
-                                float: '0 14px 40px rgba(15,23,42,.10)',
-                            },
-                            borderRadius: { '2xl': '1rem' }
-                        }
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                theme: {
+                    container: { center: true, padding: '1rem' },
+                    extend: {
+                        colors: {
+                            primary: {50:'#eef7ff',100:'#daecff',200:'#b6d8ff',300:'#87beff',400:'#55a0ff',500:'#2f86ff',600:'#186ae6',700:'#1354b4',800:'#0f418c',900:'#0c356f'},
+                            ink: { 900:'#0f172a', 700:'#334155', 500:'#64748b' }
+                        },
+                        boxShadow: {
+                            card: '0 6px 20px rgba(15,23,42,.06)',
+                            float: '0 14px 40px rgba(15,23,42,.10)',
+                        },
+                        borderRadius: { '2xl': '1rem' }
                     }
                 }
             }
-        </script>
-    <?php endif; ?>
+        }
+    </script>
     
     
     <link rel="stylesheet" href="<?php echo e(asset('css/desktop-responsive-scaling.css')); ?>">

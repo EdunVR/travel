@@ -734,15 +734,6 @@
 </section>
 @endif
 
-<!-- ===== TAGLINE ===== -->
-<div class="section-white py-8 border-b border-green-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 class="font-playfair text-2xl sm:text-3xl font-bold text-gray-900">
-            Penuhi Panggilan Allah Dari Sini!
-        </h2>
-    </div>
-</div>
-
 <!-- ===== PAKET UMROH (dari database) ===== -->
 <section id="paket" class="section-pale py-20">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-content relative">
@@ -774,8 +765,7 @@
         @endif
 
         <div class="text-center mt-10">
-            <a href="https://wa.me/628976688800?text=Assalamu'alaikum, saya ingin melihat semua paket umroh HM Tour"
-               target="_blank"
+            <a href="{{ url('/paket') }}"
                class="inline-flex items-center gap-2 border-2 border-green-brand text-green-brand hover:bg-green-pale px-8 py-3 rounded-full text-sm font-semibold transition-all">
                 Lihat Semua Paket <i class="fas fa-arrow-right"></i>
             </a>
@@ -1018,27 +1008,12 @@
                     <p class="font-semibold text-gray-900 text-sm">Izin PPIU KEMENAG RI</p>
                     <p class="text-xs text-gray-600 mt-1">27042200404460002</p>
                 </div>
-                <div class="text-center p-4 bg-green-50 rounded-xl">
-                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <i class="fas fa-handshake text-green-600 text-xl"></i>
-                    </div>
-                    <p class="font-semibold text-gray-900 text-sm">Anggota SAPUHI</p>
-                    <p class="text-xs text-gray-600 mt-1">340/DPP/SAPUHI/2022</p>
-                </div>
-                <div class="text-center p-4 bg-green-50 rounded-xl">
-                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <i class="fas fa-id-card text-green-600 text-xl"></i>
-                    </div>
-                    <p class="font-semibold text-gray-900 text-sm">NIB</p>
-                    <p class="text-xs text-gray-600 mt-1">27042200404460002</p>
-                </div>
-                <div class="text-center p-4 bg-green-50 rounded-xl">
-                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <i class="fas fa-gavel text-green-600 text-xl"></i>
-                    </div>
-                    <p class="font-semibold text-gray-900 text-sm">SK Kehakiman</p>
-                    <p class="text-xs text-gray-600 mt-1">C-453.HT.03.01-TH.2005</p>
-                </div>
+            </div>
+            <div class="text-center mt-6 pt-6 border-t border-green-100">
+                <a href="{{ url('/legalitas') }}" 
+                   class="inline-flex items-center gap-2 border-2 border-green-brand text-green-brand hover:bg-green-pale px-6 py-3 rounded-full text-sm font-semibold transition-all">
+                    <i class="fas fa-file-contract"></i> Lihat Semua Legalitas
+                </a>
             </div>
         </div>
     </div>
@@ -1078,95 +1053,46 @@
             </div>
             <h2 class="font-arabic text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Sejarah HM Tour</h2>
             <p class="text-gray-600 max-w-2xl mx-auto">
-                Lebih Dari 13+ Tahun Kami Berpengalaman
+                Lebih Dari 13+ Tahun Kami Berpengalaman Melayani Jemaah
             </p>
         </div>
 
-        <!-- Timeline -->
-        <div class="relative max-w-4xl mx-auto">
-            <!-- Vertical line -->
-            <div class="absolute left-1/2 transform -translate-x-1/2 w-1 h-full bg-green-200 hidden md:block"></div>
-
-            <!-- Timeline items -->
-            <div class="space-y-12">
-                <!-- 2012 -->
-                <div class="relative flex flex-col md:flex-row items-center">
-                    <div class="w-full md:w-1/2 md:pr-8 md:text-right mb-4 md:mb-0">
-                        <div class="bg-white rounded-xl p-6 border border-green-100 shadow-sm hover:shadow-md transition-shadow">
-                            <span class="text-green-600 font-bold text-lg">2012</span>
-                            <h3 class="font-bold text-gray-900 mt-2 mb-2">HM Tour & Travel Berdiri</h3>
-                            <p class="text-sm text-gray-600">Pada tahun 2012 kami mendirikan Biro perjalanan lokal HM Tour & Travel dan melayani berbagai pengguna yang ingin liburan di Indonesia.</p>
+        <!-- Ringkasan Sejarah -->
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-2xl p-8 border border-green-100 shadow-sm">
+                <div class="grid md:grid-cols-3 gap-6 mb-8">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-calendar-alt text-green-600 text-2xl"></i>
                         </div>
+                        <h3 class="font-bold text-gray-900 text-lg mb-2">2012</h3>
+                        <p class="text-sm text-gray-600">HM Tour & Travel didirikan sebagai biro perjalanan lokal</p>
                     </div>
-                    <div class="absolute left-1/2 transform -translate-x-1/2 w-4 h-4 bg-green-600 rounded-full border-4 border-white hidden md:block"></div>
-                    <div class="w-full md:w-1/2 md:pl-8"></div>
-                </div>
-
-                <!-- 2013 -->
-                <div class="relative flex flex-col md:flex-row items-center">
-                    <div class="w-full md:w-1/2 md:pr-8"></div>
-                    <div class="absolute left-1/2 transform -translate-x-1/2 w-4 h-4 bg-green-600 rounded-full border-4 border-white hidden md:block"></div>
-                    <div class="w-full md:w-1/2 md:pl-8 mb-4 md:mb-0">
-                        <div class="bg-white rounded-xl p-6 border border-green-100 shadow-sm hover:shadow-md transition-shadow">
-                            <span class="text-green-600 font-bold text-lg">2013</span>
-                            <h3 class="font-bold text-gray-900 mt-2 mb-2">Pendaftaran Perusahaan</h3>
-                            <p class="text-sm text-gray-600">Agar dapat melayani instansi resmi seperti kantor pemerintahan, sekolah, universitas, dan berbagai kantor swasta. Kami mendaftarkan perusahaan agar memiliki legalitas dengan izin resmi.</p>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-certificate text-green-600 text-2xl"></i>
                         </div>
+                        <h3 class="font-bold text-gray-900 text-lg mb-2">2021</h3>
+                        <p class="text-sm text-gray-600">Meningkat menjadi PT Hikami Mandiri Indonesia</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-award text-green-600 text-2xl"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-900 text-lg mb-2">2024</h3>
+                        <p class="text-sm text-gray-600">Meraih Akreditasi A dari KEMENAG RI</p>
                     </div>
                 </div>
-
-                <!-- 2020 -->
-                <div class="relative flex flex-col md:flex-row items-center">
-                    <div class="w-full md:w-1/2 md:pr-8 md:text-right mb-4 md:mb-0">
-                        <div class="bg-white rounded-xl p-6 border border-green-100 shadow-sm hover:shadow-md transition-shadow">
-                            <span class="text-green-600 font-bold text-lg">2020</span>
-                            <h3 class="font-bold text-gray-900 mt-2 mb-2">Pindah Kantor</h3>
-                            <p class="text-sm text-gray-600">Kami melakukan pemindahan kantor untuk dapat melayani para pengguna lebih baik lagi. Kantor kami sekarang berada di: Jl. A.H. Nasution No.98, Sukamiskin, Kec. Arcamanik, Kota Bandung, Jawa Barat 40293.</p>
-                        </div>
-                    </div>
-                    <div class="absolute left-1/2 transform -translate-x-1/2 w-4 h-4 bg-green-600 rounded-full border-4 border-white hidden md:block"></div>
-                    <div class="w-full md:w-1/2 md:pl-8"></div>
-                </div>
-
-                <!-- 2021 -->
-                <div class="relative flex flex-col md:flex-row items-center">
-                    <div class="w-full md:w-1/2 md:pr-8"></div>
-                    <div class="absolute left-1/2 transform -translate-x-1/2 w-4 h-4 bg-green-600 rounded-full border-4 border-white hidden md:block"></div>
-                    <div class="w-full md:w-1/2 md:pl-8 mb-4 md:mb-0">
-                        <div class="bg-white rounded-xl p-6 border border-green-100 shadow-sm hover:shadow-md transition-shadow">
-                            <span class="text-green-600 font-bold text-lg">2021</span>
-                            <h3 class="font-bold text-gray-900 mt-2 mb-2">Mengubah Citra</h3>
-                            <p class="text-sm text-gray-600">Pada awalnya, perusahaan kami berdiri dengan nama CV. HM Tour & Travel. Kemudian kami meningkatkan perusahaan kami dengan nama: PT Hikami Mandiri Indonesia.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 2022 -->
-                <div class="relative flex flex-col md:flex-row items-center">
-                    <div class="w-full md:w-1/2 md:pr-8 md:text-right mb-4 md:mb-0">
-                        <div class="bg-white rounded-xl p-6 border border-green-100 shadow-sm hover:shadow-md transition-shadow">
-                            <span class="text-green-600 font-bold text-lg">2022</span>
-                            <h3 class="font-bold text-gray-900 mt-2 mb-2">Penawaran Umum Perdana</h3>
-                            <p class="text-sm text-gray-600">Pada tahun 2022 kami menawarkan saham perusahaan kami kepada beberapa investor. Dan mendapatkan beberapa investor yang berminat untuk memiliki saham perusahaan kami.</p>
-                        </div>
-                    </div>
-                    <div class="absolute left-1/2 transform -translate-x-1/2 w-4 h-4 bg-green-600 rounded-full border-4 border-white hidden md:block"></div>
-                    <div class="w-full md:w-1/2 md:pl-8"></div>
-                </div>
-
-                <!-- 2024 -->
-                <div class="relative flex flex-col md:flex-row items-center">
-                    <div class="w-full md:w-1/2 md:pr-8"></div>
-                    <div class="absolute left-1/2 transform -translate-x-1/2 w-4 h-4 bg-green-600 rounded-full border-4 border-white hidden md:block"></div>
-                    <div class="w-full md:w-1/2 md:pl-8 mb-4 md:mb-0">
-                        <div class="bg-white rounded-xl p-6 border border-green-100 shadow-sm hover:shadow-md transition-shadow">
-                            <span class="text-green-600 font-bold text-lg">2024</span>
-                            <h3 class="font-bold text-gray-900 mt-2 mb-2">Akreditasi A dari KEMENAG</h3>
-                            <p class="text-sm text-gray-600">Mendapatkan predikat Akreditasi A dari KEMENAG dalam pelayanan jemaah umroh & Haji salah satu yang terbaik.</p>
-                        </div>
-                    </div>
-                </div>
-                    </div>
+                
+                <div class="text-center border-t border-green-100 pt-6">
+                    <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
+                        Dari biro perjalanan lokal hingga menjadi penyelenggara umroh dan haji berakreditasi A, 
+                        HM Tour terus berkembang untuk memberikan pelayanan terbaik bagi jemaah.
+                    </p>
+                    <a href="{{ url('/sejarah') }}" 
+                       class="inline-flex items-center gap-2 bg-green-gradient text-white font-semibold px-6 py-3 rounded-full text-sm hover:opacity-90 transition-all shadow-md">
+                        <i class="fas fa-book-open"></i> Lihat Detail Sejarah
+                    </a>
                 </div>
             </div>
         </div>
@@ -1223,9 +1149,6 @@
                 ['img' => url('WEB_HMTour/wp-content/uploads/2025/08/Hotel-Al-Shohada-Mekkah-1.jpg'),                    'name' => 'Hotel Al-Shohada',          'city' => 'Makkah',  'stars' => 5],
                 ['img' => url('WEB_HMTour/wp-content/uploads/2025/08/gOLDEN-tULIP-aLZAHABI-1.jpg'),                      'name' => 'Golden Tulip Al-Zahabi',    'city' => 'Madinah', 'stars' => 5],
                 ['img' => url('WEB_HMTour/wp-content/uploads/2025/08/Hotel-Movenpick-Mekkah-Umroh-Sesuai-Sunnah.jpeg'),  'name' => 'Movenpick',                 'city' => 'Makkah',  'stars' => 5],
-                ['img' => url('WEB_HMTour/wp-content/uploads/2025/08/Hotel-Swissotel-Al-Maqam-Makkah-Umroh-Sesuai-Sunnah.jpeg'), 'name' => 'Swissotel Al-Maqam', 'city' => 'Makkah',  'stars' => 5],
-                ['img' => url('WEB_HMTour/wp-content/uploads/2025/08/Hotel-Pullman-Zamzam-Mekkah-Umroh-Sesuai-Sunnah.jpeg'), 'name' => 'Pullman Zamzam',        'city' => 'Makkah',  'stars' => 5],
-                ['img' => url('WEB_HMTour/wp-content/uploads/2025/08/Hotel-Grand-Plaza-Madinah-Umroh-Sesuai-Sunnah.jpeg'), 'name' => 'Grand Plaza',             'city' => 'Madinah', 'stars' => 4],
             ];
             @endphp
             @foreach($hotels as $hotel)
@@ -1238,18 +1161,20 @@
                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                          onerror="this.parentElement.style.background='linear-gradient(135deg,#e8f5e9,#c8e6c9)';this.remove()">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
-                    <div class="absolute bottom-3 left-3 flex gap-0.5">
-                        @for($i = 0; $i < $hotel['stars']; $i++)
-                        <i class="fas fa-star text-yellow-400 text-xs"></i>
-                        @endfor
-                    </div>
                 </div>
                 <div class="p-4">
-                    <h3 class="font-semibold text-gray-900 text-sm">{{ $hotel['name'] }}</h3>
+                    <h3 class="font-semibold text-gray-900 text-sm break-words">{{ $hotel['name'] }}</h3>
                     <p class="text-green-brand text-xs mt-1 font-medium"><i class="fas fa-map-marker-alt mr-1"></i>{{ $hotel['city'] }}</p>
                 </div>
             </a>
             @endforeach
+        </div>
+        
+        <div class="text-center mt-10">
+            <a href="{{ url('/hotel-partner') }}" 
+               class="inline-flex items-center gap-2 border-2 border-green-brand text-green-brand hover:bg-green-pale px-6 py-3 rounded-full text-sm font-semibold transition-all">
+                <i class="fas fa-hotel"></i> Lihat Semua Hotel Partner
+            </a>
         </div>
     </div>
 </section>

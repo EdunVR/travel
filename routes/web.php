@@ -188,8 +188,27 @@ Route::get('/', function () {
 
 // ===== PUBLIC PACKAGE DETAIL ROUTE =====
 Route::get('/paket/{id}', [App\Http\Controllers\PublicPackageController::class, 'show'])
+    ->where('id', '[0-9]+')
     ->middleware(['web', 'affiliate.tracking'])
     ->name('public.paket.show');
+
+// ===== PUBLIC ALL PACKAGES PAGE =====
+Route::get('/paket', [App\Http\Controllers\PublicPackageController::class, 'index'])
+    ->middleware(['web', 'affiliate.tracking'])
+    ->name('public.paket.index');
+
+// ===== PUBLIC INFORMATION PAGES =====
+Route::get('/sejarah', [App\Http\Controllers\PublicDocumentController::class, 'sejarah'])
+    ->middleware(['web'])
+    ->name('public.sejarah');
+
+Route::get('/legalitas', [App\Http\Controllers\PublicDocumentController::class, 'legalitas'])
+    ->middleware(['web'])
+    ->name('public.legalitas');
+
+Route::get('/hotel-partner', [App\Http\Controllers\PublicDocumentController::class, 'hotelPartner'])
+    ->middleware(['web'])
+    ->name('public.hotel-partner');
 
 // ===== AFFILIATE ROUTES =====
 // Pendaftaran Affiliator

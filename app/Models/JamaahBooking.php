@@ -248,8 +248,8 @@ class JamaahBooking extends Model
             - ($this->discount_amount ?? 0);
 
         // Add handling fee if enabled
-        if ($this->travelPackage && $this->travelPackage->handling_fee_enabled && $this->travelPackage->handling_fee_amount > 0) {
-            $grandTotal += $this->travelPackage->handling_fee_amount;
+        if ($this->travelPackage && $this->travelPackage->include_handling_lounge_fee && $this->travelPackage->handling_lounge_fee_amount > 0) {
+            $grandTotal += $this->travelPackage->handling_lounge_fee_amount;
         }
 
         return max(0, $grandTotal);

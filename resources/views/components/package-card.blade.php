@@ -124,7 +124,7 @@
     </div>
     
     <!-- Content Section with Fixed Height -->
-    <div class="p-5 flex flex-col" style="min-height: 420px;">
+    <div class="p-5 flex flex-col" style="height: 380px;">
         <h3 class="font-bold text-gray-900 text-base mb-1 line-clamp-2 group-hover:text-green-600 transition-colors" style="min-height: 3rem;">{{ $package->package_name }}</h3>
         
         @if($package->outlet)
@@ -135,21 +135,21 @@
         <div style="min-height: 1.25rem;" class="mb-3"></div>
         @endif
         
-        <!-- Hotel & Maskapai Section - NEW -->
-        <div class="mb-3 space-y-2 flex-grow">
+        <!-- Hotel & Maskapai Section - Fixed Height with Scroll -->
+        <div class="mb-3 flex-grow overflow-y-auto" style="max-height: 180px;">
             @if($package->flightDeparture)
-            <div class="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2">
+            <div class="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2 mb-2">
                 <div class="flex-shrink-0 w-8 h-8 bg-white rounded-md flex items-center justify-center shadow-sm">
                     <i class="fas fa-plane text-blue-600 text-sm"></i>
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-xs text-gray-500 leading-tight">Maskapai</p>
-                    <p class="text-xs font-semibold text-gray-900 truncate">{{ $package->flightDeparture->airline_name ?? 'N/A' }}</p>
+                    <p class="text-xs font-semibold text-gray-900 break-words">{{ $package->flightDeparture->airline_name ?? 'N/A' }}</p>
                 </div>
             </div>
             @endif
             
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-2 gap-2 mb-2">
                 @if($package->hotelMakkah)
                 <div class="flex items-start gap-2 bg-amber-50 rounded-lg px-2 py-2">
                     <div class="flex-shrink-0 w-6 h-6 bg-white rounded flex items-center justify-center shadow-sm mt-0.5">
@@ -157,14 +157,7 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-xs text-gray-500 leading-tight">Makkah</p>
-                        <p class="text-xs font-semibold text-gray-900 truncate leading-tight">{{ $package->hotelMakkah->hotel_name ?? 'N/A' }}</p>
-                        @if($package->hotelMakkah && $package->hotelMakkah->star_rating)
-                        <div class="flex gap-0.5 mt-0.5">
-                            @for($i = 0; $i < $package->hotelMakkah->star_rating; $i++)
-                            <i class="fas fa-star text-yellow-400" style="font-size: 8px;"></i>
-                            @endfor
-                        </div>
-                        @endif
+                        <p class="text-xs font-semibold text-gray-900 break-words leading-tight">{{ $package->hotelMakkah->hotel_name ?? 'N/A' }}</p>
                     </div>
                 </div>
                 @endif
@@ -176,14 +169,7 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-xs text-gray-500 leading-tight">Madinah</p>
-                        <p class="text-xs font-semibold text-gray-900 truncate leading-tight">{{ $package->hotelMadinah->hotel_name ?? 'N/A' }}</p>
-                        @if($package->hotelMadinah && $package->hotelMadinah->star_rating)
-                        <div class="flex gap-0.5 mt-0.5">
-                            @for($i = 0; $i < $package->hotelMadinah->star_rating; $i++)
-                            <i class="fas fa-star text-yellow-400" style="font-size: 8px;"></i>
-                            @endfor
-                        </div>
-                        @endif
+                        <p class="text-xs font-semibold text-gray-900 break-words leading-tight">{{ $package->hotelMadinah->hotel_name ?? 'N/A' }}</p>
                     </div>
                 </div>
                 @endif
@@ -191,7 +177,7 @@
             
             <!-- Hotel Tambahan -->
             @if($package->hotels && is_array($package->hotels) && count($package->hotels) > 0)
-            <div class="mt-2 space-y-1">
+            <div class="space-y-1">
                 @foreach($package->hotels as $additionalHotel)
                 <div class="flex items-start gap-2 bg-purple-50 rounded-lg px-2 py-2">
                     <div class="flex-shrink-0 w-6 h-6 bg-white rounded flex items-center justify-center shadow-sm mt-0.5">
@@ -199,14 +185,7 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-xs text-gray-500 leading-tight">{{ $additionalHotel['city'] ?? 'Hotel' }}</p>
-                        <p class="text-xs font-semibold text-gray-900 truncate leading-tight">{{ $additionalHotel['hotel_name'] ?? 'N/A' }}</p>
-                        @if(isset($additionalHotel['star_rating']) && $additionalHotel['star_rating'])
-                        <div class="flex gap-0.5 mt-0.5">
-                            @for($i = 0; $i < $additionalHotel['star_rating']; $i++)
-                            <i class="fas fa-star text-yellow-400" style="font-size: 8px;"></i>
-                            @endfor
-                        </div>
-                        @endif
+                        <p class="text-xs font-semibold text-gray-900 break-words leading-tight">{{ $additionalHotel['hotel_name'] ?? 'N/A' }}</p>
                         @if(isset($additionalHotel['nights']) && $additionalHotel['nights'])
                         <p class="text-xs text-gray-400 mt-0.5">{{ $additionalHotel['nights'] }} malam</p>
                         @endif

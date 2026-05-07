@@ -787,8 +787,8 @@
 
               // Handling fee
               $showHandlingFee = 0;
-              if ($booking->travelPackage && $booking->travelPackage->handling_fee_enabled && $booking->travelPackage->handling_fee_amount > 0) {
-                  $showHandlingFee = $booking->travelPackage->handling_fee_amount;
+              if ($booking->travelPackage && $booking->travelPackage->include_handling_lounge_fee && $booking->travelPackage->handling_lounge_fee_amount > 0) {
+                  $showHandlingFee = $booking->travelPackage->handling_lounge_fee_amount;
               }
 
               $showGrandTotal = ($showUnitPrice * $showMainPax) + $showFamilyDiscountTotal
@@ -845,7 +845,7 @@
 
               @if($showHandlingFee > 0)
               <tr>
-                <th>{{ $booking->travelPackage->handling_fee_description ?? 'Handling & Lounge Fee Wajib' }}</th>
+                <th>{{ $booking->travelPackage->handling_lounge_fee_description ?? 'Handling & Lounge Fee Wajib' }}</th>
                 <td class="text-right text-primary">Rp {{ number_format($showHandlingFee, 0, ',', '.') }}</td>
               </tr>
               @endif

@@ -15,6 +15,47 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class PublicPackageController extends Controller
 {
+    /**
+     * Display all packages page
+     */
+    public function index(Request $request)
+    {
+        $query = TravelPackage::active()
+            ->with(['outlet', 'flightDeparture', 'hotelMakkah', 'hotelMadinah']);
+
+        // Filter by outlet
+        if ($request->filled('outlet_id')) {
+            $query->where('id_outlet', $request->outlet_id);
+        }
+
+        // Filter by package type
+        if ($request->filled('package_type')) {
+            $query->where('package_type', $request->package_type);
+        }
+
+        // Filter by month
+        if ($request->filled('bulan')) {
+            $query->whereMonth('departure_date', $request->bulan);
+        }
+
+        // Sort by departure date
+        $query->orderBy('departure_date', 'asc');
+
+        $packages = $query->paginate(12);
+
+        // Get outlets for filter
+        $outlets = Outlet::active()->orderBy('nama_outlet')->get(['id_outlet', 'nama_outlet', 'kota']);
+
+        // Get package types for filter
+        $packageTypes = TravelPackage::active()
+            ->select('package_type')
+            ->distinct()
+            ->pluck('package_type')
+            ->filter();
+
+        return view('public.paket-list', compact('packages', 'outlets', 'packageTypes'));
+    }
+
     public function show($id)
     {
         $package = TravelPackage::with([
@@ -793,9 +834,9 @@ class PublicPackageController extends Controller
         }
 
         // Add Handling & Lounge Fee if enabled in package
-        if ($package && $package->handling_fee_enabled && $package->handling_fee_amount > 0) {
-            $handlingFee = $package->handling_fee_amount;
-            $description = $package->handling_fee_description ?? 'Handling & Lounge Fee Wajib';
+        if ($package && $package->include_handling_lounge_fee && $package->handling_lounge_fee_amount > 0) {
+            $handlingFee = $package->handling_lounge_fee_amount;
+            $description = $package->handling_lounge_fee_description ?? 'Handling & Lounge Fee Wajib';
             $breakdown[] = ['label' => $description, 'amount' => $handlingFee, 'pax' => 1];
             $total += $handlingFee;
         }

@@ -11,6 +11,29 @@ use Illuminate\Support\Facades\Log;
 
 class PublicDocumentController extends Controller
 {
+    /**
+     * Display full history page
+     */
+    public function sejarah()
+    {
+        return view('public.sejarah');
+    }
+
+    /**
+     * Display all legality documents page
+     */
+    public function legalitas()
+    {
+        return view('public.legalitas');
+    }
+
+    /**
+     * Display all hotel partners page
+     */
+    public function hotelPartner()
+    {
+        return view('public.hotel-partner');
+    }
 
     /**
      * Public invoice PDF — accessible without login via signed token.
