@@ -38,8 +38,21 @@ class PublicPackageController extends Controller
             $query->whereMonth('departure_date', $request->bulan);
         }
 
-        // Sort by departure date
-        $query->orderBy('departure_date', 'asc');
+        // Sort by price or departure date
+        $sortBy = $request->get('sort_by', 'departure_date');
+        
+        switch ($sortBy) {
+            case 'price_asc':
+                $query->orderBy('price', 'asc');
+                break;
+            case 'price_desc':
+                $query->orderBy('price', 'desc');
+                break;
+            case 'departure_date':
+            default:
+                $query->orderBy('departure_date', 'asc');
+                break;
+        }
 
         $packages = $query->paginate(12);
 

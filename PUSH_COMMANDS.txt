@@ -1,0 +1,46 @@
+# Git Push Commands - Copy Paste untuk Push Berikutnya
+
+## Perintah Lengkap (Copy semua 3 baris ini):
+```
+git add .
+git commit -m "feat: deskripsi perubahan yang dilakukan"
+git push origin main
+```
+
+## Atau Satu Per Satu:
+
+### 1. Add semua perubahan
+```
+git add .
+```
+
+### 2. Commit dengan pesan
+```
+git commit -m "feat: deskripsi perubahan yang dilakukan"
+```
+
+### 3. Push ke remote
+```
+git push origin main
+```
+
+## Contoh Pesan Commit yang Baik:
+
+- `feat: add new feature X` - untuk fitur baru
+- `fix: resolve bug in Y` - untuk perbaikan bug
+- `refactor: improve code structure in Z` - untuk refactoring
+- `docs: update documentation` - untuk dokumentasi
+- `style: format code` - untuk formatting
+- `perf: improve performance` - untuk optimasi performa
+
+## Tips:
+- Ganti "deskripsi perubahan yang dilakukan" dengan deskripsi yang jelas
+- Gunakan bahasa Inggris untuk pesan commit (best practice)
+- Atau gunakan bahasa Indonesia jika lebih nyaman
+
+## Contoh Lengkap:
+```
+git add .
+git commit -m "fix: resolve URL base issue in homepage links"
+git push origin main
+```

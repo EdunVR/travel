@@ -130,11 +130,11 @@ Route::get('/', function () {
         ->orderBy('package_type')
         ->pluck('package_type');
 
-    // Paket katalog untuk ditampilkan di homepage (6 terbaru/terpopuler)
+    // Paket katalog untuk ditampilkan di homepage (6 dengan keberangkatan terdekat)
     $featuredPackages = \App\Models\TravelPackage::active()
         ->with(['outlet', 'flightDeparture', 'hotelMakkah', 'hotelMadinah'])
-        ->orderByDesc('booking_count')
-        ->orderBy('departure_date')
+        ->where('departure_date', '>=', now())
+        ->orderBy('departure_date', 'asc')
         ->limit(6)
         ->get();
 
