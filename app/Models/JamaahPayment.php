@@ -19,12 +19,17 @@ class JamaahPayment extends Model
         'notes',
         'recorded_by',
         'bukti_transfer',
-        'payment_type'
+        'payment_type',
+        'verification_status',
+        'verified_at',
+        'verified_by',
+        'verification_notes',
     ];
 
     protected $casts = [
         'payment_date' => 'date',
-        'amount' => 'decimal:2'
+        'amount' => 'decimal:2',
+        'verified_at' => 'datetime',
     ];
 
     /**
@@ -95,5 +100,45 @@ class JamaahPayment extends Model
             return $query->where('payment_method', $method);
         }
         return $query;
+    }
+
+    /**
+     * Relationship: User who verified this payment
+     */
+    public function verifiedBy()
+    {
+        return $this->belongsTo(User::class, 'verified_by');
+    }
+
+    /**
+     * Relationship: Booking (alias for jamaahBooking)
+     */
+    public function booking()
+    {
+        return $this->belongsTo(JamaahBooking::class, 'id_jamaah_booking');
+    }
+
+    /**
+     * Scope: Pending verification payments
+     */
+    public function scopePendingVerification($query)
+    {
+        return $query->where('verification_status', 'pending_verification');
+    }
+
+    /**
+     * Scope: Verified payments
+     */
+    public function scopeVerified($query)
+    {
+        return $query->where('verification_status', 'verified');
+    }
+
+    /**
+     * Scope: Rejected payments
+     */
+    public function scopeRejected($query)
+    {
+        return $query->where('verification_status', 'rejected');
     }
 }

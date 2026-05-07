@@ -85,7 +85,7 @@
 
         <!-- Filter -->
         <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
-            <form action="<?php echo e(route('public.paket.index')); ?>" method="GET" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <form action="<?php echo e(route('public.paket.index')); ?>" method="GET" class="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <!-- Perusahaan -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -131,6 +131,18 @@
                     </select>
                 </div>
 
+                <!-- Urutkan Harga -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-sort-amount-down text-green-brand mr-1"></i> Urutkan Harga
+                    </label>
+                    <select name="sort_by" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-brand focus:border-transparent">
+                        <option value="departure_date" <?php echo e(request('sort_by') == 'departure_date' || !request('sort_by') ? 'selected' : ''); ?>>Keberangkatan Terdekat</option>
+                        <option value="price_asc" <?php echo e(request('sort_by') == 'price_asc' ? 'selected' : ''); ?>>Harga Termurah</option>
+                        <option value="price_desc" <?php echo e(request('sort_by') == 'price_desc' ? 'selected' : ''); ?>>Harga Termahal</option>
+                    </select>
+                </div>
+
                 <!-- Button -->
                 <div class="flex items-end">
                     <button type="submit" class="w-full bg-green-gradient text-white font-semibold px-6 py-2.5 rounded-lg hover:opacity-90 transition-all">
@@ -139,7 +151,7 @@
                 </div>
             </form>
 
-            <?php if(request()->hasAny(['outlet_id', 'bulan', 'package_type'])): ?>
+            <?php if(request()->hasAny(['outlet_id', 'bulan', 'package_type', 'sort_by'])): ?>
             <div class="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
                 <div class="text-sm text-gray-600">
                     <i class="fas fa-filter mr-1"></i> Filter aktif

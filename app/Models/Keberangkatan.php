@@ -25,8 +25,8 @@ class Keberangkatan extends Model
     ];
 
     protected $casts = [
-        'departure_date' => 'date',
-        'return_date' => 'date',
+        'departure_date' => 'immutable_date',
+        'return_date' => 'immutable_date',
         'total_jamaah' => 'integer'
     ];
 

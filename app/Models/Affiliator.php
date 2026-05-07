@@ -193,12 +193,15 @@ class Affiliator extends Model
         return $click;
     }
 
-    public function addReferral($bookingId, $packageId, $orderAmount, $orderReference = null, $voucherDiscount = 0)
+    public function addReferral($bookingId, $packageId, $orderAmount, $orderReference = null, $voucherDiscount = 0, $totalPax = 1)
     {
         $commissionData = $this->getSaleCommission($packageId, $orderAmount);
         
+        // MULTIPLY by total pax
+        $baseCommission = $commissionData['amount'] * $totalPax;
+        
         // Kurangi komisi dengan diskon voucher
-        $finalCommission = max(0, $commissionData['amount'] - $voucherDiscount);
+        $finalCommission = max(0, $baseCommission - $voucherDiscount);
 
         // Hitung termin: 50% saat pelunasan, 50% saat keberangkatan
         $termin1 = round($finalCommission * 0.5, 2);
@@ -212,6 +215,7 @@ class Affiliator extends Model
             'commission_amount' => $finalCommission,
             'commission_type'   => $commissionData['type'],
             'commission_rate'   => $commissionData['rate'],
+            'total_pax'         => $totalPax, // Save total pax
             'voucher_discount'  => $voucherDiscount,
             'order_date'        => now(),
             'termin_1_amount'   => $termin1,

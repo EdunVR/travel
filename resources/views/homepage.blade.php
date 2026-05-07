@@ -773,6 +773,111 @@
     </div>
 </section>
 
+<!-- ===== PROGRAM KEMITRAAN ===== -->
+@if(!isset($affiliator) || !$affiliator)
+<section class="section-white py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-content relative">
+        <div class="text-center mb-14">
+            <div class="inline-flex items-center gap-2 bg-green-pale border border-green-200 rounded-full px-4 py-2 mb-4">
+                <i class="fas fa-handshake text-green-brand text-xs"></i>
+                <span class="text-green-brand text-xs font-semibold uppercase tracking-wider">Program Kemitraan</span>
+            </div>
+            <h2 class="font-playfair text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+                Bergabung Bersama <span class="text-green-gradient">HM Tour</span>
+            </h2>
+            <p class="text-gray-600 max-w-2xl mx-auto">
+                Pilih program kemitraan yang sesuai dengan kebutuhan Anda dan mulai dapatkan penghasilan
+            </p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            @php
+            $programs = \App\Models\PartnershipProgram::active()->ordered()->get();
+            @endphp
+            @forelse($programs as $program)
+            <div class="card-hover bg-white rounded-2xl overflow-hidden border border-green-100 shadow-sm group">
+                <div class="bg-gradient-to-br from-green-50 to-white p-5 border-b border-green-100">
+                    <div class="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-green-500 transition-colors">
+                        <i class="fas fa-handshake text-green-600 group-hover:text-white text-xl transition-colors"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 text-center text-base mb-2">{{ $program->name }}</h3>
+                    <div class="text-center mb-3">
+                        @if($program->registration_fee == 0)
+                            <span class="inline-block bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">GRATIS</span>
+                        @else
+                            <span class="inline-block bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1 rounded-full">{{ $program->formatted_fee }}</span>
+                        @endif
+                        @if($program->requires_previous_booking)
+                        <span class="inline-block bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-full ml-1" title="Memerlukan booking sebelumnya">
+                            <i class="fas fa-star"></i>
+                        </span>
+                        @endif
+                    </div>
+                    <p class="text-xs text-gray-600 text-center line-clamp-2 min-h-[32px]">{{ $program->description }}</p>
+                </div>
+                <div class="p-4">
+                    <!-- Target Audience -->
+                    <div class="mb-3 pb-3 border-b border-gray-100">
+                        <div class="text-xs text-gray-500 mb-1">Target:</div>
+                        <div class="text-xs font-semibold text-gray-700">{{ $program->target_audience }}</div>
+                    </div>
+                    
+                    <!-- Commission Info -->
+                    <div class="space-y-2 mb-4">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-500">Komisi Per Closing:</span>
+                            <span class="font-semibold text-green-600">{{ $program->formatted_commission }}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-500">Komisi Per Click:</span>
+                            <span class="font-semibold text-blue-600">Rp {{ number_format($program->default_ppc_commission, 0, ',', '.') }}</span>
+                        </div>
+                        @if($program->max_commission_per_sale > 0)
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-500">Max Per Sale:</span>
+                            <span class="font-semibold text-amber-600">Rp {{ number_format($program->max_commission_per_sale, 0, ',', '.') }}</span>
+                        </div>
+                        @endif
+                    </div>
+                    
+                    <!-- Benefits Preview -->
+                    @php
+                        $benefits = $program->benefits;
+                        if (is_string($benefits)) {
+                            $benefits = json_decode($benefits, true);
+                        }
+                    @endphp
+                    @if($benefits && is_array($benefits) && count($benefits) > 0)
+                    <div class="mb-4">
+                        <div class="text-xs text-gray-500 mb-2">Benefit:</div>
+                        <ul class="space-y-1">
+                            @foreach(array_slice($benefits, 0, 3) as $benefit)
+                            <li class="text-xs text-gray-700 flex items-start gap-1">
+                                <i class="fas fa-check text-green-500 text-[10px] mt-0.5"></i>
+                                <span class="line-clamp-1">{{ $benefit }}</span>
+                            </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                    @endif
+                    
+                    <a href="{{ route('affiliate.register') }}"
+                       class="block text-center bg-green-gradient text-white font-semibold px-4 py-2.5 rounded-lg text-xs hover:opacity-90 transition">
+                        Daftar Sekarang <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                </div>
+            </div>
+            @empty
+            <div class="col-span-full text-center py-12 text-gray-400">
+                <i class="fas fa-info-circle text-3xl mb-3 block"></i>
+                Program kemitraan akan segera hadir
+            </div>
+            @endforelse
+        </div>
+    </div>
+</section>
+@endif
+
 <!-- ===== KEUNGGULAN ===== -->
 <section id="keunggulan" class="section-white py-20">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-content relative">

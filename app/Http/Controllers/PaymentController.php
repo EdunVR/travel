@@ -799,4 +799,140 @@ class PaymentController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Show payments pending verification
+     */
+    public function verifyIndex()
+    {
+        $payments = JamaahPayment::with(['booking.jamaah', 'booking.travelPackage'])
+            ->pendingVerification()
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+        
+        $pendingCount = JamaahPayment::pendingVerification()->count();
+        
+        return view('admin.travel.payment.verify-payments', compact('payments', 'pendingCount'));
+    }
+
+    /**
+     * Verify a payment
+     */
+    public function verifyPayment(Request $request, $paymentId)
+    {
+        $payment = JamaahPayment::with('booking')->findOrFail($paymentId);
+        
+        if ($payment->verification_status !== 'pending_verification') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment already processed'
+            ]);
+        }
+        
+        // Update payment status
+        $payment->update([
+            'verification_status' => 'verified',
+            'verified_at' => now(),
+            'verified_by' => auth()->id(),
+        ]);
+        
+        // Update booking
+        $booking = $payment->booking;
+        $booking->paid_amount = ($booking->paid_amount ?? 0) + $payment->amount;
+        $booking->remaining_amount = $booking->total_price - $booking->paid_amount;
+        
+        if ($booking->paid_amount >= $booking->total_price) {
+            $booking->payment_status = 'paid';
+        } elseif ($booking->paid_amount > 0) {
+            $booking->payment_status = 'partial';
+        }
+        $booking->save();
+        
+        // Sync piutang
+        $this->syncPiutang($booking);
+        
+        // Verify affiliate sale
+        $affiliateService = new \App\Services\AffiliateTrackingService();
+        try {
+            $affiliateService->verifySale($booking->id);
+        } catch (\Exception $e) {
+            \Log::error('Failed to verify affiliate sale: ' . $e->getMessage());
+        }
+        
+        // Send WhatsApp notification
+        $this->sendPaymentVerifiedWhatsApp($payment);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment verified successfully'
+        ]);
+    }
+
+    /**
+     * Reject a payment
+     */
+    public function rejectPayment(Request $request, $paymentId)
+    {
+        $payment = JamaahPayment::with('booking')->findOrFail($paymentId);
+        
+        $payment->update([
+            'verification_status' => 'rejected',
+            'verified_at' => now(),
+            'verified_by' => auth()->id(),
+            'verification_notes' => $request->reason,
+        ]);
+        
+        // Send rejection notification
+        $this->sendPaymentRejectedWhatsApp($payment, $request->reason);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment rejected'
+        ]);
+    }
+
+    /**
+     * Send WhatsApp after verification
+     */
+    private function sendPaymentVerifiedWhatsApp($payment)
+    {
+        $booking = $payment->booking;
+        $package = $booking->travelPackage;
+        $jamaah = $booking->jamaah;
+        
+        $msg = "Assalamu'alaikum, pembayaran Anda telah diverifikasi! ✅\n\n";
+        $msg .= "📦 Paket: {$package->package_name}\n";
+        $msg .= "🔖 Booking: {$booking->booking_code}\n";
+        $msg .= "💰 Jumlah: Rp " . number_format($payment->amount, 0, ',', '.') . "\n\n";
+        $msg .= "Terima kasih telah mempercayai HM Tour! 🙏";
+        
+        try {
+            $whatsappService = new \App\Services\WhatsAppService();
+            $whatsappService->sendMessage($jamaah->telepon, $msg);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send WhatsApp: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send WhatsApp for rejection
+     */
+    private function sendPaymentRejectedWhatsApp($payment, $reason)
+    {
+        $booking = $payment->booking;
+        $jamaah = $booking->jamaah;
+        
+        $msg = "Assalamu'alaikum, mohon maaf pembayaran Anda tidak dapat diverifikasi.\n\n";
+        $msg .= "🔖 Booking: {$booking->booking_code}\n";
+        $msg .= "❌ Alasan: {$reason}\n\n";
+        $msg .= "Silakan upload ulang bukti pembayaran yang benar.\n";
+        $msg .= "Hubungi kami jika ada pertanyaan: 0812-3456-7890";
+        
+        try {
+            $whatsappService = new \App\Services\WhatsAppService();
+            $whatsappService->sendMessage($jamaah->telepon, $msg);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send WhatsApp: ' . $e->getMessage());
+        }
+    }
 }

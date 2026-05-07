@@ -424,13 +424,14 @@ class PublicPackageController extends Controller
             }
         }
 
-        // Hitung DP amounts untuk display
+        // Hitung DP amounts untuk display menggunakan method dari model
         $dp25Percent = round($grandTotal * 0.25);
-        $dp5Million = 10000000;
+        $totalPax = $booking->getTotalPax();
+        $dp10MillionPerPax = $booking->calculateDPAmount(); // 10 juta x pax
 
         return view('public.invoice-booking', compact(
             'booking', 'package', 'unitPrice', 'familyMembers', 'priceBreakdown', 'grandTotal', 
-            'bankAccounts', 'dp25Percent', 'dp5Million', 'adminDiscount'
+            'bankAccounts', 'dp25Percent', 'dp10MillionPerPax', 'totalPax', 'adminDiscount'
         ));
     }
 
@@ -526,7 +527,7 @@ class PublicPackageController extends Controller
         $nextNumber = $lastPayment ? (intval(substr($lastPayment->receipt_number, 4)) + 1) : 1;
         $receiptNumber = 'KWT-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
 
-        // Simpan payment - save full path with folder
+        // Simpan payment - save full path with folder WITH VERIFICATION STATUS
         $payment = JamaahPayment::create([
             'id_jamaah_booking' => $booking->id,
             'payment_date'      => now()->toDateString(),
@@ -538,276 +539,85 @@ class PublicPackageController extends Controller
             'recorded_by'       => null, // Public payment, no user
             'bukti_transfer'    => 'bukti-transfer/' . $fileName, // Save with folder path
             'payment_type'      => $validated['payment_type'],
+            'verification_status' => 'pending_verification', // NEW: Set pending
         ]);
 
-        // Update booking
-        $booking->paid_amount = ($booking->paid_amount ?? 0) + $amount;
-        $booking->remaining_amount = $booking->total_price - $booking->paid_amount;
-        
-        if ($booking->paid_amount >= $booking->total_price) {
-            $booking->payment_status = 'paid';
-        } elseif ($booking->paid_amount > 0) {
-            $booking->payment_status = 'partial';
-        }
-        $booking->save();
+        // DON'T update booking yet - wait for admin verification
+        // DON'T send WhatsApp yet - wait for admin verification
+        // DON'T sync piutang yet - wait for admin verification
 
-        // Sync piutang ke tabel piutang
-        $this->syncPiutang($booking);
+        // Redirect to pending verification page
+        return redirect()->route('public.payment.pending', [
+            'packageId' => $packageId,
+            'bookingId' => $bookingId,
+            'paymentId' => $payment->id
+        ])->with('success', 'Pembayaran berhasil diupload. Menunggu verifikasi admin.');
+    }
 
-        // Verify affiliate sale (jika ada referral pending untuk booking ini)
-        $affiliateService = new \App\Services\AffiliateTrackingService();
-        try {
-            $verified = $affiliateService->verifySale($booking->id);
-            if ($verified) {
-                \Log::info('Affiliate commission verified and credited for booking: ' . $booking->booking_code);
-            }
-        } catch (\Exception $e) {
-            \Log::error('Failed to verify affiliate sale: ' . $e->getMessage());
-            // Don't fail the payment if affiliate verification fails
-        }
-
-        // Buat atau update SalesInvoice agar link invoice PDF bisa diakses
-        $invoiceService = new InvoiceIntegrationService();
-        if (!$booking->id_invoice) {
-            // Buat invoice baru
-            $paymentTerm = $validated['payment_type'] === 'full' ? 'full' : 'installment';
-            try {
-                $invoice = $invoiceService->createInvoiceForJamaah($booking, $paymentTerm, $amount);
-            } catch (\Exception $e) {
-                \Log::error('Failed to create invoice for public booking: ' . $e->getMessage());
-                $invoice = null;
-            }
-        } else {
-            // Update invoice yang sudah ada
-            $invoice = \App\Models\SalesInvoice::find($booking->id_invoice);
-            if ($invoice) {
-                try {
-                    $invoiceService->updateInvoicePayment($invoice, $amount);
-                } catch (\Exception $e) {
-                    \Log::error('Failed to update invoice payment: ' . $e->getMessage());
-                }
-            }
-        }
-
-        // Reload booking untuk mendapatkan id_invoice terbaru
-        $booking->refresh();
-
-        // Generate tokens untuk PDF links (public routes - sama seperti QR code)
-        $invoiceToken = hash('sha256', $booking->id . ($booking->id_invoice ?? '') . config('app.key'));
-        $receiptToken = hash('sha256', $payment->id . $payment->id_jamaah_booking . config('app.key'));
-
-        // Gunakan route public yang sama dengan QR code di invoice/kwitansi
-        // Jika invoice belum ada, kirim link ke halaman invoice booking saja
-        if ($booking->id_invoice) {
-            $invoiceUrl = route('public.invoice', ['bookingId' => $booking->id, 'token' => $invoiceToken]);
-        } else {
-            $invoiceUrl = url('/paket/' . $packageId . '/invoice/' . $booking->id);
-        }
-        $receiptUrl = route('public.receipt', ['paymentId' => $payment->id, 'token' => $receiptToken]);
-
-        // Get company settings untuk info bank
-        // Gunakan outlet_id (bukan id_outlet) sesuai schema tabel
+    /**
+     * Show payment pending verification page
+     */
+    public function paymentPending($packageId, $bookingId, $paymentId)
+    {
+        $payment = JamaahPayment::findOrFail($paymentId);
+        $booking = JamaahBooking::with(['travelPackage', 'jamaah'])->findOrFail($bookingId);
         $package = $booking->travelPackage;
-        $companySetting = null;
-        if ($package->id_outlet) {
-            $companySetting = \App\Models\CompanySetting::where('outlet_id', $package->id_outlet)->first();
-        }
-        // Fallback ke setting pertama jika tidak ada setting untuk outlet ini
-        if (!$companySetting) {
-            $companySetting = \App\Models\CompanySetting::first();
-        }
+        
+        // Verify payment belongs to this booking
+        abort_if($payment->id_jamaah_booking != $bookingId, 404);
+        abort_if($booking->id_travel_package != $packageId, 404);
+        
+        return view('public.payment-pending-verification', compact('payment', 'booking', 'package'));
+    }
 
-        // Get family members untuk rincian pax - ambil dari booking, bukan member
+    /**
+     * Add family member to existing booking
+     */
+    public function addFamilyMember(Request $request, $bookingId)
+    {
+        $booking = JamaahBooking::with('travelPackage')->findOrFail($bookingId);
+        
+        $validated = $request->validate([
+            'nama' => 'required|string|max:255',
+            'hubungan' => 'nullable|string|max:50',
+            'tanggal_lahir' => 'nullable|date',
+        ]);
+        
+        // Get existing family members from booking
         $familyMembers = $booking->family_members_booking;
-        if (is_string($familyMembers)) $familyMembers = json_decode($familyMembers, true);
-        if (!is_array($familyMembers)) $familyMembers = [];
-
-        // Hitung pax berdasarkan kategori
-        $dewasaCount = 1; // Jamaah utama
-        $infantCount = 0;
-        $anakCount = 0;
-        
-        foreach ($familyMembers as $fm) {
-            if (empty($fm['tanggal_lahir'])) {
-                $dewasaCount++;
-            } else {
-                $age = \Carbon\Carbon::parse($fm['tanggal_lahir'])->age;
-                if ($age < 2) {
-                    $infantCount++;
-                } elseif ($age <= 8) {
-                    $anakCount++;
-                } else {
-                    $dewasaCount++;
-                }
-            }
+        if (is_string($familyMembers)) {
+            $familyMembers = json_decode($familyMembers, true);
         }
-
-        // Susun pesan WA dengan informasi lengkap
-        $package = $booking->travelPackage;
-        $jamaah = $booking->jamaah;
-        
-        $msg  = "Assalamu'alaikum, pembayaran telah berhasil diproses:\n\n";
-        
-        // 1. Info Transfer ke Rekening
-        if ($companySetting && $companySetting->bank_name && $companySetting->bank_account_number) {
-            $msg .= "💳 *Transfer ke:*\n";
-            $msg .= "Bank: {$companySetting->bank_name}\n";
-            $msg .= "No. Rek: {$companySetting->bank_account_number}\n";
-            $msg .= "a/n: " . ($companySetting->bank_account_name ?? $companySetting->company_name) . "\n\n";
+        if (!is_array($familyMembers)) {
+            $familyMembers = [];
         }
         
-        // 2. Data Customer
-        $msg .= "👤 *Data Customer:*\n";
-        $msg .= "Nama: {$jamaah->nama}\n";
-        if ($jamaah->alamat) $msg .= "Alamat: {$jamaah->alamat}\n";
-        if ($jamaah->email) $msg .= "Email: {$jamaah->email}\n";
-        if ($jamaah->telepon) $msg .= "No. HP: {$jamaah->telepon}\n";
-        $msg .= "\n";
+        // Add new family member
+        $familyMembers[] = $validated;
         
-        // 3. Order & Payment Status
-        $msg .= "📋 *Status Pesanan:*\n";
-        $msg .= "Kode Booking: *{$booking->booking_code}*\n";
-        $msg .= "Order Status: " . strtoupper($booking->status) . "\n";
-        $msg .= "Payment Status: " . strtoupper($booking->payment_status ?? 'pending') . "\n";
+        // Calculate additional DP (10 million per pax)
+        $additionalDP = 10000000;
         
-        // 4. Tanggal
-        $msg .= "Tanggal Booking: " . $booking->booking_date->format('d M Y') . "\n";
-        $msg .= "Tanggal Bayar: " . now()->format('d M Y H:i') . "\n";
-        $msg .= "\n";
+        // Update booking
+        $booking->family_members_booking = json_encode($familyMembers);
+        $booking->total_price += $additionalDP;
+        $booking->remaining_amount = $booking->total_price - ($booking->paid_amount ?? 0);
+        $booking->save();
         
-        // 5-8. Jumlah Total, Dibayar, Sisa
-        $msg .= "💰 *Rincian Pembayaran:*\n";
-        $msg .= "No. Kwitansi: *{$receiptNumber}*\n";
-        $msg .= "Jenis: " . ($validated['payment_type'] === 'dp' ? 'DP (25% atau min Rp 10jt)' : 'Lunas') . "\n";
-        
-        // Show original price if there are discounts
-        if ($booking->voucher_discount > 0 || $booking->admin_discount > 0) {
-            $originalTotal = $booking->total_price + ($booking->voucher_discount ?? 0) + ($booking->admin_discount ?? 0);
-            $msg .= "Harga Paket: Rp " . number_format($originalTotal, 0, ',', '.') . "\n";
-            
-            if ($booking->voucher_discount > 0) {
-                $msg .= "Diskon Voucher ({$booking->voucher_code}): -Rp " . number_format($booking->voucher_discount, 0, ',', '.') . "\n";
-            }
-            
-            if ($booking->admin_discount > 0) {
-                $msg .= "Diskon Admin: -Rp " . number_format($booking->admin_discount, 0, ',', '.') . "\n";
-            }
-            
-            $msg .= "Total Setelah Diskon: Rp " . number_format($booking->total_price, 0, ',', '.') . "\n";
-        } else {
-            $msg .= "Total Harga: Rp " . number_format($booking->total_price, 0, ',', '.') . "\n";
-        }
-        
-        $msg .= "Jumlah Dibayar: Rp " . number_format($amount, 0, ',', '.') . "\n";
-        $msg .= "Total Terbayar: Rp " . number_format($booking->paid_amount, 0, ',', '.') . "\n";
-        $msg .= "Sisa Tagihan: Rp " . number_format($booking->remaining_amount, 0, ',', '.') . "\n";
-        $msg .= "\n";
-        
-        // 9. Rincian Pesanan
-        $msg .= "📦 *Rincian Pesanan:*\n";
-        $msg .= "Paket: *{$package->package_name}*\n";
-        $msg .= "Tgl Berangkat: " . $package->departure_date->format('d M Y') . "\n";
-        $msg .= "Tgl Pulang: " . $package->return_date->format('d M Y') . "\n";
-        $msg .= "Durasi: {$package->duration_days} Hari\n";
-        $msg .= "\n";
-        
-        // Rincian Pax
-        $msg .= "👥 *Jumlah Jamaah:*\n";
-        $msg .= "Dewasa: {$dewasaCount} Pax\n";
-        if ($anakCount > 0) $msg .= "Anak (2-8th): {$anakCount} Pax\n";
-        if ($infantCount > 0) $msg .= "Infant (<2th): {$infantCount} Pax\n";
-        $msg .= "\n";
-        
-        // Paket Harga & Variant
-        if ($booking->price_package_name) {
-            $msg .= "💎 *Paket Harga:*\n";
-            $msg .= "Nama: {$booking->price_package_name}\n";
-            if ($booking->price_variant) {
-                $msg .= "Variant: " . ucfirst($booking->price_variant) . "\n";
-            }
-            $msg .= "\n";
-        }
-        
-        // Link Dokumen
-        $msg .= "📄 *Dokumen:*\n";
-        $msg .= "Invoice: {$invoiceUrl}\n";
-        $msg .= "Kwitansi: {$receiptUrl}\n\n";
-        
-        $msg .= "Terima kasih atas pembayaran Anda. Tim kami akan segera menghubungi untuk proses selanjutnya 🙏";
-
-        // AUTO-SEND WhatsApp via OpenWA
-        $jamaahPhone = $jamaah->telepon ?? $jamaah->whatsapp ?? null;
-        
-        \Log::info('Payment completed, preparing WhatsApp notification', [
+        // Log activity
+        \Log::info('Family member added to booking', [
+            'booking_id' => $booking->id,
             'booking_code' => $booking->booking_code,
-            'jamaah_phone' => $jamaahPhone,
-            'has_phone' => !empty($jamaahPhone)
+            'new_member' => $validated['nama'],
+            'additional_dp' => $additionalDP,
+            'new_total' => $booking->total_price
         ]);
         
-        if ($jamaahPhone) {
-            // Try to send via OpenWA
-            \Log::info('Attempting to send WhatsApp via OpenWA', [
-                'booking_code' => $booking->booking_code,
-                'phone' => $jamaahPhone
-            ]);
-            
-            try {
-                $whatsappService = new \App\Services\WhatsAppService();
-                $result = $whatsappService->sendMessage($jamaahPhone, $msg);
-                
-                \Log::info('OpenWA sendMessage result', [
-                    'booking_code' => $booking->booking_code,
-                    'success' => $result['success'] ?? false,
-                    'error' => $result['error'] ?? null
-                ]);
-                
-                if ($result['success']) {
-                    // Message sent successfully via OpenWA
-                    \Log::info('WhatsApp auto-sent successfully', [
-                        'booking_code' => $booking->booking_code,
-                        'phone' => $jamaahPhone,
-                        'message_id' => $result['messageId'] ?? null
-                    ]);
-                    
-                    // Redirect to receipt page after successful payment
-                    return redirect()->route('public.receipt', [
-                        'paymentId' => $payment->id, 
-                        'token' => $receiptToken
-                    ])->with('success', 'Pembayaran berhasil! Notifikasi WhatsApp telah dikirim ke ' . $jamaahPhone);
-                } else {
-                    // OpenWA failed, use fallback wa.me link
-                    \Log::warning('OpenWA failed, using fallback wa.me link', [
-                        'booking_code' => $booking->booking_code,
-                        'phone' => $jamaahPhone,
-                        'error' => $result['error'] ?? 'Unknown error'
-                    ]);
-                    
-                    // Use fallback URL from service or generate manually
-                    $waUrl = $result['fallback_url'] ?? 'https://wa.me/' . $whatsappService->formatPhone($jamaahPhone) . '?text=' . urlencode($msg);
-                    
-                    return redirect($waUrl);
-                }
-            } catch (\Exception $e) {
-                \Log::error('Exception while sending WhatsApp', [
-                    'booking_code' => $booking->booking_code,
-                    'phone' => $jamaahPhone,
-                    'exception' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-                
-                // Fallback to wa.me
-                $waUrl = 'https://wa.me/' . preg_replace('/[^0-9]/', '', $jamaahPhone) . '?text=' . urlencode($msg);
-                return redirect($waUrl);
-            }
-        } else {
-            // No phone number, redirect to admin for notification
-            \Log::warning('No jamaah phone number, redirecting to admin', [
-                'booking_code' => $booking->booking_code
-            ]);
-            
-            $waUrl = 'https://wa.me/628976688800?text=' . urlencode($msg);
-            return redirect($waUrl);
-        }
+        // Redirect to invoice with success message
+        return redirect()->route('public.paket.invoice', [
+            'packageId' => $booking->id_travel_package,
+            'bookingId' => $booking->id
+        ])->with('success', 'Anggota keluarga berhasil ditambahkan! Silakan bayar DP tambahan sebesar Rp 10,000,000');
     }
 
     /**

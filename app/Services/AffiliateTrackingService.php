@@ -124,13 +124,18 @@ class AffiliateTrackingService
             return false;
         }
 
-        // Buat referral record dengan voucher discount
+        // Get booking to calculate total pax
+        $booking = \App\Models\JamaahBooking::find($bookingId);
+        $totalPax = $booking ? $booking->getTotalPax() : 1;
+
+        // Buat referral record dengan voucher discount dan total pax
         $referral = $affiliator->addReferral(
             $bookingId,
             $packageId,
             $orderAmount,
             $orderReference,
-            $voucherDiscount
+            $voucherDiscount,
+            $totalPax // Pass total pax untuk perhitungan komisi
         );
 
         return $referral;

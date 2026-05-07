@@ -70,8 +70,8 @@ class TravelPackage extends Model
     ];
 
     protected $casts = [
-        'departure_date' => 'date',
-        'return_date' => 'date',
+        'departure_date' => 'immutable_date',
+        'return_date' => 'immutable_date',
         'makkah_check_in' => 'date',
         'makkah_check_out' => 'date',
         'madinah_check_in' => 'date',

@@ -308,6 +308,58 @@ class JamaahBooking extends Model
     }
 
     /**
+     * Calculate DP amount based on total pax
+     * DP = 10 juta x jumlah pax
+     * 
+     * @return float
+     */
+    public function calculateDPAmount()
+    {
+        $totalPax = $this->getTotalPax();
+        return 10000000 * $totalPax; // 10 juta per pax
+    }
+    
+    /**
+     * Get total pax (jamaah utama + anggota keluarga)
+     * 
+     * @return int
+     */
+    public function getTotalPax()
+    {
+        // Jamaah utama = 1
+        $total = 1;
+        
+        // Hitung anggota keluarga dari booking
+        $familyMembers = $this->family_members_booking;
+        if (is_string($familyMembers)) {
+            $familyMembers = json_decode($familyMembers, true);
+        }
+        
+        if (is_array($familyMembers)) {
+            $total += count($familyMembers);
+        }
+        
+        return $total;
+    }
+    
+    /**
+     * Get DP amount based on dp_option
+     * 
+     * @return float
+     */
+    public function getDPAmount()
+    {
+        if ($this->dp_option === '10_million') {
+            return $this->calculateDPAmount(); // 10 juta x pax
+        } elseif ($this->dp_option === '25_percent') {
+            return $this->total_price * 0.25; // 25% dari total
+        }
+        
+        // Default: 10 juta x pax
+        return $this->calculateDPAmount();
+    }
+
+    /**
      * Override to use booking's outlet ID
      */
     protected function getCurrentOutletId()
