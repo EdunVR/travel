@@ -31,6 +31,30 @@ class Keberangkatan extends Model
     ];
 
     /**
+     * Boot method to auto-sync dates with package
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // When creating a new keberangkatan, auto-sync dates from package
+        static::creating(function ($keberangkatan) {
+            if ($keberangkatan->id_travel_package && !$keberangkatan->departure_date) {
+                $package = TravelPackage::find($keberangkatan->id_travel_package);
+                if ($package) {
+                    $keberangkatan->departure_date = $package->departure_date;
+                    $keberangkatan->return_date = $package->return_date;
+                    \Log::info('Auto-synced keberangkatan dates from package', [
+                        'package_id' => $package->id,
+                        'departure_date' => $package->departure_date,
+                        'return_date' => $package->return_date
+                    ]);
+                }
+            }
+        });
+    }
+
+    /**
      * Relationship to outlet
      */
     public function outlet()

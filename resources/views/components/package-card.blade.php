@@ -2,13 +2,17 @@
 
 <a href="{{ url('/paket/' . $package->id) }}" class="block">
 <div class="card-hover bg-white rounded-2xl overflow-hidden border border-green-100 shadow-sm group cursor-pointer hover:shadow-xl transition-all duration-300">
-    <!-- Image Section with Fixed Aspect Ratio -->
-    <div class="relative overflow-hidden" style="aspect-ratio: 16/9;">
+    <!-- Image Section with Fixed Aspect Ratio + Lazy Loading + Blur Placeholder -->
+    <div class="relative overflow-hidden bg-gray-100" style="aspect-ratio: 16/9;">
         @if($package->image_path)
         @php
             $cropData = $package->thumbnail_crop_settings ?? null;
             $hasValidCrop = $cropData && is_array($cropData) && isset($cropData['width']) && $cropData['width'] > 0;
+            $imagePath = asset('storage/'.$package->image_path);
         @endphp
+        
+        <!-- Blur Placeholder (shows immediately) -->
+        <div class="absolute inset-0 bg-gradient-to-br from-green-50 to-green-100 animate-pulse"></div>
         
         @if($hasValidCrop)
         @php
@@ -18,15 +22,24 @@
             $cropW = $cropData['width'] ?? 1;
             $cropH = $cropData['height'] ?? 1;
         @endphp
-        <img src="{{ asset('storage/'.$package->image_path) }}"
+        <img src="{{ $imagePath }}"
              alt="{{ $package->package_name }}"
              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+             loading="lazy"
+             decoding="async"
              data-crop-x="{{ $cropX }}"
              data-crop-y="{{ $cropY }}"
              data-crop-w="{{ $cropW }}"
              data-crop-h="{{ $cropH }}"
              onerror="this.parentElement.style.background='linear-gradient(135deg,#e8f5e9,#c8e6c9)';this.remove()"
              onload="(function(img){
+                // Remove placeholder
+                const placeholder = img.previousElementSibling;
+                if (placeholder && placeholder.classList.contains('animate-pulse')) {
+                    placeholder.style.opacity = '0';
+                    setTimeout(() => placeholder.remove(), 300);
+                }
+                
                 const cropX = parseFloat(img.dataset.cropX);
                 const cropY = parseFloat(img.dataset.cropY);
                 const cropW = parseFloat(img.dataset.cropW);
@@ -56,10 +69,20 @@
                 img.style.objectPosition = centerXPercent + '% ' + focusYPercent + '%';
              })(this)">
         @else
-        <img src="{{ asset('storage/'.$package->image_path) }}"
+        <img src="{{ $imagePath }}"
              alt="{{ $package->package_name }}"
              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-             onerror="this.parentElement.style.background='linear-gradient(135deg,#e8f5e9,#c8e6c9)';this.remove()">
+             loading="lazy"
+             decoding="async"
+             onerror="this.parentElement.style.background='linear-gradient(135deg,#e8f5e9,#c8e6c9)';this.remove()"
+             onload="(function(img){
+                // Remove placeholder
+                const placeholder = img.previousElementSibling;
+                if (placeholder && placeholder.classList.contains('animate-pulse')) {
+                    placeholder.style.opacity = '0';
+                    setTimeout(() => placeholder.remove(), 300);
+                }
+             })(this)">
         @endif
         @else
         <div class="w-full h-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">

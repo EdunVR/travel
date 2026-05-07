@@ -1329,10 +1329,8 @@
                 </div>
                 <p class="text-gray-600 text-sm leading-relaxed mb-6 italic">"{{ $t['text'] }}"</p>
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-green-200 flex-shrink-0">
-                        <img src="{{ $t['img'] }}" alt="{{ $t['name'] }}"
-                             class="w-full h-full object-cover"
-                             onerror="this.parentElement.style.background='#e8f5e9';this.remove()">
+                    <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-user text-green-600 text-lg"></i>
                     </div>
                     <div>
                         <div class="font-semibold text-gray-900 text-sm">{{ $t['name'] }}</div>

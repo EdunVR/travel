@@ -415,7 +415,19 @@ Hubungi Kami
 </button>
 </div>
 <div id="family-rows" class="space-y-2"></div>
-<p class="text-xs text-gray-400 mt-1">Isi tanggal lahir untuk kalkulasi harga usia (infant/anak)</p>
+<div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+<div class="flex items-start gap-2">
+<i class="fas fa-info-circle text-blue-600 text-sm mt-0.5"></i>
+<div class="text-xs text-blue-800">
+<p class="font-semibold mb-1">Informasi Penting tentang Kamar:</p>
+<ul class="list-disc list-inside space-y-0.5 text-blue-700">
+<li><strong>Anak-anak dan bayi/infant sharing bed</strong> dengan orang tua</li>
+<li>Quad = 4 orang (bukan 4 bed) - pengelola akan menyesuaikan jumlah pemesanan kamar</li>
+<li>Isi tanggal lahir untuk kalkulasi harga usia (infant 0-2th, anak 2-8th)</li>
+</ul>
+</div>
+</div>
+</div>
 </div>
 
 
@@ -505,7 +517,7 @@ Rp <?php echo e(number_format($package->handling_lounge_fee_amount, 0, ',', '.')
 
 <button type="submit"
         class="w-full mt-4 bg-green-gradient text-white font-bold py-3.5 rounded-xl text-sm hover:opacity-90 transition-all shadow-lg shadow-green-200 flex items-center justify-center gap-2">
-<i class="fab fa-whatsapp text-lg"></i> Pesan dan Konfirmasi
+<i class="fab fa-whatsapp text-lg"></i> PESAN & KONFIRMASI
 </button>
 </form>
 
