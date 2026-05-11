@@ -632,18 +632,31 @@
             $familyDiscountTotal = array_sum(array_column($familyDiscount, 'price'));
             $chargedHotelsTotal = $booking->hotelBookings ? $booking->hotelBookings->where('is_charged', true)->sum('total_cost') : 0;
             $addonsTotal = $booking->addons ? $booking->addons->sum(fn($a) => $a->harga * $a->qty) : 0;
-            $grandTotal = $mainSubtotal + $familyDiscountTotal + ($booking->equipment_cost ?? 0) + ($booking->upgrade_cost ?? 0) + $chargedHotelsTotal + $addonsTotal - $booking->discount_amount;
+            
+            // Add handling fee if enabled
+            $handlingFee = 0;
+            if ($booking->travelPackage && $booking->travelPackage->include_handling_lounge_fee && $booking->travelPackage->handling_lounge_fee_amount > 0) {
+                $handlingFee = $booking->travelPackage->handling_lounge_fee_amount;
+            }
+            
+            $grandTotal = $mainSubtotal + $familyDiscountTotal + ($booking->equipment_cost ?? 0) + ($booking->upgrade_cost ?? 0) + $chargedHotelsTotal + $addonsTotal + $handlingFee - $booking->discount_amount;
         ?>
         <div class="total-section">
             <table>
                 <?php if(count($familyDiscount) > 0): ?>
                 <tr>
-                    <td colspan="4" class="text-right">Paket Utama (<?php echo e($mainPax); ?> Pax Ã— Rp <?php echo e(number_format($unitPrice, 0, ',', '.')); ?>)</td>
+                    <td colspan="4" class="text-right">Paket Utama (<?php echo e($mainPax); ?> Pax × Rp <?php echo e(number_format($unitPrice, 0, ',', '.')); ?>)</td>
                     <td class="text-right" style="width: 150px;">Rp <?php echo e(number_format($mainSubtotal, 0, ',', '.')); ?></td>
                 </tr>
                 <tr>
                     <td colspan="4" class="text-right">Anggota Keluarga (Diskon)</td>
                     <td class="text-right">Rp <?php echo e(number_format($familyDiscountTotal, 0, ',', '.')); ?></td>
+                </tr>
+                <?php endif; ?>
+                <?php if($handlingFee > 0): ?>
+                <tr>
+                    <td colspan="4" class="text-right"><?php echo e($booking->travelPackage->handling_lounge_fee_description ?? 'Handling & Lounge Fee Wajib'); ?></td>
+                    <td class="text-right">Rp <?php echo e(number_format($handlingFee, 0, ',', '.')); ?></td>
                 </tr>
                 <?php endif; ?>
                 <tr>
@@ -974,16 +987,44 @@
                 <?php if(!empty($booking->terms_conditions)): ?>
                     <div style="white-space: pre-wrap;"><?php echo e($booking->terms_conditions); ?></div>
                 <?php else: ?>
-                <ol style="margin: 0; padding-left: 15px;">
-                    <li>Pembayaran harus dilakukan sesuai dengan jatuh tempo yang tertera pada invoice.</li>
-                    <li>Pembatalan booking akan dikenakan biaya sesuai dengan ketentuan yang berlaku.</li>
-                    <li>Jamaah wajib melengkapi dokumen perjalanan minimal 30 hari sebelum keberangkatan.</li>
-                    <li>Harga paket sudah termasuk tiket pesawat, akomodasi hotel, transportasi, dan makan sesuai program.</li>
-                    <li>Harga paket belum termasuk biaya visa, asuransi perjalanan, dan pengeluaran pribadi.</li>
-                    <li>Perusahaan berhak mengubah jadwal keberangkatan dengan pemberitahuan terlebih dahulu.</li>
-                    <li>Jamaah wajib mengikuti seluruh program yang telah ditentukan oleh perusahaan.</li>
-                    <li>Segala keluhan dan pertanyaan dapat disampaikan melalui kontak yang tertera pada invoice.</li>
-                </ol>
+                <div style="margin-bottom: 10px;">
+                    <strong style="font-size: 10px;">Ketentuan Pembelian Paket Umrah:</strong>
+                    <ol style="margin: 5px 0; padding-left: 18px;">
+                        <li>Pembayaran DP untuk Booking seat sebesar 10 juta/pax di transfer ke rekening Perusahaan.</li>
+                        <li>Pembayaran 50% harga paket dilakukan maksimal H-40 dari tanggal keberangkatan.</li>
+                        <li>Pelunasan dilakukan paling lambat H-30 dari tanggal keberangkatan.</li>
+                        <li>Ketentuan Pembatalan:
+                            <ol style="list-style-type: lower-alpha; padding-left: 15px; margin: 3px 0;">
+                                <li>Pembatalan dikenakan biaya 3 juta/Jemaah Non Refundable.</li>
+                                <li>Pembatalan Setelah H-40 dikenakan biaya 5 juta/Jemaah Non Refundable.</li>
+                                <li>Pembatalan setelah H-30 dikenakan biaya seharga tiket pesawat.</li>
+                                <li>Pembatalan/perubahan paket H-20 Non Refundable.</li>
+                            </ol>
+                        </li>
+                        <li>Tiket pesawat kelas ekonomi. Untuk upgrade ke bisnis, hubungi kami untuk ketersediaan kursi dan biaya tambahan.</li>
+                        <li>Jika hingga H-16 keberangkatan kuota kamar paket QUAD belum terpenuhi, pembeli harus upgrade sesuai ketersediaan kamar.</li>
+                        <li>Jika terdapat Force Majure maka tidak dapat dibebankan kepada travel.</li>
+                    </ol>
+                </div>
+                
+                <div style="margin-bottom: 10px;">
+                    <strong style="font-size: 10px;">Ketentuan Pendaftaran:</strong>
+                    <ol style="margin: 5px 0; padding-left: 18px;">
+                        <li>Biaya Paket dan jadwal penerbangan dapat berubah sewaktu-waktu apabila terdapat perubahan Kebijakan dari Negara-negara yang berkaitan seperti kebijakan Persyaratan Kesehatan, Tiket Pesawat, Hotel & Visa. Harga Paket juga menyesuaikan apabila terdapat perubahan Kurs yang signifikan.</li>
+                        <li>Program perjalanan sewaktu-waktu bisa berubah mengikuti situasi dan kondisi terupdate.</li>
+                        <li>Jadwal Penerbangan Travel yang telah terbooking dapat berubah sewaktu-waktu mengikuti kebijakan dan kondisi terbaru maskapai.</li>
+                        <li>Perihal Hotel yang telah tertera diflyer, ataupun jika terdapat perubahan ke hotel yang setaraf merupakan wewenang dari pihak HM Tour & Travel sepenuhnya.</li>
+                        <li>Jika terdapat kondisi Force Majure karna (bencana alam, kerusuhan, peperangan, huru-hara keributan, blokade, perselisihan, perburuan, pemogokan, wabah penyakit, kebijakan pemerintah setempat, dll) rencana perjalanan dapat dirubah baik susunan maupun tanggal keberangkatanya baik dengan pemberitahuan atau tanpa pemberitahuan terlebih dahulu, hal ini demi kepentingan dan keamanan seluruh rombongan dan HM Tour & Travel tidak bertanggung jawab dalam pengembalian biaya atau uang service yang sudah dibayarkan namun tidak digunakan dikarnakan Force Majure.</li>
+                        <li>Terkait dengan hotel di Indonesia serta paket City Tour Al Ula dan Thoif, perlu kami informasikan bahwa biaya tersebut tidak dapat diuangkan kembali karena statusnya sudah bersifat kolektif.</li>
+                    </ol>
+                </div>
+                
+                <div>
+                    <strong style="font-size: 10px;">Ketentuan Umum:</strong>
+                    <p style="margin: 5px 0;">
+                        Dengan melakukan DP (Down Payment) ke Pihak HM Tour & Travel, maka Jemaah dianggap memahami, mengetahui, menyetujui dan bersedia mengikuti semua Ketentuan tertulis yang ada di HM Tour & Travel dalam keadaan sadar dan tanpa tekanan dari pihak manapun.
+                    </p>
+                </div>
                 <?php endif; ?>
             </div>
         </div>

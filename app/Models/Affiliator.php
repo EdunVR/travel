@@ -24,6 +24,7 @@ class Affiliator extends Model
         'upline_master_id',
         'upline_leader_id',
         'upline_partner_id',
+        'recruited_by',
         'payment_proof',
         'payment_verified_at',
         'ppc_commission',
@@ -105,6 +106,17 @@ class Affiliator extends Model
     public function uplinePartner()
     {
         return $this->belongsTo(Affiliator::class, 'upline_partner_id');
+    }
+
+    // Agency fee relationships
+    public function recruiter()
+    {
+        return $this->belongsTo(Affiliator::class, 'recruited_by');
+    }
+
+    public function recruits()
+    {
+        return $this->hasMany(Affiliator::class, 'recruited_by');
     }
 
     // Downline relationships

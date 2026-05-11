@@ -126,7 +126,17 @@ class AffiliateTrackingService
 
         // Get booking to calculate total pax
         $booking = \App\Models\JamaahBooking::find($bookingId);
-        $totalPax = $booking ? $booking->getTotalPax() : 1;
+        
+        if (!$booking) {
+            return false;
+        }
+        
+        // Refresh booking to ensure we have latest data
+        $booking->refresh();
+        
+        $totalPax = $booking->getTotalPax();
+        
+        \Log::info('Affiliate trackSale - Booking: ' . $bookingId . ', Total Pax: ' . $totalPax . ', Family Members: ' . ($booking->family_members_booking ? 'Yes' : 'No'));
 
         // Buat referral record dengan voucher discount dan total pax
         $referral = $affiliator->addReferral(

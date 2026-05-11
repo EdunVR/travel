@@ -521,6 +521,90 @@
                         </div>
                     </div>
 
+                    <!-- Fee Keagenan Settings -->
+                    <div class="mb-6">
+                        <h4 class="text-md font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-users-cog mr-2 text-primary-600"></i>
+                            Pengaturan Fee Keagenan
+                        </h4>
+                        
+                        <!-- Enable/Disable -->
+                        <div class="mb-4">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" name="agency_fee_enabled" id="agency_fee_enabled" value="1"
+                                       class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500">
+                                <span class="ml-2 text-sm font-medium text-gray-700">Aktifkan Fee Keagenan</span>
+                            </label>
+                            <p class="text-xs text-gray-500 mt-1 ml-6">
+                                Mitra yang merekrut mitra baru akan mendapat komisi dari aktivitas mitra yang direkrut
+                            </p>
+                        </div>
+
+                        <div id="agency_fee_fields" class="space-y-4">
+                            <!-- Fee Type -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tipe Fee Keagenan</label>
+                                <select name="agency_fee_type" id="agency_fee_type"
+                                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="percentage">Persentase dari Komisi</option>
+                                    <option value="fixed">Nominal Tetap</option>
+                                    <option value="both">Keduanya (Persentase + Tetap)</option>
+                                </select>
+                            </div>
+
+                            <!-- Percentage -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Persentase Fee (%)</label>
+                                <input type="number" name="agency_fee_percentage" id="agency_fee_percentage" 
+                                       step="0.01" min="0" max="100" value="10"
+                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Contoh: 10% berarti mitra upline dapat 10% dari komisi mitra downline
+                                </p>
+                            </div>
+
+                            <!-- Fixed Amount -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fee Tetap (Rp)</label>
+                                <input type="number" name="agency_fee_fixed" id="agency_fee_fixed" 
+                                       step="1000" min="0" value="0"
+                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Fee tetap per transaksi yang dilakukan mitra downline
+                                </p>
+                            </div>
+
+                            <!-- Max Level -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Maksimal Level Downline</label>
+                                <select name="agency_fee_max_level" id="agency_fee_max_level"
+                                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="1">1 Level (Direct Recruit Only)</option>
+                                    <option value="2">2 Level (Multi-Level)</option>
+                                    <option value="3">3 Level (Multi-Level)</option>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Level 1: Hanya dari mitra yang langsung direkrut<br>
+                                    Level 2+: Dari mitra yang direkrut dan mitra yang direkrut oleh mitra tersebut
+                                </p>
+                            </div>
+
+                            <!-- Example Calculation -->
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <p class="text-sm font-semibold text-blue-900 mb-2">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Contoh Perhitungan:
+                                </p>
+                                <ul class="text-xs text-blue-800 space-y-1">
+                                    <li>• Mitra A merekrut Mitra B</li>
+                                    <li>• Mitra B closing jamaah, dapat komisi Rp 1.000.000</li>
+                                    <li>• Fee keagenan 10%</li>
+                                    <li>• Mitra A dapat: Rp 100.000 (10% x Rp 1.000.000)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Upload Progress Bar -->
                     <div id="upload_progress_container" class="mb-4 hidden">
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -642,6 +726,33 @@
                 isActiveElement.value = settings.is_active ? '1' : '0';
             }
 
+            // Set agency fee settings
+            const agencyFeeEnabled = document.getElementById('agency_fee_enabled');
+            if (agencyFeeEnabled) {
+                agencyFeeEnabled.checked = settings.agency_fee_enabled || false;
+                toggleAgencyFeeFields();
+            }
+
+            const agencyFeeType = document.getElementById('agency_fee_type');
+            if (agencyFeeType && settings.agency_fee_type) {
+                agencyFeeType.value = settings.agency_fee_type;
+            }
+
+            const agencyFeePercentage = document.getElementById('agency_fee_percentage');
+            if (agencyFeePercentage && settings.agency_fee_percentage) {
+                agencyFeePercentage.value = settings.agency_fee_percentage;
+            }
+
+            const agencyFeeFixed = document.getElementById('agency_fee_fixed');
+            if (agencyFeeFixed && settings.agency_fee_fixed) {
+                agencyFeeFixed.value = settings.agency_fee_fixed;
+            }
+
+            const agencyFeeMaxLevel = document.getElementById('agency_fee_max_level');
+            if (agencyFeeMaxLevel && settings.agency_fee_max_level) {
+                agencyFeeMaxLevel.value = settings.agency_fee_max_level;
+            }
+
             // Show current logo if exists
             if (settings.logo_url) {
                 const currentLogoDisplay = document.getElementById('current_logo_display');
@@ -666,6 +777,28 @@
             document.getElementById('logo_preview').classList.add('hidden');
             document.getElementById('favicon_preview').classList.add('hidden');
         }
+
+        // Toggle agency fee fields visibility
+        function toggleAgencyFeeFields() {
+            const checkbox = document.getElementById('agency_fee_enabled');
+            const fields = document.getElementById('agency_fee_fields');
+            if (checkbox && fields) {
+                if (checkbox.checked) {
+                    fields.classList.remove('hidden');
+                } else {
+                    fields.classList.add('hidden');
+                }
+            }
+        }
+
+        // Add event listener for agency fee checkbox
+        document.addEventListener('DOMContentLoaded', function() {
+            const agencyFeeCheckbox = document.getElementById('agency_fee_enabled');
+            if (agencyFeeCheckbox) {
+                agencyFeeCheckbox.addEventListener('change', toggleAgencyFeeFields);
+                toggleAgencyFeeFields(); // Initial state
+            }
+        });
 
         // Remove current logo
         function removeCurrentLogo() {

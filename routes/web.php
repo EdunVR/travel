@@ -270,7 +270,7 @@ Route::post('/paket/{packageId}/invoice/{bookingId}/bayar', [\App\Http\Controlle
     ->name('public.paket.pay');
 
 // Payment pending verification page (Task 9)
-Route::get('/paket/{packageId}/payment/{bookingId}/pending/{paymentId}', 
+Route::get('/paket/{packageId}/booking/{bookingId}/pending', 
     [\App\Http\Controllers\PublicPackageController::class, 'paymentPending'])
     ->middleware(['web'])
     ->name('public.payment.pending');
@@ -762,9 +762,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('travel/booking/{booking}/invoice/pdf', [PaymentController::class, 'generateJamaahInvoice'])->name('payment.jamaah-invoice-pdf');
         
         // Payment Verification (Task 9)
-        Route::get('travel/payment/verify', [PaymentController::class, 'verifyIndex'])->name('admin.payment.verify');
-        Route::post('travel/payment/{paymentId}/verify', [PaymentController::class, 'verifyPayment'])->name('admin.payment.verify.action');
-        Route::post('travel/payment/{paymentId}/reject', [PaymentController::class, 'rejectPayment'])->name('admin.payment.reject');
+        Route::get('travel/payment/verify', [PaymentController::class, 'verifyIndex'])->name('travel.payment.verify');
+        Route::post('travel/payment/{paymentId}/verify', [PaymentController::class, 'verifyPayment'])->name('travel.payment.verify.action');
+        Route::post('travel/payment/{paymentId}/reject', [PaymentController::class, 'rejectPayment'])->name('travel.payment.reject');
 
         // Document Management
         Route::get('travel/booking/{booking}/documents', [DocumentController::class, 'index'])->name('document.index');

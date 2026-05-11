@@ -291,6 +291,22 @@ class Member extends Model
     }
 
     /**
+     * Accessor for full_name (alias for nama)
+     */
+    public function getFullNameAttribute()
+    {
+        return $this->nama ?? '';
+    }
+
+    /**
+     * Accessor for phone_number (alias for telepon)
+     */
+    public function getPhoneNumberAttribute()
+    {
+        return $this->telepon ?? '';
+    }
+
+    /**
      * Scope untuk menambahkan total piutang dalam query
      */
     public function scopeWithTotalPiutang($query)

@@ -807,9 +807,15 @@
               // Add-ons total
               $showAddonsTotal = $booking->addons ? $booking->addons->sum(fn($a) => $a->harga * $a->qty) : 0;
 
+              // Handling fee
+              $showHandlingFee = 0;
+              if ($booking->travelPackage && $booking->travelPackage->include_handling_lounge_fee && $booking->travelPackage->handling_lounge_fee_amount > 0) {
+                  $showHandlingFee = $booking->travelPackage->handling_lounge_fee_amount;
+              }
+
               $showGrandTotal = ($showUnitPrice * $showMainPax) + $showFamilyDiscountTotal
                   + ($booking->equipment_cost ?? 0) + ($booking->upgrade_cost ?? 0)
-                  + $showHotelCharge + $showAddonsTotal
+                  + $showHotelCharge + $showAddonsTotal + $showHandlingFee
                   - $booking->discount_amount;
               $showSisa = max(0, $showGrandTotal - $booking->paid_amount);
             ?>
@@ -856,6 +862,13 @@
               <tr>
                 <th>Add-ons / Request</th>
                 <td class="text-right text-info">Rp <?php echo e(number_format($showAddonsTotal, 0, ',', '.')); ?></td>
+              </tr>
+              <?php endif; ?>
+
+              <?php if($showHandlingFee > 0): ?>
+              <tr>
+                <th><?php echo e($booking->travelPackage->handling_lounge_fee_description ?? 'Handling & Lounge Fee Wajib'); ?></th>
+                <td class="text-right text-primary">Rp <?php echo e(number_format($showHandlingFee, 0, ',', '.')); ?></td>
               </tr>
               <?php endif; ?>
 

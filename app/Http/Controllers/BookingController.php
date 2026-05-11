@@ -31,7 +31,11 @@ class BookingController extends Controller
     public function index()
     {
         $outlets = Outlet::all();
-        return view('admin.travel.booking.index', compact('outlets'));
+        
+        // Get pending payment verification count
+        $pendingPaymentCount = \App\Models\JamaahPayment::pendingVerification()->count();
+        
+        return view('admin.travel.booking.index', compact('outlets', 'pendingPaymentCount'));
     }
 
     /**

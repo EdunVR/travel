@@ -104,6 +104,15 @@ class AffiliateController extends Controller
             ]
         ]);
 
+        // Check for recruiter cookie
+        $recruiterCode = \Cookie::get('affiliate_ref');
+        if ($recruiterCode) {
+            $recruiter = Affiliator::where('username', $recruiterCode)->first();
+            if ($recruiter) {
+                session(['affiliate_recruiter_id' => $recruiter->id]);
+            }
+        }
+
         // Upload dan compress foto jika ada
         if ($request->hasFile('photo')) {
             $photoPath = $this->compressAndUploadImage($request->file('photo'), 'affiliator-photos-temp');
@@ -212,12 +221,13 @@ class AffiliateController extends Controller
             'upline_master_id' => $registrationData['upline_master_id'] ?? null,
             'upline_leader_id' => $registrationData['upline_leader_id'] ?? null,
             'upline_partner_id' => $registrationData['upline_partner_id'] ?? null,
+            'recruited_by' => session('affiliate_recruiter_id'),
             'status' => $autoApprove ? 'active' : 'pending',
             'approved_at' => $autoApprove ? now() : null,
         ]);
 
         // Clear session data
-        session()->forget(['affiliate_registration_data', 'affiliate_registration_token', 'affiliate_registration_photo']);
+        session()->forget(['affiliate_registration_data', 'affiliate_registration_token', 'affiliate_registration_photo', 'affiliate_recruiter_id']);
 
         // Kirim notifikasi WA ke mitra (konfirmasi pembayaran)
         $this->sendAffiliatorPaymentConfirmation($affiliator, $program, $autoApprove);

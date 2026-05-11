@@ -16,6 +16,16 @@
         <p class="text-slate-600 text-sm">Kelola booking jamaah untuk paket perjalanan</p>
       </div>
       <div class="flex flex-wrap gap-2">
+        <a href="<?php echo e(route('admin.inventaris.travel.payment.verify')); ?>" class="inline-flex items-center gap-2 rounded-xl bg-amber-600 text-white px-4 py-2 hover:bg-amber-700 transition-colors relative">
+          <i class='bx bx-check-shield text-lg'></i> 
+          <span>Verifikasi Pembayaran</span>
+          <?php if($pendingPaymentCount > 0): ?>
+          <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse">
+            <?php echo e($pendingPaymentCount); ?>
+
+          </span>
+          <?php endif; ?>
+        </a>
         <?php if (\Illuminate\Support\Facades\Blade::check('hasPermission', 'travel.booking.create')): ?>
         <button x-on:click="openCreate()" class="inline-flex items-center gap-2 rounded-xl bg-primary-600 text-white px-4 py-2 hover:bg-primary-700">
           <i class='bx bx-plus-circle text-lg'></i> Tambah Booking

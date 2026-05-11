@@ -355,6 +355,19 @@ class PublicPackageController extends Controller
         // Pastikan booking milik paket ini
         abort_if($booking->id_travel_package != $packageId, 404);
 
+        // Cek apakah ada pembayaran yang sedang pending verifikasi
+        $latestPayment = JamaahPayment::where('id_jamaah_booking', $bookingId)
+            ->latest()
+            ->first();
+
+        if ($latestPayment && $latestPayment->verification_status === 'pending_verification') {
+            // Redirect ke halaman pending verification
+            return redirect()->route('public.payment.pending', [
+                'packageId' => $packageId,
+                'bookingId' => $bookingId
+            ]);
+        }
+
         $package = $booking->travelPackage;
 
         // Hitung ulang total
@@ -557,15 +570,26 @@ class PublicPackageController extends Controller
     /**
      * Show payment pending verification page
      */
-    public function paymentPending($packageId, $bookingId, $paymentId)
+    public function paymentPending($packageId, $bookingId)
     {
-        $payment = JamaahPayment::findOrFail($paymentId);
         $booking = JamaahBooking::with(['travelPackage', 'jamaah'])->findOrFail($bookingId);
         $package = $booking->travelPackage;
         
-        // Verify payment belongs to this booking
-        abort_if($payment->id_jamaah_booking != $bookingId, 404);
+        // Verify booking belongs to this package
         abort_if($booking->id_travel_package != $packageId, 404);
+        
+        // Get latest payment
+        $payment = JamaahPayment::where('id_jamaah_booking', $bookingId)
+            ->latest()
+            ->first();
+        
+        // If no payment or payment is verified, redirect to invoice
+        if (!$payment || $payment->verification_status === 'verified') {
+            return redirect()->route('public.booking.invoice', [
+                'packageId' => $packageId,
+                'bookingId' => $bookingId
+            ]);
+        }
         
         return view('public.payment-pending-verification', compact('payment', 'booking', 'package'));
     }

@@ -38,6 +38,12 @@ class AffiliateAdminController extends Controller
 
         $affiliators = $query->latest()->paginate(20);
 
+        // Calculate agency fee for each affiliator
+        foreach ($affiliators as $affiliator) {
+            $affiliator->agency_fee_total = $this->calculateAgencyFee($affiliator);
+            $affiliator->recruited_count = $affiliator->recruits()->count();
+        }
+
         // Summary stats
         $stats = [
             'total' => Affiliator::count(),
@@ -49,6 +55,46 @@ class AffiliateAdminController extends Controller
         ];
 
         return view('admin.affiliate.index', compact('affiliators', 'stats'));
+    }
+
+    /**
+     * Calculate agency fee for an affiliator
+     */
+    private function calculateAgencyFee($affiliator)
+    {
+        $settings = \App\Models\CompanySetting::first();
+        
+        if (!$settings || !$settings->agency_fee_enabled) {
+            return 0;
+        }
+
+        $recruited = Affiliator::where('recruited_by', $affiliator->id)->get();
+        $totalFee = 0;
+
+        foreach ($recruited as $downline) {
+            $downlineCommission = AffiliateReferral::where('affiliator_id', $downline->id)
+                ->where('status', 'verified')
+                ->sum('commission_amount');
+
+            // Calculate agency fee based on type
+            if ($settings->agency_fee_type == 'percentage') {
+                $totalFee += ($downlineCommission * $settings->agency_fee_percentage / 100);
+            } elseif ($settings->agency_fee_type == 'fixed') {
+                $transactionCount = AffiliateReferral::where('affiliator_id', $downline->id)
+                    ->where('status', 'verified')
+                    ->count();
+                $totalFee += ($transactionCount * $settings->agency_fee_fixed);
+            } elseif ($settings->agency_fee_type == 'both') {
+                $percentageFee = ($downlineCommission * $settings->agency_fee_percentage / 100);
+                $transactionCount = AffiliateReferral::where('affiliator_id', $downline->id)
+                    ->where('status', 'verified')
+                    ->count();
+                $fixedFee = ($transactionCount * $settings->agency_fee_fixed);
+                $totalFee += ($percentageFee + $fixedFee);
+            }
+        }
+
+        return $totalFee;
     }
 
     /**

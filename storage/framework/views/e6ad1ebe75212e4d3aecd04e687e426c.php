@@ -285,6 +285,27 @@ Invoice resmi untuk pembayaran Anda
 <?php endif; ?>
 </div>
 
+<!-- Add Family Member Section (Task 10) -->
+<?php if($booking->payment_status !== 'unpaid'): ?>
+<div>
+    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Tambah Anggota Keluarga</h3>
+    <div class="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-4">
+        <p class="text-sm text-purple-800 mb-3">
+            <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            Ingin menambah anggota keluarga? Anda bisa menambahkan sekarang dengan membayar DP tambahan.
+        </p>
+        <button type="button" onclick="showAddFamilyMemberModal()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Tambah Anggota Keluarga
+        </button>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- FORM PEMBAYARAN -->
 <form action="<?php echo e(route('public.paket.pay', ['packageId' => $package->id, 'bookingId' => $booking->id])); ?>" method="POST" enctype="multipart/form-data" id="paymentForm">
 <?php echo csrf_field(); ?>
@@ -308,21 +329,29 @@ if (!empty($booking->custom_payment_amount)) {
     // Jika admin set custom amount
     $paymentAmount = min($booking->custom_payment_amount, $paymentAmount);
     $paymentLabel = 'Jumlah yang Ditentukan Admin';
+    $paymentDetail = '';
 } elseif ($booking->payment_type === 'full') {
     $paymentLabel = 'Bayar Lunas';
+    $paymentDetail = '';
 } else {
     // DP
     if ($booking->dp_option === '25_percent') {
         $paymentAmount = min(round($grandTotal * 0.25), $paymentAmount);
         $paymentLabel = 'Bayar DP (25%)';
+        $paymentDetail = '';
     } else {
-        $paymentAmount = min(10000000, $paymentAmount);
-        $paymentLabel = 'Bayar DP (Rp 10 Juta)';
+        // DP 10 juta x pax
+        $paymentAmount = min($dp10MillionPerPax, $paymentAmount);
+        $paymentLabel = 'Bayar DP';
+        $paymentDetail = 'Rp 10 juta x ' . $totalPax . ' pax';
     }
 }
 ?>
 <?php echo e($paymentLabel); ?>
 
+<?php if($paymentDetail): ?>
+<div class="text-xs text-gray-500 mt-1"><?php echo e($paymentDetail); ?></div>
+<?php endif; ?>
 </div>
 <div class="text-xs text-gray-500 mt-1">
 <?php if(!empty($booking->custom_payment_amount)): ?>
@@ -421,8 +450,13 @@ BAYAR SEKARANG
 </div>
 
 <!-- Footer -->
-<div class="px-6 py-4 bg-gray-50 border-t border-gray-100 text-center">
+<div class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+<div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+<a href="<?php echo e(url('/')); ?>" class="inline-flex items-center gap-2 text-green-brand hover:text-green-mid font-semibold text-sm transition-colors">
+<i class="fas fa-home"></i> Kembali ke Homepage
+</a>
 <p class="text-gray-400 text-xs">&copy; <?php echo e(date('Y')); ?> HM Tour & Travel. Berizin Kemenag RI.</p>
+</div>
 </div>
 
 </div>
@@ -577,6 +611,88 @@ document.addEventListener('DOMContentLoaded', function() {
                 applyVoucher();
             }
         });
+    }
+});
+</script>
+
+<!-- Modal Add Family Member (Task 10) -->
+<div id="addFamilyMemberModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 max-h-screen overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold">Tambah Anggota Keluarga</h3>
+            <button type="button" onclick="hideAddFamilyMemberModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <form action="<?php echo e(route('public.booking.add-family-member', ['bookingId' => $booking->id])); ?>" method="POST">
+            <?php echo csrf_field(); ?>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Nama Lengkap <span class="text-red-500">*</span></label>
+                    <input type="text" name="nama" required 
+                           class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                           placeholder="Masukkan nama lengkap">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Hubungan</label>
+                    <select name="hubungan" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <option value="">Pilih Hubungan</option>
+                        <option value="Suami">Suami</option>
+                        <option value="Istri">Istri</option>
+                        <option value="Anak">Anak</option>
+                        <option value="Orang Tua">Orang Tua</option>
+                        <option value="Saudara">Saudara</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold mb-2">Tanggal Lahir</label>
+                    <input type="date" name="tanggal_lahir" 
+                           class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    <p class="text-xs text-gray-500 mt-1">Untuk perhitungan diskon usia (anak/infant)</p>
+                </div>
+                
+                <div class="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-3">
+                    <p class="text-sm text-yellow-800">
+                        <strong>DP Tambahan:</strong> Rp 10,000,000<br>
+                        <span class="text-xs">DP akan ditambahkan ke total tagihan Anda</span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex gap-3 mt-6">
+                <button type="button" onclick="hideAddFamilyMemberModal()" 
+                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-all">
+                    Batal
+                </button>
+                <button type="submit" 
+                        class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-all">
+                    Tambah & Bayar DP
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showAddFamilyMemberModal() {
+    document.getElementById('addFamilyMemberModal').classList.remove('hidden');
+}
+
+function hideAddFamilyMemberModal() {
+    document.getElementById('addFamilyMemberModal').classList.add('hidden');
+}
+
+// Close modal when clicking outside
+document.getElementById('addFamilyMemberModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideAddFamilyMemberModal();
     }
 });
 </script>

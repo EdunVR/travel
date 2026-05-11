@@ -115,7 +115,12 @@ class CompanySettingController extends Controller
             'date_format' => ['required', Rule::in(array_keys(CompanySetting::getDateFormats()))],
             'time_format' => ['required', Rule::in(array_keys(CompanySetting::getTimeFormats()))],
             'tax_rate' => 'required|numeric|min:0|max:100',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'agency_fee_enabled' => 'boolean',
+            'agency_fee_type' => 'nullable|in:percentage,fixed,both',
+            'agency_fee_percentage' => 'nullable|numeric|min:0|max:100',
+            'agency_fee_fixed' => 'nullable|numeric|min:0',
+            'agency_fee_max_level' => 'nullable|integer|min:1|max:3',
         ]);
 
         if ($validator->fails()) {
@@ -129,6 +134,7 @@ class CompanySettingController extends Controller
         try {
             $data = $request->except(['company_logo', 'company_favicon']);
             $data['is_active'] = $request->boolean('is_active', true);
+            $data['agency_fee_enabled'] = $request->boolean('agency_fee_enabled', false);
 
             // Handle logo upload
             if ($request->hasFile('company_logo')) {

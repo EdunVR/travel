@@ -94,6 +94,7 @@
                         <th class="text-center px-4 py-3 font-semibold text-slate-600">Penjualan</th>
                         <th class="text-right px-4 py-3 font-semibold text-slate-600">Saldo Tersedia</th>
                         <th class="text-right px-4 py-3 font-semibold text-slate-600">Pending</th>
+                        <th class="text-center px-4 py-3 font-semibold text-slate-600">Fee Keagenan</th>
                         <th class="text-center px-4 py-3 font-semibold text-slate-600">Status</th>
                         <th class="text-center px-4 py-3 font-semibold text-slate-600">Aksi</th>
                     </tr>
@@ -155,6 +156,20 @@
                             Rp {{ number_format($aff->pending_balance, 0, ',', '.') }}
                         </td>
                         <td class="px-4 py-3 text-center">
+                            @if($aff->recruited_count > 0)
+                                <div class="text-sm">
+                                    <div class="font-semibold text-purple-600">
+                                        Rp {{ number_format($aff->agency_fee_total, 0, ',', '.') }}
+                                    </div>
+                                    <div class="text-xs text-slate-400">
+                                        dari {{ $aff->recruited_count }} mitra
+                                    </div>
+                                </div>
+                            @else
+                                <span class="text-xs text-slate-400">-</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 text-center">
                             @if($aff->status === 'active')
                                 <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">Aktif</span>
                             @elseif($aff->status === 'pending')
@@ -203,7 +218,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="text-center py-12 text-slate-400">
+                        <td colspan="10" class="text-center py-12 text-slate-400">
                             <i class="fas fa-users text-3xl mb-3 block"></i>
                             Belum ada mitra
                         </td>
