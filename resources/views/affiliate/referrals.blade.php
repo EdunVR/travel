@@ -57,6 +57,7 @@
                         <th class="text-right px-4 py-3 font-semibold text-gray-600">Komisi</th>
                         <th class="text-center px-4 py-3 font-semibold text-gray-600">Tanggal</th>
                         <th class="text-center px-4 py-3 font-semibold text-gray-600">Status</th>
+                        <th class="text-center px-4 py-3 font-semibold text-gray-600">Status Fee</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
@@ -66,8 +67,8 @@
                             <div class="font-medium text-gray-900">{{ $ref->package->package_name ?? 'N/A' }}</div>
                         </td>
                         <td class="px-4 py-3">
-                            <div class="text-gray-700">{{ $ref->booking->member->nama_lengkap ?? 'N/A' }}</div>
-                            <div class="text-xs text-gray-400">{{ $ref->booking->member->email ?? '' }}</div>
+                            <div class="text-gray-700">{{ $ref->booking->member->nama ?? $ref->booking->member->full_name ?? 'N/A' }}</div>
+                            <div class="text-xs text-gray-400">{{ $ref->booking->member->telepon ?? '' }}</div>
                         </td>
                         <td class="px-4 py-3 text-right text-gray-600">
                             Rp {{ number_format($ref->order_amount, 0, ',', '.') }}
@@ -89,10 +90,19 @@
                                 <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">Paid</span>
                             @endif
                         </td>
+                        <td class="px-4 py-3 text-center">
+                            @if(!$ref->termin_1_released)
+                                <span class="bg-amber-100 text-amber-700 text-xs px-2 py-1 rounded-full">⏳ Menunggu Pelunasan</span>
+                            @elseif($ref->termin_1_released && !$ref->termin_2_released)
+                                <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">⏳ Menunggu Keberangkatan</span>
+                            @else
+                                <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">✅ Bisa Ditarik</span>
+                            @endif
+                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center py-12 text-gray-400">
+                        <td colspan="7" class="text-center py-12 text-gray-400">
                             <i class="fas fa-inbox text-4xl mb-3 block"></i>
                             Belum ada referral
                         </td>

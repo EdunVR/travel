@@ -275,6 +275,35 @@ Route::get('/paket/{packageId}/booking/{bookingId}/pending',
     ->middleware(['web'])
     ->name('public.payment.pending');
 
+// Check payment status API (Task 9)
+Route::get('/payment/{paymentId}/check-status', 
+    [\App\Http\Controllers\PublicPackageController::class, 'checkPaymentStatus'])
+    ->middleware(['web'])
+    ->name('public.payment.check-status');
+
+// Public manifest form (Task 10)
+Route::get('/booking/{bookingId}/manifest', 
+    [\App\Http\Controllers\PublicDocumentController::class, 'manifestForm'])
+    ->middleware(['web'])
+    ->name('public.booking.manifest');
+
+Route::post('/booking/{bookingId}/manifest', 
+    [\App\Http\Controllers\PublicDocumentController::class, 'submitManifest'])
+    ->middleware(['web'])
+    ->name('public.booking.manifest.submit');
+
+// OCR Passport for public manifest form (Task 14)
+Route::post('/manifest/ocr-passport', 
+    [\App\Http\Controllers\PublicDocumentController::class, 'ocrPassport'])
+    ->middleware(['web'])
+    ->name('public.manifest.ocr-passport');
+
+// OCR KTP for public manifest form
+Route::post('/manifest/ocr-ktp', 
+    [\App\Http\Controllers\PublicDocumentController::class, 'ocrKtp'])
+    ->middleware(['web'])
+    ->name('public.manifest.ocr-ktp');
+
 // Add family member to booking (Task 10)
 Route::post('/booking/{bookingId}/add-family-member', 
     [\App\Http\Controllers\PublicPackageController::class, 'addFamilyMember'])
@@ -827,60 +856,34 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('travel/report/team-performance/pdf', [ReportController::class, 'exportTeamPerformancePdf'])->name('travel.report.team-performance.pdf');
         Route::get('travel/report/team-performance/excel', [ReportController::class, 'exportTeamPerformanceExcel'])->name('travel.report.team-performance.excel');
 
-        // ===== AFFILIATE ADMIN ROUTES =====
-        Route::prefix('affiliate')->name('affiliate.')->group(function () {
-            // Settings (harus sebelum /{affiliator} agar tidak konflik)
-            Route::get('/config/settings', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'settings'])->name('settings');
-            Route::post('/config/settings', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'saveSettings'])->name('settings.save');
-            Route::post('/config/package-commission', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'savePackageCommission'])->name('package-commission.save');
-            Route::delete('/config/package-commission/{commission}', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'deletePackageCommission'])->name('package-commission.delete');
-
-            // Vouchers Management
-            Route::get('/vouchers', [\App\Http\Controllers\AdminVoucherController::class, 'index'])->name('vouchers');
-            Route::get('/vouchers/list', [\App\Http\Controllers\AdminVoucherController::class, 'list'])->name('vouchers.list');
-            Route::get('/vouchers/generate-code', [\App\Http\Controllers\AdminVoucherController::class, 'generateCode'])->name('vouchers.generate-code');
-            Route::post('/vouchers', [\App\Http\Controllers\AdminVoucherController::class, 'store'])->name('vouchers.store');
-            Route::put('/vouchers/{id}', [\App\Http\Controllers\AdminVoucherController::class, 'update'])->name('vouchers.update');
-            Route::delete('/vouchers/{id}', [\App\Http\Controllers\AdminVoucherController::class, 'destroy'])->name('vouchers.destroy');
-
-            // Payouts
-            Route::get('/manage/payouts', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'payouts'])->name('payouts');
-            Route::patch('/manage/payout/{payout}/approve', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'approvePayout'])->name('payout.approve');
-            Route::patch('/manage/payout/{payout}/reject', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'rejectPayout'])->name('payout.reject');
-
-            // Referrals
-            Route::patch('/referral/{referral}/verify', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'verifyReferral'])->name('referral.verify');
-            Route::patch('/referral/{referral}/reject', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'rejectReferral'])->name('referral.reject');
-
-            // Leaderboard
-            Route::get('/leaderboard', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'leaderboard'])->name('leaderboard');
-
-            // Hierarchy settings
-            Route::get('/hierarchy/settings', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'hierarchySettings'])->name('hierarchy.settings');
-            Route::post('/hierarchy/settings', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'saveHierarchySettings'])->name('hierarchy.settings.save');
-            Route::get('/hierarchy/tree', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'hierarchyTree'])->name('hierarchy.tree');
-            Route::get('/hierarchy/tree-data', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'hierarchyTreeData'])->name('hierarchy.tree.data');
-            Route::get('/hierarchy/tree/{affiliator}', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'hierarchyTreeNode'])->name('hierarchy.tree.node');
-            Route::post('/hierarchy/fee-setting', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'saveLineFee'])->name('hierarchy.fee.save');
-            Route::delete('/{affiliator}/delete', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'destroy'])->name('destroy');
-
-            // Termin release
-            Route::patch('/referral/{referral}/release-termin1', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'releaseTermin1'])->name('referral.release-termin1');
-            Route::patch('/referral/{referral}/release-termin2', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'releaseTermin2'])->name('referral.release-termin2');
-
-            // Index & Detail (wildcard terakhir)
-            Route::get('/', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'index'])->name('index');
-            Route::get('/{affiliator}', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'show'])->name('show');
-            Route::patch('/{affiliator}/approve', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'approve'])->name('approve');
-            Route::patch('/{affiliator}/suspend', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'suspend'])->name('suspend');
-            Route::patch('/{affiliator}/update-commission', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'updateCommission'])->name('update-commission');
-            Route::patch('/{affiliator}/update-hierarchy', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'updateHierarchy'])->name('update-hierarchy');
-        });
-
         Route::post('travel/tasks/{id}/reassign', [TaskController::class, 'reassign'])->name('travel.tasks.reassign');
         Route::put('travel/tasks/{id}/status', [TaskController::class, 'updateStatus'])->name('travel.tasks.update-status');
         Route::get('travel/tasks/team/{teamCode}/members', [TaskController::class, 'getTeamMembers'])->name('travel.tasks.team-members');
         Route::get('travel/tasks/overdue-count', [TaskController::class, 'overdueCount'])->name('travel.tasks.overdue-count');
+        
+        // Affiliate Management (Admin)
+        Route::prefix('affiliate')->name('affiliate.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'index'])->name('index');
+            Route::get('/data', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'getData'])->name('data');
+            Route::get('/hierarchy/tree', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'hierarchyTree'])->name('hierarchy.tree');
+            Route::post('/hierarchy/fee/save', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'saveLineFee'])->name('hierarchy.fee.save');
+            Route::patch('/{affiliator}/update-hierarchy', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'updateHierarchy'])->name('update-hierarchy');
+            Route::get('/leaderboard', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'leaderboard'])->name('leaderboard');
+            Route::get('/payouts', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'payouts'])->name('payouts');
+            Route::get('/payouts/data', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'getPayoutsData'])->name('payouts.data');
+            Route::post('/payouts/{payout}/approve', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'approvePayout'])->name('payouts.approve');
+            Route::post('/payouts/{payout}/reject', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'rejectPayout'])->name('payouts.reject');
+            Route::get('/settings', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'settings'])->name('settings');
+            Route::post('/settings', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'updateSettings'])->name('settings.update');
+            Route::get('/{affiliator}', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'show'])->name('show');
+            Route::patch('/{affiliator}/approve', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'approve'])->name('approve');
+            Route::patch('/{affiliator}/suspend', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'suspend'])->name('suspend');
+            Route::patch('/{affiliator}/update-commission', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'updateCommission'])->name('update-commission');
+            Route::patch('/referral/{referral}/verify', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'verifyReferral'])->name('referral.verify');
+            Route::patch('/referral/{referral}/release-termin1', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'releaseTermin1'])->name('referral.release-termin1');
+            Route::patch('/referral/{referral}/release-termin2', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'releaseTermin2'])->name('referral.release-termin2');
+            Route::delete('/{affiliator}', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'destroy'])->name('destroy');
+        });
         
         // Notifications
         Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');

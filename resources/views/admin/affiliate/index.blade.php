@@ -94,7 +94,6 @@
                         <th class="text-center px-4 py-3 font-semibold text-slate-600">Penjualan</th>
                         <th class="text-right px-4 py-3 font-semibold text-slate-600">Saldo Tersedia</th>
                         <th class="text-right px-4 py-3 font-semibold text-slate-600">Pending</th>
-                        <th class="text-center px-4 py-3 font-semibold text-slate-600">Fee Keagenan</th>
                         <th class="text-center px-4 py-3 font-semibold text-slate-600">Status</th>
                         <th class="text-center px-4 py-3 font-semibold text-slate-600">Aksi</th>
                     </tr>
@@ -156,20 +155,6 @@
                             Rp {{ number_format($aff->pending_balance, 0, ',', '.') }}
                         </td>
                         <td class="px-4 py-3 text-center">
-                            @if($aff->recruited_count > 0)
-                                <div class="text-sm">
-                                    <div class="font-semibold text-purple-600">
-                                        Rp {{ number_format($aff->agency_fee_total, 0, ',', '.') }}
-                                    </div>
-                                    <div class="text-xs text-slate-400">
-                                        dari {{ $aff->recruited_count }} mitra
-                                    </div>
-                                </div>
-                            @else
-                                <span class="text-xs text-slate-400">-</span>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3 text-center">
                             @if($aff->status === 'active')
                                 <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">Aktif</span>
                             @elseif($aff->status === 'pending')
@@ -189,7 +174,7 @@
                                     <i class="fas fa-edit text-xs"></i>
                                 </button>
                                 @if($aff->status === 'pending')
-                                <form action="{{ route('admin.inventaris.affiliate.approve', $aff) }}" method="POST">
+                                <form action="{{ route('admin.inventaris.affiliate.approve', $aff) }}" method="POST" class="inline">
                                     @csrf @method('PATCH')
                                     <button type="submit" onclick="return confirm('Aktifkan mitra ini?')"
                                             class="p-1.5 rounded-lg bg-green-50 border border-green-200 text-green-600 hover:bg-green-100 transition" title="Approve">
@@ -197,7 +182,7 @@
                                     </button>
                                 </form>
                                 @elseif($aff->status === 'active')
-                                <form action="{{ route('admin.inventaris.affiliate.suspend', $aff) }}" method="POST">
+                                <form action="{{ route('admin.inventaris.affiliate.suspend', $aff) }}" method="POST" class="inline">
                                     @csrf @method('PATCH')
                                     <button type="submit" onclick="return confirm('Suspend mitra ini?')"
                                             class="p-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-600 hover:bg-amber-100 transition" title="Suspend">
@@ -205,7 +190,7 @@
                                     </button>
                                 </form>
                                 @else
-                                <form action="{{ route('admin.inventaris.affiliate.approve', $aff) }}" method="POST">
+                                <form action="{{ route('admin.inventaris.affiliate.approve', $aff) }}" method="POST" class="inline">
                                     @csrf @method('PATCH')
                                     <button type="submit"
                                             class="p-1.5 rounded-lg bg-green-50 border border-green-200 text-green-600 hover:bg-green-100 transition" title="Aktifkan">
@@ -213,12 +198,19 @@
                                     </button>
                                 </form>
                                 @endif
+                                <form action="{{ route('admin.inventaris.affiliate.destroy', $aff) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus mitra {{ $aff->full_name }}? Data yang terkait dengan mitra ini juga akan terhapus.')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit"
+                                            class="p-1.5 rounded-lg bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition" title="Hapus">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                </form>
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="10" class="text-center py-12 text-slate-400">
+                        <td colspan="9" class="text-center py-12 text-slate-400">
                             <i class="fas fa-users text-3xl mb-3 block"></i>
                             Belum ada mitra
                         </td>

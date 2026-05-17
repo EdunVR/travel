@@ -97,6 +97,14 @@ class BookingController extends Controller
             $finalTotal = $grandTotal - $voucherDiscount - $adminDiscount;
             $remaining = max(0, $finalTotal - $booking->paid_amount);
             
+            // Calculate handling fee
+            $handlingFee = 0;
+            $basePrice = $grandTotal;
+            if ($booking->travelPackage && $booking->travelPackage->include_handling_lounge_fee && $booking->travelPackage->handling_lounge_fee_amount > 0) {
+                $handlingFee = $booking->travelPackage->handling_lounge_fee_amount;
+                $basePrice = $grandTotal - $handlingFee; // Base price without handling fee
+            }
+            
             // Status badges
             $statusBadges = [
                 'pending' => '<span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700">Pending</span>',
@@ -139,6 +147,10 @@ class BookingController extends Controller
                 'keberangkatan_name' => $departureDate,
                 'id_keberangkatan' => $booking->id_keberangkatan,
                 'booking_date' => $booking->booking_date->format('d M Y'),
+                'base_price' => $basePrice,
+                'base_price_formatted' => 'Rp ' . number_format($basePrice, 0, ',', '.'),
+                'handling_fee' => $handlingFee,
+                'handling_fee_formatted' => 'Rp ' . number_format($handlingFee, 0, ',', '.'),
                 'total_price' => $grandTotal,
                 'total_price_formatted' => 'Rp ' . number_format($grandTotal, 0, ',', '.'),
                 'voucher_code' => $booking->voucher_code ?? null,
@@ -499,10 +511,21 @@ class BookingController extends Controller
         try {
             DB::beginTransaction();
 
-            $booking = JamaahBooking::with(['payments', 'addons', 'hotelBookings'])->findOrFail($id);
+            // Use find() instead of findOrFail() to handle missing records gracefully
+            $booking = JamaahBooking::with(['payments', 'addons', 'hotelBookings'])->find($id);
+
+            // Check if booking exists
+            if (!$booking) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Booking tidak ditemukan. Mungkin sudah dihapus sebelumnya.'
+                ], 404);
+            }
 
             // Check outlet access
             if (Auth::user()->id_outlet && $booking->id_outlet != Auth::user()->id_outlet) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthorized access to this booking'
@@ -510,22 +533,24 @@ class BookingController extends Controller
             }
 
             // 1. Delete all payments and their bukti transfer files
-            foreach ($booking->payments as $payment) {
-                if ($payment->bukti_transfer) {
-                    $filePath = storage_path('app/public/' . $payment->bukti_transfer);
-                    if (file_exists($filePath)) {
-                        @unlink($filePath);
+            if ($booking->payments) {
+                foreach ($booking->payments as $payment) {
+                    if ($payment->bukti_transfer) {
+                        $filePath = storage_path('app/public/' . $payment->bukti_transfer);
+                        if (file_exists($filePath)) {
+                            @unlink($filePath);
+                        }
                     }
+                    $payment->delete();
                 }
-                $payment->delete();
             }
 
             // 2. Delete invoice if exists
             if ($booking->id_invoice) {
                 $invoice = \App\Models\SalesInvoice::find($booking->id_invoice);
                 if ($invoice) {
-                    // Delete invoice items first
-                    \DB::table('sales_invoice_items')->where('id_invoice', $invoice->id)->delete();
+                    // Delete invoice items first (correct table name: sales_invoice_item, not sales_invoice_items)
+                    \DB::table('sales_invoice_item')->where('id_sales_invoice', $invoice->id_sales_invoice)->delete();
                     // Delete invoice
                     $invoice->delete();
                 }
@@ -535,15 +560,19 @@ class BookingController extends Controller
             \App\Models\Piutang::where('id_jamaah_booking', $booking->id)->delete();
 
             // 4. Delete addons
-            foreach ($booking->addons as $addon) {
-                $addon->delete();
+            if ($booking->addons) {
+                foreach ($booking->addons as $addon) {
+                    $addon->delete();
+                }
             }
 
             // 5. Delete hotel bookings
-            foreach ($booking->hotelBookings as $hotelBooking) {
-                // Delete room assignments first
-                \DB::table('hotel_room_assignments')->where('id_hotel_booking', $hotelBooking->id)->delete();
-                $hotelBooking->delete();
+            if ($booking->hotelBookings) {
+                foreach ($booking->hotelBookings as $hotelBooking) {
+                    // Delete room assignments first
+                    \DB::table('hotel_room_assignments')->where('id_hotel_booking', $hotelBooking->id)->delete();
+                    $hotelBooking->delete();
+                }
             }
 
             // 6. Flight bookings are per keberangkatan, not per jamaah booking
@@ -561,7 +590,13 @@ class BookingController extends Controller
                 $doc->delete();
             }
 
-            // 8. Delete bukti pembayaran file if exists (old bookings)
+            // 8. Delete affiliate referral tracking if exists
+            \DB::table('affiliate_referrals')->where('booking_id', $booking->id)->delete();
+
+            // 9. Delete voucher usage if exists
+            \DB::table('voucher_usages')->where('id_jamaah_booking', $booking->id)->delete();
+
+            // 10. Delete bukti pembayaran file if exists (old bookings)
             if ($booking->bukti_pembayaran) {
                 $filePath = storage_path('app/public/' . $booking->bukti_pembayaran);
                 if (file_exists($filePath)) {
@@ -569,13 +604,15 @@ class BookingController extends Controller
                 }
             }
 
-            // 9. Finally, delete the booking itself
+            // 11. Finally, delete the booking itself
             $booking->delete();
 
-            // 10. Update package status if it was full
-            $package = $booking->travelPackage;
-            if ($package && $package->status === 'full' && !$package->isFull()) {
-                $package->update(['status' => 'active']);
+            // 12. Update package status if it was full
+            if ($booking->id_travel_package) {
+                $package = \App\Models\TravelPackage::find($booking->id_travel_package);
+                if ($package && $package->status === 'full' && !$package->isFull()) {
+                    $package->update(['status' => 'active']);
+                }
             }
 
             DB::commit();
@@ -601,8 +638,22 @@ class BookingController extends Controller
      */
     public function edit($id)
     {
-        $booking = JamaahBooking::with(['travelPackage', 'jamaah', 'keberangkatan'])
-            ->findOrFail($id);
+        $booking = JamaahBooking::with([
+            'travelPackage.hppCalculation',
+            'travelPackage.flightDeparture',
+            'travelPackage.flightReturn',
+            'travelPackage.hotelMakkah',
+            'travelPackage.hotelMadinah',
+            'jamaah',
+            'keberangkatan',
+            'payments.recordedBy',
+            'documents',
+            'outlet',
+            'invoice',
+            'addons',
+            'hotelBookings.hotel',
+            'voucher.affiliator'
+        ])->findOrFail($id);
 
         // Check outlet access
         if (Auth::user()->id_outlet && $booking->id_outlet != Auth::user()->id_outlet) {

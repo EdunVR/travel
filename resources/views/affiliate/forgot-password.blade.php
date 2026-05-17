@@ -6,7 +6,16 @@
     <title>Lupa Password - HM Tour</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="icon" type="image/png" href="{{ url('WEB_HMTour/wp-content/uploads/2023/04/Logo-HM_UMRAH-3.png') }}">
+    <!-- Favicon from CompanySettings -->
+    @php
+        try {
+            $settings = \App\Models\CompanySetting::first();
+            $faviconUrl = $settings && $settings->favicon_url ? $settings->favicon_url : ($settings && $settings->logo_url ? $settings->logo_url : url('WEB_HMTour/wp-content/uploads/2023/04/Logo-HM_UMRAH-3.png'));
+        } catch (\Exception $e) {
+            $faviconUrl = url('WEB_HMTour/wp-content/uploads/2023/04/Logo-HM_UMRAH-3.png');
+        }
+    @endphp
+    <link rel="icon" type="image/png" href="{{ $faviconUrl }}">
 </head>
 <body class="bg-gradient-to-br from-green-50 to-emerald-100 min-h-screen flex items-center justify-center">
     
@@ -56,37 +65,20 @@
                                placeholder="Masukkan email Anda">
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-3">
-                            <i class="fas fa-paper-plane mr-2 text-gray-400"></i>Kirim Link Reset Via
-                        </label>
-                        <div class="space-y-3">
-                            <label class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                                <input type="radio" name="send_via" value="whatsapp" checked
-                                       class="w-4 h-4 text-green-600 focus:ring-green-500">
-                                <span class="ml-3 flex items-center">
-                                    <i class="fab fa-whatsapp text-green-600 text-xl mr-2"></i>
-                                    <span class="text-sm font-medium text-gray-700">WhatsApp</span>
-                                </span>
-                            </label>
-                            <label class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                                <input type="radio" name="send_via" value="email"
-                                       class="w-4 h-4 text-green-600 focus:ring-green-500">
-                                <span class="ml-3 flex items-center">
-                                    <i class="fas fa-envelope text-blue-600 text-lg mr-2"></i>
-                                    <span class="text-sm font-medium text-gray-700">Email</span>
-                                </span>
-                            </label>
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div class="flex items-center">
+                            <i class="fab fa-whatsapp text-green-600 text-3xl mr-3"></i>
+                            <div>
+                                <p class="text-sm font-medium text-gray-800">Link Reset via WhatsApp</p>
+                                <p class="text-xs text-gray-600 mt-1">Link reset password akan dikirim ke nomor WhatsApp yang terdaftar</p>
+                            </div>
                         </div>
-                        <p class="text-xs text-gray-500 mt-2">
-                            Link reset password akan dikirim sesuai pilihan Anda
-                        </p>
                     </div>
                 </div>
 
                 <button type="submit"
                         class="w-full mt-6 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition">
-                    <i class="fas fa-paper-plane mr-2"></i>Kirim Link Reset Password
+                    <i class="fab fa-whatsapp mr-2"></i>Kirim Link Reset via WhatsApp
                 </button>
             </form>
 

@@ -353,8 +353,16 @@
             </div>
             <div class="mt-2 text-xs space-y-1">
               <div class="flex justify-between">
-                <span class="text-slate-600">Total Harga:</span>
-                <span class="font-medium" x-text="selectedBookingForPayment?.total_price_formatted"></span>
+                <span class="text-slate-600">Total Harga Paket:</span>
+                <span class="font-medium" x-text="selectedBookingForPayment?.base_price_formatted"></span>
+              </div>
+              <div x-show="selectedBookingForPayment?.handling_fee > 0" class="flex justify-between text-yellow-600">
+                <span>Lounge & Handling Fee:</span>
+                <span class="font-medium" x-text="selectedBookingForPayment?.handling_fee_formatted"></span>
+              </div>
+              <div class="flex justify-between border-t border-slate-200 pt-1">
+                <span class="text-slate-600 font-medium">Total Tagihan:</span>
+                <span class="font-semibold" x-text="selectedBookingForPayment?.total_price_formatted"></span>
               </div>
               <div x-show="selectedBookingForPayment?.voucher_discount > 0" class="flex justify-between text-green-600">
                 <span>Diskon Voucher:</span>
@@ -403,10 +411,14 @@
               step="1000"
               min="0"
               class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-500"
-              placeholder="Masukkan jumlah pembayaran">
+              placeholder="Masukkan jumlah pembayaran"
+              @input="updatePaymentPreview()">
             <small class="text-xs text-slate-500 mt-1 block">
               Maksimal: <span x-text="selectedBookingForPayment?.remaining_amount_formatted"></span>
             </small>
+            <div x-show="paymentAmountForm.custom_payment_amount > 0" class="text-sm font-medium text-primary-600 mt-1">
+              <span x-text="formatRupiah(paymentAmountForm.custom_payment_amount)"></span>
+            </div>
             <div x-show="paymentAmountErrors.custom_payment_amount" class="text-red-500 text-xs mt-1" x-text="paymentAmountErrors.custom_payment_amount"></div>
           </div>
 
@@ -417,7 +429,15 @@
                 <p class="font-medium mb-1">Preview Perhitungan:</p>
                 <div class="space-y-1">
                   <div class="flex justify-between">
-                    <span>Total Harga:</span>
+                    <span>Total Harga Paket:</span>
+                    <span x-text="selectedBookingForPayment?.base_price_formatted"></span>
+                  </div>
+                  <div x-show="selectedBookingForPayment?.handling_fee > 0" class="flex justify-between text-yellow-700">
+                    <span>Lounge & Handling Fee:</span>
+                    <span x-text="selectedBookingForPayment?.handling_fee_formatted"></span>
+                  </div>
+                  <div class="flex justify-between border-t border-blue-300 pt-1">
+                    <span>Total Tagihan:</span>
                     <span x-text="selectedBookingForPayment?.total_price_formatted"></span>
                   </div>
                   <div x-show="selectedBookingForPayment?.voucher_discount > 0" class="flex justify-between text-green-700">
@@ -962,6 +982,12 @@
           } finally {
             this.deleting = false;
           }
+        },
+
+        formatRupiah(amount) {
+          if (!amount || amount == 0) return 'Rp 0';
+          const number = parseFloat(amount);
+          return 'Rp ' + new Intl.NumberFormat('id-ID').format(number);
         },
 
         showToastMessage(message, type = 'success') {

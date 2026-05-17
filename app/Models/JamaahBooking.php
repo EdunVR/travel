@@ -163,15 +163,26 @@ class JamaahBooking extends Model
      */
     public function updatePaymentStatus()
     {
+        // Use getGrandTotal() to include all fees and discounts
+        $grandTotal = $this->getGrandTotal();
+        $voucherDiscount = $this->voucher_discount ?? 0;
+        $adminDiscount = $this->admin_discount ?? 0;
+        $finalTotal = $grandTotal - $voucherDiscount - $adminDiscount;
+        
         if ($this->paid_amount == 0) {
             $this->payment_status = 'unpaid';
-        } elseif ($this->paid_amount >= $this->total_price) {
+            $this->status = 'pending';
+        } elseif ($this->paid_amount >= $finalTotal) {
             $this->payment_status = 'paid';
+            // Also update booking status to confirmed when fully paid
+            if ($this->status === 'pending') {
+                $this->status = 'confirmed';
+            }
         } else {
             $this->payment_status = 'partial';
         }
         
-        $this->remaining_amount = $this->total_price - $this->paid_amount;
+        $this->remaining_amount = max(0, $finalTotal - $this->paid_amount);
         $this->save();
     }
 

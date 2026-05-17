@@ -1524,7 +1524,7 @@
           formData.append('image', file);
 
           try {
-            const response = await fetch('{{ route("admin.crm.pelanggan.ocr.ktp") }}', {
+            const response = await fetch('{{ route("crm.pelanggan.ocr.ktp") }}', {
               method: 'POST',
               headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -1602,7 +1602,7 @@
           formData.append('image', file);
 
           try {
-            const response = await fetch('{{ route("admin.crm.pelanggan.ocr.passport") }}', {
+            const response = await fetch('{{ route("crm.pelanggan.ocr.passport") }}', {
               method: 'POST',
               headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -1666,7 +1666,7 @@
           formData.append('image', file);
 
           try {
-            const response = await fetch('{{ route("admin.crm.pelanggan.ocr.visa") }}', {
+            const response = await fetch('{{ route("crm.pelanggan.ocr.visa") }}', {
               method: 'POST',
               headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -1767,7 +1767,7 @@
           formData.append('image', file);
 
           try {
-            const response = await fetch('{{ route("admin.crm.pelanggan.ocr.sertifikat-kesehatan") }}', {
+            const response = await fetch('{{ route("crm.pelanggan.ocr.sertifikat-kesehatan") }}', {
               method: 'POST',
               headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'

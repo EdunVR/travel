@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Affiliator - HM Tour</title>
+    <!-- Favicon from CompanySettings -->
+    @php
+        try {
+            $settings = \App\Models\CompanySetting::first();
+            $faviconUrl = $settings && $settings->favicon_url ? $settings->favicon_url : ($settings && $settings->logo_url ? $settings->logo_url : url('WEB_HMTour/wp-content/uploads/2023/04/Logo-HM_UMRAH-3.png'));
+        } catch (\Exception $e) {
+            $faviconUrl = url('WEB_HMTour/wp-content/uploads/2023/04/Logo-HM_UMRAH-3.png');
+        }
+    @endphp
+    <link rel="icon" type="image/png" href="{{ $faviconUrl }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -184,7 +194,26 @@
                     <span class="text-xs text-gray-500">Total Pendapatan</span>
                 </div>
                 <div class="text-2xl font-bold text-gray-900">Rp {{ number_format($stats['total_earnings'], 0, ',', '.') }}</div>
-                <div class="text-xs text-gray-500 mt-1">Pending: Rp {{ number_format($stats['pending_balance'], 0, ',', '.') }}</div>
+                <div class="text-xs text-gray-500 mt-1">
+                    Pending: Rp {{ number_format($stats['pending_balance'], 0, ',', '.') }}
+                    @php
+                        $waitingPayment = $affiliator->referrals()
+                            ->where('status', 'verified')
+                            ->where('termin_1_released', false)
+                            ->sum('commission_amount');
+                        $waitingDeparture = $affiliator->referrals()
+                            ->where('status', 'verified')
+                            ->where('termin_1_released', true)
+                            ->where('termin_2_released', false)
+                            ->sum('commission_amount');
+                    @endphp
+                    @if($waitingPayment > 0)
+                        <br><span class="text-amber-600">⏳ Menunggu Pelunasan: Rp {{ number_format($waitingPayment, 0, ',', '.') }}</span>
+                    @endif
+                    @if($waitingDeparture > 0)
+                        <br><span class="text-blue-600">⏳ Menunggu Keberangkatan: Rp {{ number_format($waitingDeparture, 0, ',', '.') }}</span>
+                    @endif
+                </div>
             </div>
         </div>
 
@@ -251,6 +280,22 @@
                                         {{ $referral->status === 'verified' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
                                         {{ $referral->status === 'verified' ? 'Verified' : 'Pending' }}
                                     </span>
+                                    {{-- Fee Status --}}
+                                    <div class="mt-1">
+                                        @if(!$referral->termin_1_released)
+                                            <span class="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-600">
+                                                ⏳ Menunggu Pelunasan
+                                            </span>
+                                        @elseif($referral->termin_1_released && !$referral->termin_2_released)
+                                            <span class="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-600">
+                                                ⏳ Menunggu Keberangkatan
+                                            </span>
+                                        @else
+                                            <span class="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-600">
+                                                ✅ Bisa Ditarik
+                                            </span>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                             @endforeach

@@ -137,7 +137,7 @@
                     </div>
                     <div class="flex justify-between text-sm">
                         <span class="text-slate-500">Daftar</span>
-                        <span class="text-slate-700">{{ $affiliator->created_at->format('d M Y') }}</span>
+                        <span class="text-slate-700">{{ $affiliator->created_at ? $affiliator->created_at->format('d M Y') : '-' }}</span>
                     </div>
                     @if($affiliator->approved_at)
                     <div class="flex justify-between text-sm">
@@ -286,17 +286,18 @@
                             <tr class="hover:bg-slate-50">
                                 <td class="px-4 py-2.5">
                                     <div class="font-medium text-slate-900 text-xs">{{ $ref->package->package_name ?? 'N/A' }}</div>
-                                    <div class="text-slate-400 text-xs">{{ $ref->order_date->format('d M Y') }}</div>
+                                    <div class="text-slate-400 text-xs">{{ $ref->order_date ? $ref->order_date->format('d M Y') : '-' }}</div>
                                 </td>
                                 <td class="px-4 py-2.5 text-right text-xs text-slate-600">
                                     Rp {{ number_format($ref->order_amount, 0, ',', '.') }}
                                 </td>
                                 <td class="px-4 py-2.5 text-right text-xs font-bold text-green-600">
                                     Rp {{ number_format($ref->commission_amount, 0, ',', '.') }}
+                                    @if(($ref->total_pax ?? 1) > 1)
                                     <div class="text-xs text-slate-400 font-normal mt-0.5">
-                                        T1: Rp {{ number_format($ref->termin_1_amount ?? $ref->commission_amount * 0.5, 0, ',', '.') }}
-                                        | T2: Rp {{ number_format($ref->termin_2_amount ?? $ref->commission_amount * 0.5, 0, ',', '.') }}
+                                        Rp {{ number_format($ref->commission_amount / ($ref->total_pax ?? 1), 0, ',', '.') }} x {{ $ref->total_pax }} pax
                                     </div>
+                                    @endif
                                 </td>
                                 <td class="px-4 py-2.5 text-center">
                                     @if($ref->status === 'verified')
@@ -308,35 +309,47 @@
                                     @else
                                         <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">Paid</span>
                                     @endif
-                                    {{-- Termin status --}}
-                                    <div class="mt-1 flex gap-1 justify-center">
-                                        <span class="text-xs px-1.5 py-0.5 rounded {{ ($ref->termin_1_released ?? false) ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400' }}">
-                                            T1 {{ ($ref->termin_1_released ?? false) ? '✓' : '○' }}
-                                        </span>
-                                        <span class="text-xs px-1.5 py-0.5 rounded {{ ($ref->termin_2_released ?? false) ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400' }}">
-                                            T2 {{ ($ref->termin_2_released ?? false) ? '✓' : '○' }}
-                                        </span>
+                                    {{-- Fee status --}}
+                                    <div class="mt-1">
+                                        @if(!$ref->termin_1_released)
+                                            <span class="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-600">
+                                                ⏳ Menunggu Pelunasan
+                                            </span>
+                                        @elseif($ref->termin_1_released && !$ref->termin_2_released)
+                                            <span class="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-600">
+                                                ⏳ Menunggu Keberangkatan
+                                            </span>
+                                        @else
+                                            <span class="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-600">
+                                                ✅ Bisa Ditarik
+                                            </span>
+                                        @endif
                                     </div>
                                 </td>
                                 <td class="px-4 py-2.5 text-center">
                                     <div class="flex flex-col gap-1 items-center">
-                                        @if(!($ref->termin_1_released ?? false))
+                                        {{-- Button: Release Termin 1 (Pelunasan) --}}
+                                        @if(!($ref->termin_1_released ?? false) && !($ref->termin_2_released ?? false))
                                         <form action="{{ route('admin.inventaris.affiliate.referral.release-termin1', $ref) }}" method="POST">
                                             @csrf @method('PATCH')
-                                            <button type="submit" title="Cairkan Termin 1 (Pelunasan)"
+                                            <button type="submit" title="Cairkan Fee (Saat Pelunasan)"
                                                     class="px-2 py-0.5 rounded bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 transition text-xs">
-                                                Cair T1
-                                            </button>
-                                        </form>
-                                        @elseif(!($ref->termin_2_released ?? false))
-                                        <form action="{{ route('admin.inventaris.affiliate.referral.release-termin2', $ref) }}" method="POST">
-                                            @csrf @method('PATCH')
-                                            <button type="submit" title="Cairkan Termin 2 (Keberangkatan)"
-                                                    class="px-2 py-0.5 rounded bg-purple-50 border border-purple-200 text-purple-600 hover:bg-purple-100 transition text-xs">
-                                                Cair T2
+                                                ✅ Cairkan Fee (Pelunasan)
                                             </button>
                                         </form>
                                         @endif
+                                        
+                                        {{-- Button: Release Termin 2 (Keberangkatan) --}}
+                                        @if(($ref->termin_1_released ?? false) && !($ref->termin_2_released ?? false))
+                                        <form action="{{ route('admin.inventaris.affiliate.referral.release-termin2', $ref) }}" method="POST">
+                                            @csrf @method('PATCH')
+                                            <button type="submit" title="Pindahkan ke Saldo Tersedia (Saat Keberangkatan)"
+                                                    class="px-2 py-0.5 rounded bg-green-50 border border-green-200 text-green-600 hover:bg-green-100 transition text-xs">
+                                                🚀 Test Keberangkatan
+                                            </button>
+                                        </form>
+                                        @endif
+                                        
                                         @if($ref->status === 'pending' && ($ref->termin_1_released ?? false))
                                         <form action="{{ route('admin.inventaris.affiliate.referral.verify', $ref) }}" method="POST">
                                             @csrf @method('PATCH')
@@ -495,7 +508,7 @@
                 <tbody class="divide-y divide-slate-50">
                     @forelse($recentReferrals as $ref)
                     <tr class="hover:bg-slate-50">
-                        <td class="px-4 py-2.5 text-xs text-slate-600">{{ $ref->order_date->format('d M Y H:i') }}</td>
+                        <td class="px-4 py-2.5 text-xs text-slate-600">{{ $ref->order_date ? $ref->order_date->format('d M Y H:i') : '-' }}</td>
                         <td class="px-4 py-2.5">
                             <div class="font-medium text-slate-900 text-xs">{{ $ref->package->package_name ?? 'N/A' }}</div>
                             <div class="text-slate-400 text-xs">Order #{{ $ref->id }}</div>
@@ -597,7 +610,7 @@
                 <tbody class="divide-y divide-slate-50">
                     @forelse($affiliator->payouts as $payout)
                     <tr class="hover:bg-slate-50">
-                        <td class="px-4 py-2.5 text-xs text-slate-600">{{ $payout->created_at->format('d M Y H:i') }}</td>
+                        <td class="px-4 py-2.5 text-xs text-slate-600">{{ $payout->created_at ? $payout->created_at->format('d M Y H:i') : '-' }}</td>
                         <td class="px-4 py-2.5 text-xs text-slate-900">
                             <div class="font-medium">{{ $payout->payment_method ?? 'Transfer Bank' }}</div>
                             <div class="text-slate-400">{{ $payout->bank_name ?? '-' }}</div>
@@ -687,7 +700,7 @@
                         @endphp
                         @forelse($transactions as $trx)
                         <tr class="hover:bg-slate-50">
-                            <td class="px-4 py-2.5 text-xs text-slate-600">{{ $trx['date']->format('d M Y H:i') }}</td>
+                            <td class="px-4 py-2.5 text-xs text-slate-600">{{ isset($trx['date']) && $trx['date'] ? $trx['date']->format('d M Y H:i') : '-' }}</td>
                             <td class="px-4 py-2.5">
                                 @if($trx['type'] == 'credit')
                                     <span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">Masuk</span>
@@ -740,7 +753,7 @@
                 </div>
                 <div>
                     <label class="text-xs text-slate-500">Tanggal Daftar</label>
-                    <div class="text-sm font-medium text-slate-900">{{ $affiliator->created_at->format('d M Y H:i') }}</div>
+                    <div class="text-sm font-medium text-slate-900">{{ $affiliator->created_at ? $affiliator->created_at->format('d M Y H:i') : '-' }}</div>
                 </div>
                 @if($affiliator->approved_at)
                 <div>
@@ -865,7 +878,7 @@
                     <tbody class="divide-y divide-slate-50">
                         @forelse($recentClicks as $click)
                         <tr class="hover:bg-slate-50">
-                            <td class="px-4 py-2.5 text-xs text-slate-600">{{ $click->clicked_at->format('d M Y H:i') }}</td>
+                            <td class="px-4 py-2.5 text-xs text-slate-600">{{ $click->clicked_at ? $click->clicked_at->format('d M Y H:i') : '-' }}</td>
                             <td class="px-4 py-2.5 text-xs text-slate-900">{{ $click->ip_address }}</td>
                             <td class="px-4 py-2.5 text-xs text-slate-600">{{ Str::limit($click->user_agent, 50) }}</td>
                             <td class="px-4 py-2.5 text-xs text-slate-600">{{ Str::limit($click->referrer_url ?? '-', 40) }}</td>

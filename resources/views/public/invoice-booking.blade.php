@@ -97,6 +97,18 @@ Diskon
 </div>
 @endif
 
+@if(isset($voucherDiscount) && $voucherDiscount > 0)
+<div class="flex items-center justify-between px-4 py-3 bg-green-50 border-b border-green-100">
+<span class="text-sm text-green-700 font-semibold">
+<svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+</svg>
+Diskon Voucher ({{ $booking->voucher_code }})
+</span>
+<span class="font-bold text-green-600 text-sm">- Rp {{ number_format($voucherDiscount,0,',','.') }}</span>
+</div>
+@endif
+
 @if(isset($adminDiscount) && $adminDiscount > 0)
 <div class="flex items-center justify-between px-4 py-3 bg-blue-50 border-b border-blue-100">
 <span class="text-sm text-blue-700 font-semibold">
@@ -122,6 +134,17 @@ Diskon Admin
 </svg>
 <div class="text-xs text-yellow-700">
 <span class="font-semibold">Selamat!</span> Anda mendapatkan diskon sebesar Rp {{ number_format($booking->discount_amount,0,',','.') }} untuk pemesanan ini.
+</div>
+</div>
+@endif
+
+@if(isset($voucherDiscount) && $voucherDiscount > 0)
+<div class="mt-2 bg-green-50 border border-green-200 rounded-lg p-3 flex items-start gap-2">
+<svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+</svg>
+<div class="text-xs text-green-700">
+<span class="font-semibold">Voucher Diterapkan!</span> Anda mendapatkan diskon voucher <strong>{{ $booking->voucher_code }}</strong> sebesar Rp {{ number_format($voucherDiscount,0,',','.') }}.
 </div>
 </div>
 @endif
@@ -159,6 +182,8 @@ Diskon Admin
 @endif
 
 <!-- Voucher Diskon -->
+@if(($booking->paid_amount ?? 0) == 0)
+{{-- Only show voucher form if no payment has been made yet --}}
 <div>
 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Kode Voucher Diskon</h3>
 <div class="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-4">
@@ -211,6 +236,25 @@ Hapus
 </div>
 </div>
 </div>
+@else
+{{-- Show message that discount is only available before first payment --}}
+<div>
+<h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Kode Voucher Diskon</h3>
+<div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+<div class="flex items-start gap-3">
+<svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+</svg>
+<div>
+<p class="text-sm font-semibold text-blue-700 mb-1">Diskon Tidak Tersedia</p>
+<p class="text-xs text-blue-600">
+Voucher diskon hanya dapat digunakan sebelum pembayaran pertama. Anda sudah melakukan pembayaran sebesar Rp {{ number_format($booking->paid_amount, 0, ',', '.') }}.
+</p>
+</div>
+</div>
+</div>
+</div>
+@endif
 
 <!-- Status Pembayaran -->
 <div>

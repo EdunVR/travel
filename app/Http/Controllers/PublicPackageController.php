@@ -405,6 +405,12 @@ class PublicPackageController extends Controller
 
         [$grandTotal, $priceBreakdown] = $this->calculateTotal($unitPrice, $familyMembers, $package);
         
+        // Apply voucher discount if exists
+        $voucherDiscount = $booking->voucher_discount ?? 0;
+        if ($voucherDiscount > 0) {
+            $grandTotal = max(0, $grandTotal - $voucherDiscount);
+        }
+        
         // Apply admin discount if exists
         $adminDiscount = $booking->admin_discount ?? 0;
         if ($adminDiscount > 0) {
@@ -444,7 +450,7 @@ class PublicPackageController extends Controller
 
         return view('public.invoice-booking', compact(
             'booking', 'package', 'unitPrice', 'familyMembers', 'priceBreakdown', 'grandTotal', 
-            'bankAccounts', 'dp25Percent', 'dp10MillionPerPax', 'totalPax', 'adminDiscount'
+            'bankAccounts', 'dp25Percent', 'dp10MillionPerPax', 'totalPax', 'adminDiscount', 'voucherDiscount'
         ));
     }
 
@@ -469,6 +475,7 @@ class PublicPackageController extends Controller
         // Handle voucher if provided and not already applied to booking
         $voucherData = null;
         $voucherDiscount = 0;
+        $affiliatorFromVoucher = null;
         
         if ($request->filled('voucher_code') && empty($booking->id_voucher)) {
             $voucher = \App\Models\AffiliateVoucher::where('code', strtoupper($request->voucher_code))
@@ -501,6 +508,16 @@ class PublicPackageController extends Controller
                 
                 // Increment voucher usage count
                 $voucher->incrementUsage();
+                
+                // Get affiliator from voucher for referral creation
+                $affiliatorFromVoucher = $voucher->affiliator;
+                
+                \Log::info('Voucher applied to booking', [
+                    'booking_id' => $booking->id,
+                    'voucher_code' => $voucher->code,
+                    'discount' => $voucherDiscount,
+                    'affiliator_id' => $affiliatorFromVoucher->id ?? null
+                ]);
             }
         }
         
@@ -518,7 +535,8 @@ class PublicPackageController extends Controller
             if ($dpOption === '25_percent') {
                 $amount = round($totalPrice * 0.25);
             } else {
-                $amount = 10000000;
+                // DP 10 juta x jumlah pax
+                $amount = $booking->calculateDPAmount(); // 10 juta x total pax
             }
             $amount = min($amount, $remainingAmount);
         } 
@@ -558,6 +576,67 @@ class PublicPackageController extends Controller
         // DON'T update booking yet - wait for admin verification
         // DON'T send WhatsApp yet - wait for admin verification
         // DON'T sync piutang yet - wait for admin verification
+        
+        // CREATE AFFILIATE REFERRAL if voucher was used OR if there's affiliate cookie
+        try {
+            // Check if referral already exists for this booking
+            $existingReferral = \App\Models\AffiliateReferral::where('booking_id', $booking->id)->first();
+            
+            if (!$existingReferral) {
+                $trackingService = new \App\Services\AffiliateTrackingService();
+                
+                // Priority 1: Use affiliator from voucher if available
+                if ($affiliatorFromVoucher) {
+                    $referral = $trackingService->trackSale(
+                        $booking->id,
+                        $booking->id_travel_package,
+                        $booking->total_price + $voucherDiscount, // Original amount before discount
+                        $booking->booking_code,
+                        $voucherDiscount,
+                        $affiliatorFromVoucher->id // Pass affiliator ID from voucher
+                    );
+                    
+                    if ($referral) {
+                        \Log::info('Affiliate referral created from voucher', [
+                            'booking_id' => $booking->id,
+                            'affiliator_id' => $affiliatorFromVoucher->id,
+                            'voucher_code' => $booking->voucher_code,
+                            'commission' => $referral->commission_amount,
+                            'status' => 'pending - waiting payment'
+                        ]);
+                    }
+                } else {
+                    // Priority 2: Try to get affiliator from cookie (normal referral link)
+                    $affiliatorFromCookie = $trackingService->getAffiliatorFromCookie();
+                    
+                    if ($affiliatorFromCookie) {
+                        $referral = $trackingService->trackSale(
+                            $booking->id,
+                            $booking->id_travel_package,
+                            $booking->total_price,
+                            $booking->booking_code,
+                            0, // No voucher discount
+                            $affiliatorFromCookie->id
+                        );
+                        
+                        if ($referral) {
+                            \Log::info('Affiliate referral created from cookie', [
+                                'booking_id' => $booking->id,
+                                'affiliator_id' => $affiliatorFromCookie->id,
+                                'commission' => $referral->commission_amount,
+                                'status' => 'pending - waiting payment'
+                            ]);
+                        }
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to create affiliate referral', [
+                'booking_id' => $booking->id,
+                'error' => $e->getMessage()
+            ]);
+            // Don't fail payment if referral creation fails
+        }
 
         // Redirect to pending verification page
         return redirect()->route('public.payment.pending', [
@@ -592,6 +671,19 @@ class PublicPackageController extends Controller
         }
         
         return view('public.payment-pending-verification', compact('payment', 'booking', 'package'));
+    }
+
+    /**
+     * Check payment status (AJAX endpoint for auto-redirect)
+     */
+    public function checkPaymentStatus($paymentId)
+    {
+        $payment = JamaahPayment::findOrFail($paymentId);
+        
+        return response()->json([
+            'verified' => $payment->verification_status === 'verified',
+            'status' => $payment->verification_status
+        ]);
     }
 
     /**
@@ -746,6 +838,8 @@ class PublicPackageController extends Controller
                 'family_members' => 'nullable|json',
                 'equipment' => 'nullable|json',
                 'total_price' => 'required|numeric|min:0',
+                'voucher_code' => 'nullable|string',
+                'voucher_discount' => 'nullable|numeric|min:0',
             ]);
 
             // Parse JSON fields
@@ -823,22 +917,62 @@ class PublicPackageController extends Controller
                 'keterangan' => 'Booking Travel - ' . $booking->booking_code,
             ]);
 
-            // 5. Track affiliate sale (jika ada cookie affiliate)
+            // 5. Track affiliate sale (jika ada cookie affiliate ATAU voucher)
             $affiliateService = new \App\Services\AffiliateTrackingService();
             try {
-                // Track the sale (creates pending referral based on cookie)
+                // Get voucher data if provided
+                $voucherCode = $request->input('voucher_code');
+                $voucherDiscount = $request->input('voucher_discount', 0);
+                $affiliatorId = null;
+                
+                // If voucher is used, get affiliator from voucher
+                if ($voucherCode) {
+                    $voucher = \App\Models\AffiliateVoucher::where('code', strtoupper($voucherCode))->first();
+                    if ($voucher && $voucher->id_affiliator) {
+                        $affiliatorId = $voucher->id_affiliator;
+                        
+                        // Update booking with voucher info
+                        $booking->update([
+                            'id_voucher' => $voucher->id,
+                            'voucher_code' => $voucher->code,
+                            'voucher_discount' => $voucherDiscount,
+                        ]);
+                        
+                        // Record voucher usage
+                        \App\Models\VoucherUsage::create([
+                            'id_voucher' => $voucher->id,
+                            'id_jamaah_booking' => $booking->id,
+                            'discount_amount' => $voucherDiscount,
+                            'original_amount' => $validated['total_price'],
+                            'final_amount' => $validated['total_price'] - $voucherDiscount,
+                            'used_at' => now(),
+                        ]);
+                        
+                        // Increment voucher usage
+                        $voucher->incrementUsage();
+                        
+                        \Log::info('Voucher applied to booking', [
+                            'booking_code' => $booking->booking_code,
+                            'voucher_code' => $voucher->code,
+                            'affiliator_id' => $affiliatorId,
+                            'discount' => $voucherDiscount
+                        ]);
+                    }
+                }
+                
+                // Track the sale (creates pending referral based on cookie OR voucher affiliator)
                 // Pass voucher discount to reduce affiliate commission
-                $voucherDiscount = $bookingData['voucher_discount'] ?? 0;
                 $referral = $affiliateService->trackSale(
                     $booking->id,
                     $validated['package_id'],
                     $validated['total_price'], // Commission based on total price
                     $booking->booking_code,
-                    $voucherDiscount // Voucher discount reduces affiliate commission
+                    $voucherDiscount, // Voucher discount reduces affiliate commission
+                    $affiliatorId // Pass affiliator ID from voucher if available
                 );
                 
                 if ($referral) {
-                    \Log::info('Affiliate referral tracked for booking: ' . $booking->booking_code . ' (voucher discount: ' . $voucherDiscount . ')');
+                    \Log::info('Affiliate referral tracked for booking: ' . $booking->booking_code . ' (voucher discount: ' . $voucherDiscount . ', affiliator: ' . ($affiliatorId ?? 'from cookie') . ')');
                 }
             } catch (\Exception $e) {
                 \Log::error('Failed to track affiliate sale: ' . $e->getMessage());

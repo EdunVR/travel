@@ -212,12 +212,14 @@ class Affiliator extends Model
         // MULTIPLY by total pax
         $baseCommission = $commissionData['amount'] * $totalPax;
         
-        // Kurangi komisi dengan diskon voucher
-        $finalCommission = max(0, $baseCommission - $voucherDiscount);
-
-        // Hitung termin: 50% saat pelunasan, 50% saat keberangkatan
-        $termin1 = round($finalCommission * 0.5, 2);
-        $termin2 = $finalCommission - $termin1;
+        // IMPORTANT: Voucher discount REDUCES affiliate commission
+        // Commission is calculated after voucher discount is applied
+        $finalCommission = $baseCommission - $voucherDiscount; // SUBTRACT voucher discount
+        
+        // Ensure commission is not negative
+        if ($finalCommission < 0) {
+            $finalCommission = 0;
+        }
         
         $referral = $this->referrals()->create([
             'booking_id'        => $bookingId,
@@ -228,14 +230,13 @@ class Affiliator extends Model
             'commission_type'   => $commissionData['type'],
             'commission_rate'   => $commissionData['rate'],
             'total_pax'         => $totalPax, // Save total pax
-            'voucher_discount'  => $voucherDiscount,
+            'voucher_discount'  => $voucherDiscount, // Save for reference only
             'order_date'        => now(),
-            'termin_1_amount'   => $termin1,
-            'termin_2_amount'   => $termin2,
+            'status'            => 'pending', // Pending until payment complete
         ]);
 
-        // Pending balance hanya termin 1 dulu (belum cair sampai pelunasan)
-        // Tidak langsung tambah pending_balance di sini, tunggu event pelunasan
+        // Pending balance tidak ditambahkan di sini
+        // Tunggu event pelunasan untuk menambahkan ke pending_balance
 
         // Buat distribusi fee ke upline
         $this->createFeeDistributions($referral, $finalCommission);
@@ -268,28 +269,14 @@ class Affiliator extends Model
             $totalFee = AffiliateHierarchySetting::calculateFee($baseCommission, $feeType, $feeValue);
             if ($totalFee <= 0) continue;
 
-            $t1 = round($totalFee * 0.5, 2);
-            $t2 = $totalFee - $t1;
-
+            // Create single distribution (no more termin split)
             AffiliateFeeDistribution::create([
                 'referral_id'        => $referral->id,
                 'from_affiliator_id' => $this->id,
                 'to_affiliator_id'   => $uplineAff->id,
                 'level_type'         => $toLevel,
-                'amount'             => $t1,
+                'amount'             => $totalFee,
                 'percentage'         => $feeType === 'percentage' ? $feeValue : 0,
-                'termin'             => 'termin_1',
-                'status'             => 'pending',
-            ]);
-
-            AffiliateFeeDistribution::create([
-                'referral_id'        => $referral->id,
-                'from_affiliator_id' => $this->id,
-                'to_affiliator_id'   => $uplineAff->id,
-                'level_type'         => $toLevel,
-                'amount'             => $t2,
-                'percentage'         => $feeType === 'percentage' ? $feeValue : 0,
-                'termin'             => 'termin_2',
                 'status'             => 'pending',
             ]);
         }
@@ -391,9 +378,7 @@ class Affiliator extends Model
 
     private function getSaleCommission($packageId, $orderAmount)
     {
-        // Gunakan komisi per affiliator berdasarkan program yang dipilih
-        $minCommission = $this->min_sale_commission ?? 500000;
-        
+        // Priority 1: Cek package-specific commission
         $packageCommission = AffiliatePackageCommission::where('package_id', $packageId)
             ->where('affiliator_id', $this->id)
             ->where('is_active', true)
@@ -402,20 +387,42 @@ class Affiliator extends Model
         if ($packageCommission) {
             $type = $packageCommission->sale_commission_type;
             $value = $packageCommission->sale_commission_value;
-        } else {
-            // Default: gunakan komisi minimal dari program
-            $type = 'flat'; // Changed from 'fixed' to 'flat' to match enum
-            $value = $minCommission;
+            
+            $amount = $type === 'percentage' 
+                ? ($orderAmount * $value / 100)
+                : $value;
+                
+            return [
+                'amount' => $amount,
+                'type' => $type,
+                'rate' => $value,
+            ];
         }
         
-        $amount = $type === 'percentage' 
-            ? max(($orderAmount * $value / 100), $minCommission)
-            : max($value, $minCommission);
-            
+        // Priority 2: Gunakan commission dari partnership program
+        if ($this->partnershipProgram && $this->partnershipProgram->commission_amount > 0) {
+            return [
+                'amount' => $this->partnershipProgram->commission_amount,
+                'type' => 'flat',
+                'rate' => $this->partnershipProgram->commission_amount,
+            ];
+        }
+        
+        // Priority 3: Gunakan min_sale_commission dari affiliator
+        if ($this->min_sale_commission > 0) {
+            return [
+                'amount' => $this->min_sale_commission,
+                'type' => 'flat',
+                'rate' => $this->min_sale_commission,
+            ];
+        }
+        
+        // Priority 4: Fallback ke global setting
+        $globalCommission = AffiliateSetting::getValue('commission_per_pax', 1000000);
         return [
-            'amount' => $amount,
-            'type' => $type,
-            'rate' => $value,
+            'amount' => $globalCommission,
+            'type' => 'flat',
+            'rate' => $globalCommission,
         ];
     }
 }

@@ -115,13 +115,42 @@ class AffiliateTrackingService
 
     /**
      * Track sale/order dari booking
+     * 
+     * @param int $bookingId
+     * @param int $packageId
+     * @param float $orderAmount
+     * @param string|null $orderReference
+     * @param float $voucherDiscount
+     * @param int|null $affiliatorId - Jika ada, gunakan affiliator ini (dari voucher). Jika null, ambil dari cookie
+     * @return mixed
      */
-    public function trackSale($bookingId, $packageId, $orderAmount, $orderReference = null, $voucherDiscount = 0)
+    public function trackSale($bookingId, $packageId, $orderAmount, $orderReference = null, $voucherDiscount = 0, $affiliatorId = null)
     {
-        $affiliator = $this->getAffiliatorFromCookie();
+        // Jika affiliatorId diberikan (dari voucher), gunakan itu
+        if ($affiliatorId) {
+            $affiliator = Affiliator::active()->find($affiliatorId);
+            
+            if (!$affiliator) {
+                \Log::warning('Affiliator from voucher not found or inactive', ['affiliator_id' => $affiliatorId]);
+                return false;
+            }
+            
+            \Log::info('Using affiliator from voucher', [
+                'affiliator_id' => $affiliator->id,
+                'affiliator_name' => $affiliator->full_name
+            ]);
+        } else {
+            // Jika tidak ada affiliatorId, coba ambil dari cookie
+            $affiliator = $this->getAffiliatorFromCookie();
 
-        if (!$affiliator) {
-            return false;
+            if (!$affiliator) {
+                return false;
+            }
+            
+            \Log::info('Using affiliator from cookie', [
+                'affiliator_id' => $affiliator->id,
+                'affiliator_name' => $affiliator->full_name
+            ]);
         }
 
         // Get booking to calculate total pax

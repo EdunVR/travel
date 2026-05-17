@@ -20,7 +20,17 @@
         <div class="bg-gradient-to-r from-yellow-600 to-yellow-500 rounded-xl shadow-lg p-6 text-white">
             <div class="text-sm opacity-90 mb-1">Saldo Pending</div>
             <div class="text-3xl font-bold">Rp {{ number_format($affiliator->pending_balance, 0, ',', '.') }}</div>
-            <div class="text-xs opacity-75 mt-2">Menunggu verifikasi</div>
+            <div class="text-xs opacity-75 mt-2">
+                @if($pendingBreakdown['waiting_payment'] > 0)
+                    Menunggu Pelunasan: Rp {{ number_format($pendingBreakdown['waiting_payment'], 0, ',', '.') }}<br>
+                @endif
+                @if($pendingBreakdown['waiting_departure'] > 0)
+                    Menunggu Keberangkatan: Rp {{ number_format($pendingBreakdown['waiting_departure'], 0, ',', '.') }}
+                @endif
+                @if($pendingBreakdown['waiting_payment'] == 0 && $pendingBreakdown['waiting_departure'] == 0)
+                    Menunggu verifikasi
+                @endif
+            </div>
         </div>
     </div>
 

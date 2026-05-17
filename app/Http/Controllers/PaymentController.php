@@ -114,6 +114,69 @@ class PaymentController extends Controller
             $booking->paid_amount += $request->amount;
             $booking->updatePaymentStatus();
 
+            // Check if booking is now fully paid (LUNAS) - mark payment condition fulfilled
+            if ($booking->payment_status === 'paid') {
+                try {
+                    $referral = \App\Models\AffiliateReferral::where('booking_id', $booking->id)->first();
+                    
+                    if ($referral && !$referral->termin_1_released) {
+                        // Mark payment condition as fulfilled
+                        $referral->update([
+                            'termin_1_released' => true,
+                            'termin_1_paid_at' => now(),
+                            'status' => 'verified',
+                            'verified_at' => now(),
+                        ]);
+                        
+                        // Add commission to pending balance (not available yet)
+                        $referral->affiliator->increment('pending_balance', $referral->commission_amount);
+                        
+                        \Log::info('Affiliate commission moved to pending (waiting departure)', [
+                            'booking_id' => $booking->id,
+                            'booking_code' => $booking->booking_code,
+                            'commission' => $referral->commission_amount,
+                            'status' => 'Menunggu Keberangkatan'
+                        ]);
+                        
+                        // Check if departure date has also passed
+                        $keberangkatan = $booking->keberangkatan;
+                        if ($keberangkatan && $keberangkatan->departure_date) {
+                            $today = \Carbon\Carbon::today();
+                            if ($keberangkatan->departure_date->lte($today)) {
+                                // Both conditions met! Release immediately
+                                $referral->affiliator->decrement('pending_balance', $referral->commission_amount);
+                                $referral->affiliator->increment('available_balance', $referral->commission_amount);
+                                
+                                $referral->update([
+                                    'termin_2_released' => true,
+                                    'termin_2_paid_at' => now(),
+                                    'status' => 'paid',
+                                    'paid_at' => now(),
+                                ]);
+                                
+                                // Release fee distributions to upline
+                                \App\Models\AffiliateFeeDistribution::where('referral_id', $referral->id)
+                                    ->where('status', 'pending')
+                                    ->get()
+                                    ->each(function ($dist) {
+                                        $dist->update(['status' => 'released', 'released_at' => now()]);
+                                        $dist->toAffiliator->decrement('pending_balance', $dist->amount);
+                                        $dist->toAffiliator->increment('available_balance', $dist->amount);
+                                    });
+                                
+                                \Log::info('✅✅ BOTH CONDITIONS MET! Commission released immediately', [
+                                    'booking_id' => $booking->id,
+                                    'commission' => $referral->commission_amount
+                                ]);
+                            }
+                        }
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Failed to process affiliate commission: ' . $e->getMessage());
+                    // Don't fail payment if affiliate processing fails
+                }
+            }
+
             // Sync piutang
             $this->syncPiutang($booking);
 
@@ -127,6 +190,9 @@ class PaymentController extends Controller
 
             // Send notification to finance team
             $this->notificationService->notifyPaymentReceived($payment);
+
+            // Send WhatsApp notification to customer with manifest link
+            $this->sendCustomerPaymentNotification($booking, $payment);
 
             // Log payment transaction to audit trail
             $this->auditService->logPaymentTransaction(
@@ -843,6 +909,9 @@ class PaymentController extends Controller
         
         if ($booking->paid_amount >= $booking->total_price) {
             $booking->payment_status = 'paid';
+            
+            // 🔥 TRIGGER EVENT: Booking sudah lunas - Release Termin 1
+            event(new \App\Events\BookingFullyPaid($booking));
         } elseif ($booking->paid_amount > 0) {
             $booking->payment_status = 'partial';
         }
@@ -900,15 +969,39 @@ class PaymentController extends Controller
         $package = $booking->travelPackage;
         $jamaah = $booking->jamaah;
         
+        // Generate manifest URL
+        $manifestUrl = route('public.booking.manifest', ['bookingId' => $booking->id]);
+        
         $msg = "Assalamu'alaikum, pembayaran Anda telah diverifikasi! ✅\n\n";
         $msg .= "📦 Paket: {$package->package_name}\n";
         $msg .= "🔖 Booking: {$booking->booking_code}\n";
         $msg .= "💰 Jumlah: Rp " . number_format($payment->amount, 0, ',', '.') . "\n\n";
+        
+        // Add remaining balance info
+        $remainingBalance = $booking->getRemainingBalance();
+        if ($remainingBalance > 0) {
+            $msg .= "💳 Sisa Tagihan: Rp " . number_format($remainingBalance, 0, ',', '.') . "\n\n";
+        } else {
+            $msg .= "✅ *LUNAS* - Pembayaran Anda telah lengkap!\n\n";
+        }
+        
+        $msg .= "📋 *LANGKAH SELANJUTNYA:*\n";
+        $msg .= "Silakan lengkapi dokumen perjalanan Anda dengan mengisi form manifest dan upload passport.\n\n";
+        $msg .= "🔗 *Link Form Manifest:*\n";
+        $msg .= $manifestUrl . "\n\n";
+        $msg .= "📸 *Fitur OCR Passport:*\n";
+        $msg .= "Upload foto passport Anda, sistem kami akan otomatis membaca data dan mengisi form untuk Anda!\n\n";
         $msg .= "Terima kasih telah mempercayai HM Tour! 🙏";
         
         try {
             $whatsappService = new \App\Services\WhatsAppService();
             $whatsappService->sendMessage($jamaah->telepon, $msg);
+            
+            \Log::info('WhatsApp verification notification sent with manifest URL', [
+                'booking_id' => $booking->id,
+                'booking_code' => $booking->booking_code,
+                'manifest_url' => $manifestUrl
+            ]);
         } catch (\Exception $e) {
             \Log::error('Failed to send WhatsApp: ' . $e->getMessage());
         }
@@ -933,6 +1026,135 @@ class PaymentController extends Controller
             $whatsappService->sendMessage($jamaah->telepon, $msg);
         } catch (\Exception $e) {
             \Log::error('Failed to send WhatsApp: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send WhatsApp notification to customer after payment with manifest link
+     */
+    private function sendCustomerPaymentNotification($booking, $payment)
+    {
+        try {
+            // Get customer phone number
+            $phoneNumber = null;
+            if ($booking->member && $booking->member->telepon) {
+                $phoneNumber = $booking->member->telepon;
+            } elseif ($booking->phone_number) {
+                $phoneNumber = $booking->phone_number;
+            }
+
+            if (!$phoneNumber) {
+                \Log::warning('No phone number found for booking', ['booking_id' => $booking->id]);
+                return;
+            }
+
+            // Format phone number for WhatsApp
+            $phoneNumber = preg_replace('/[^0-9]/', '', $phoneNumber);
+            if (substr($phoneNumber, 0, 1) === '0') {
+                $phoneNumber = '62' . substr($phoneNumber, 1);
+            } elseif (substr($phoneNumber, 0, 2) !== '62') {
+                $phoneNumber = '62' . $phoneNumber;
+            }
+
+            // Generate manifest URL - public form for customer to fill
+            $manifestUrl = route('public.booking.manifest', ['bookingId' => $booking->id]);
+            
+            // Compose WhatsApp message
+            $customerName = $booking->member->nama_lengkap ?? $booking->customer_name ?? 'Jamaah';
+            $message = "*TERIMA KASIH ATAS PEMBAYARAN ANDA* 🙏\n\n";
+            $message .= "Assalamu'alaikum *{$customerName}*,\n\n";
+            $message .= "✅ Pembayaran Anda telah kami terima:\n";
+            $message .= "💰 Jumlah: Rp " . number_format($payment->amount, 0, ',', '.') . "\n";
+            $message .= "📅 Tanggal: " . $payment->payment_date->format('d M Y') . "\n";
+            $message .= "🔖 Booking: {$booking->booking_code}\n\n";
+            
+            // Add remaining balance info
+            $remainingBalance = $booking->getRemainingBalance();
+            if ($remainingBalance > 0) {
+                $message .= "💳 Sisa Tagihan: Rp " . number_format($remainingBalance, 0, ',', '.') . "\n\n";
+            } else {
+                $message .= "✅ *LUNAS* - Pembayaran Anda telah lengkap!\n\n";
+            }
+            
+            $message .= "📋 *LANGKAH SELANJUTNYA:*\n";
+            $message .= "Silakan lengkapi dokumen perjalanan Anda dengan mengisi form manifest dan upload passport.\n\n";
+            $message .= "🔗 *Link Form Manifest:*\n";
+            $message .= $manifestUrl . "\n\n";
+            $message .= "📸 *Fitur OCR Passport:*\n";
+            $message .= "Upload foto passport Anda, sistem kami akan otomatis membaca data dan mengisi form untuk Anda!\n\n";
+            $message .= "Jika ada pertanyaan, hubungi kami di nomor ini.\n\n";
+            $message .= "_HM Tour - Your Trusted Travel Partner_ ✈️🕋";
+
+            // Send via Fonnte API
+            $token = env('FONNTE_TOKEN');
+            if (!$token) {
+                \Log::error('Fonnte token not configured');
+                return;
+            }
+
+            $url = 'https://api.fonnte.com/send';
+            $data = [
+                'target' => $phoneNumber,
+                'message' => $message,
+                'countryCode' => '62',
+            ];
+
+            $curl = curl_init();
+            curl_setopt_array($curl, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '',
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 60,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS => http_build_query($data),
+                CURLOPT_HTTPHEADER => [
+                    'Authorization: ' . $token,
+                    'Content-Type: application/x-www-form-urlencoded'
+                ],
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_SSL_VERIFYHOST => 2,
+            ]);
+            
+            $response = curl_exec($curl);
+            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($curl);
+            curl_close($curl);
+            
+            if ($curlError) {
+                \Log::error('WhatsApp send failed (cURL error)', [
+                    'booking_id' => $booking->id,
+                    'phone' => $phoneNumber,
+                    'error' => $curlError,
+                    'http_code' => $httpCode
+                ]);
+                return;
+            }
+
+            $result = json_decode($response, true);
+            
+            if ($httpCode === 200) {
+                \Log::info('WhatsApp payment notification sent successfully', [
+                    'booking_id' => $booking->id,
+                    'phone' => $phoneNumber,
+                    'response' => $result
+                ]);
+            } else {
+                \Log::error('WhatsApp send failed', [
+                    'booking_id' => $booking->id,
+                    'phone' => $phoneNumber,
+                    'http_code' => $httpCode,
+                    'response' => $result
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('WhatsApp payment notification exception', [
+                'booking_id' => $booking->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
 }

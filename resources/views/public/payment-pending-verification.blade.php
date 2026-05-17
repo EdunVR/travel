@@ -7,13 +7,44 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>*{font-family:'Nunito',sans-serif}</style>
+    
+    <!-- Auto-redirect when payment is verified -->
+    <script>
+        // Check payment status every 5 seconds
+        let checkInterval = setInterval(function() {
+            fetch('{{ route("public.payment.check-status", ["paymentId" => $payment->id]) }}')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.verified) {
+                        clearInterval(checkInterval);
+                        // Show success message briefly
+                        document.getElementById('statusMessage').innerHTML = `
+                            <div class="bg-green-100 border-2 border-green-500 rounded-xl p-4 text-center">
+                                <svg class="w-12 h-12 text-green-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <p class="font-bold text-green-900 text-lg">Pembayaran Terverifikasi!</p>
+                                <p class="text-green-700 text-sm mt-1">Mengalihkan ke invoice...</p>
+                            </div>
+                        `;
+                        // Redirect after 2 seconds
+                        setTimeout(function() {
+                            window.location.href = '{{ route("public.paket.invoice", ["packageId" => $package->id, "bookingId" => $booking->id]) }}';
+                        }, 2000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking payment status:', error);
+                });
+        }, 5000); // Check every 5 seconds
+    </script>
 </head>
 <body class="bg-gray-50">
     <div class="max-w-2xl mx-auto py-12 px-4">
         <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
             
             <!-- Icon -->
-            <div class="bg-yellow-50 p-8 text-center">
+            <div class="bg-yellow-50 p-8 text-center" id="statusMessage">
                 <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>

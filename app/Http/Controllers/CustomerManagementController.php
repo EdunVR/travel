@@ -1097,6 +1097,58 @@ class CustomerManagementController extends Controller
             return false;
         }
     }
+
+    /**
+     * Perform OCR on image file
+     * This method is used by VisaParserHelper and other OCR operations
+     */
+    private function performOcr($imagePath)
+    {
+        try {
+            // Check if Tesseract is available
+            if (!$this->isTesseractAvailable()) {
+                throw new \Exception('Tesseract OCR not available');
+            }
+
+            // Preprocess image for better OCR
+            $processedPath = $this->preprocessImage($imagePath);
+
+            // Try multiple PSM modes for best results
+            $results = [];
+            foreach ([3, 4, 6] as $psm) {
+                try {
+                    $text = Ocr::scan($processedPath, 'eng', $psm);
+                    $results[] = [
+                        'text' => $text,
+                        'length' => strlen($text),
+                        'psm' => $psm
+                    ];
+                } catch (\Exception $e) {
+                    \Log::warning("PSM $psm failed: " . $e->getMessage());
+                }
+            }
+
+            // Clean up processed image if different from original
+            if ($processedPath !== $imagePath) {
+                @unlink($processedPath);
+            }
+
+            if (empty($results)) {
+                throw new \Exception('All OCR attempts failed');
+            }
+
+            // Pick best result (longest text)
+            usort($results, function($a, $b) {
+                return $b['length'] - $a['length'];
+            });
+
+            return $results[0]['text'];
+
+        } catch (\Exception $e) {
+            \Log::error('performOcr error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
     
     /**
      * Preprocess image for better OCR accuracy

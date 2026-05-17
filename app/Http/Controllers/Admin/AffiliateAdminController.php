@@ -38,9 +38,9 @@ class AffiliateAdminController extends Controller
 
         $affiliators = $query->latest()->paginate(20);
 
-        // Calculate agency fee for each affiliator
+        // AGENCY FEE DISABLED - Fokus pada fee penjualan dengan sistem termin
         foreach ($affiliators as $affiliator) {
-            $affiliator->agency_fee_total = $this->calculateAgencyFee($affiliator);
+            // HAPUS: $affiliator->agency_fee_total = $this->calculateAgencyFee($affiliator);
             $affiliator->recruited_count = $affiliator->recruits()->count();
         }
 
@@ -59,7 +59,10 @@ class AffiliateAdminController extends Controller
 
     /**
      * Calculate agency fee for an affiliator
+     * DISABLED - Agency fee system has been disabled
+     * Fokus pada fee penjualan dengan sistem termin
      */
+    /*
     private function calculateAgencyFee($affiliator)
     {
         $settings = \App\Models\CompanySetting::first();
@@ -96,6 +99,7 @@ class AffiliateAdminController extends Controller
 
         return $totalFee;
     }
+    */
 
     /**
      * Detail affiliator
@@ -438,19 +442,40 @@ class AffiliateAdminController extends Controller
 
     /**
      * Release termin 2 (saat keberangkatan)
+     * Moves commission from pending_balance to available_balance
      */
     public function releaseTermin2(AffiliateReferral $referral)
     {
         if (!$referral->termin_1_released) {
-            return back()->withErrors(['error' => 'Termin 1 harus dicairkan terlebih dahulu.']);
+            return back()->withErrors(['error' => 'Booking belum lunas. Tidak bisa release fee.']);
         }
         if ($referral->termin_2_released) {
-            return back()->withErrors(['error' => 'Termin 2 sudah pernah dicairkan.']);
+            return back()->withErrors(['error' => 'Fee sudah dicairkan ke saldo tersedia.']);
         }
 
-        $referral->affiliator->releaseTermin2($referral->id);
+        // Move from pending to available
+        $affiliator = $referral->affiliator;
+        $affiliator->decrement('pending_balance', $referral->commission_amount);
+        $affiliator->increment('available_balance', $referral->commission_amount);
+        
+        $referral->update([
+            'termin_2_released' => true,
+            'termin_2_paid_at' => now(),
+            'status' => 'paid',
+            'paid_at' => now(),
+        ]);
+        
+        // Release fee distributions to upline
+        \App\Models\AffiliateFeeDistribution::where('referral_id', $referral->id)
+            ->where('status', 'pending')
+            ->get()
+            ->each(function ($dist) {
+                $dist->update(['status' => 'released', 'released_at' => now()]);
+                $dist->toAffiliator->decrement('pending_balance', $dist->amount);
+                $dist->toAffiliator->increment('available_balance', $dist->amount);
+            });
 
-        return back()->with('success', 'Termin 2 (50%) berhasil dicairkan ke saldo pending mitra.');
+        return back()->with('success', 'Fee berhasil dipindahkan ke saldo tersedia! Mitra sudah bisa tarik dana.');
     }
 
     /**
@@ -659,8 +684,10 @@ class AffiliateAdminController extends Controller
      */
     public function destroy(Affiliator $affiliator)
     {
+        $name = $affiliator->full_name;
         $affiliator->delete();
-        return response()->json(['success' => true]);
+        
+        return back()->with('success', "Mitra {$name} berhasil dihapus.");
     }
 
     /**

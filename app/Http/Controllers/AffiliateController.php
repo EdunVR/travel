@@ -733,6 +733,19 @@ class AffiliateController extends Controller
             return redirect()->route('affiliate.dashboard');
         }
 
+        // Calculate pending breakdown
+        $pendingBreakdown = [
+            'waiting_payment' => $affiliator->referrals()
+                ->where('status', 'verified')
+                ->where('termin_1_released', false)
+                ->sum('commission_amount'),
+            'waiting_departure' => $affiliator->referrals()
+                ->where('status', 'verified')
+                ->where('termin_1_released', true)
+                ->where('termin_2_released', false)
+                ->sum('commission_amount'),
+        ];
+
         $transactions = collect();
         
         // Gabungkan clicks dan referrals sebagai transactions
@@ -747,12 +760,21 @@ class AffiliateController extends Controller
         });
 
         $referrals = $affiliator->referrals()->latest('order_date')->get()->map(function($ref) {
+            $status = 'pending';
+            if ($ref->termin_1_released && $ref->termin_2_released) {
+                $status = 'completed';
+            } elseif ($ref->termin_1_released) {
+                $status = 'pending'; // Termin 1 cair, termin 2 pending
+            } else {
+                $status = 'pending'; // Termin 1 belum cair
+            }
+            
             return [
                 'type' => 'referral',
                 'date' => $ref->order_date,
                 'amount' => $ref->commission_amount,
                 'description' => 'Komisi Referral - ' . ($ref->package->package_name ?? 'N/A'),
-                'status' => $ref->status
+                'status' => $status
             ];
         });
 
@@ -768,7 +790,7 @@ class AffiliateController extends Controller
 
         $transactions = $clicks->concat($referrals)->concat($payouts)->sortByDesc('date')->take(50);
 
-        return view('affiliate.wallet', compact('affiliator', 'transactions'));
+        return view('affiliate.wallet', compact('affiliator', 'transactions', 'pendingBreakdown'));
     }
 
     /**
@@ -1052,12 +1074,16 @@ class AffiliateController extends Controller
     {
         $request->validate([
             'email' => 'required|email|exists:affiliators,email',
-            'send_via' => 'required|in:whatsapp,email',
         ], [
             'email.exists' => 'Email tidak terdaftar dalam sistem.',
         ]);
 
         $affiliator = Affiliator::where('email', $request->email)->first();
+
+        // Cek apakah affiliator memiliki nomor WhatsApp
+        if (!$affiliator->phone_number) {
+            return back()->withErrors(['error' => 'Nomor WhatsApp tidak terdaftar. Silakan hubungi administrator.']);
+        }
 
         // Generate token
         $token = bin2hex(random_bytes(32));
@@ -1075,58 +1101,28 @@ class AffiliateController extends Controller
         // Generate reset link
         $resetLink = route('affiliate.reset-password', ['token' => $token, 'email' => $request->email]);
 
-        if ($request->send_via === 'whatsapp') {
-            // Kirim via WhatsApp
-            $message = "*RESET PASSWORD - HM TOUR*\n\n";
-            $message .= "Halo {$affiliator->full_name},\n\n";
-            $message .= "Anda telah meminta reset password untuk akun mitra Anda.\n\n";
-            $message .= "Klik link berikut untuk reset password:\n";
-            $message .= $resetLink . "\n\n";
-            $message .= "Link ini berlaku selama 1 jam.\n\n";
-            $message .= "Jika Anda tidak meminta reset password, abaikan pesan ini.\n\n";
-            $message .= "Terima kasih! 🙏";
+        // Kirim via WhatsApp
+        $message = "*RESET PASSWORD - HM TOUR* 🔐\n\n";
+        $message .= "Halo *{$affiliator->full_name}*,\n\n";
+        $message .= "Anda telah meminta reset password untuk akun mitra Anda.\n\n";
+        $message .= "🔗 *Klik link berikut untuk reset password:*\n";
+        $message .= $resetLink . "\n\n";
+        $message .= "⏰ Link ini berlaku selama *1 jam*.\n\n";
+        $message .= "❗ Jika Anda tidak meminta reset password, abaikan pesan ini.\n\n";
+        $message .= "Terima kasih! 🙏\n\n";
+        $message .= "_HM Tour - Your Trusted Travel Partner_";
 
-            $sent = $this->sendWhatsApp($affiliator->phone_number, $message);
+        $sent = $this->sendWhatsApp($affiliator->phone_number, $message);
 
-            if ($sent) {
-                return back()->with('success', 'Link reset password telah dikirim ke WhatsApp Anda.');
-            } else {
-                return back()->withErrors(['error' => 'Gagal mengirim WhatsApp. Silakan coba lagi atau gunakan opsi Email.']);
-            }
+        if ($sent) {
+            return back()->with('success', 'Link reset password telah dikirim ke WhatsApp Anda (' . substr($affiliator->phone_number, 0, 4) . '****).');
         } else {
-            // Kirim via Email
-            try {
-                // Cek apakah email sudah dikonfigurasi dengan benar
-                $mailConfigured = config('mail.mailers.smtp.username') && 
-                                 config('mail.mailers.smtp.username') !== 'your-email@gmail.com' &&
-                                 config('mail.mailers.smtp.password') && 
-                                 config('mail.mailers.smtp.password') !== 'your-app-password';
-
-                if (!$mailConfigured) {
-                    \Log::warning('Email not configured properly', [
-                        'username' => config('mail.mailers.smtp.username'),
-                        'has_password' => !empty(config('mail.mailers.smtp.password'))
-                    ]);
-                    return back()->withErrors(['error' => 'Email belum dikonfigurasi. Silakan gunakan opsi WhatsApp atau hubungi administrator.']);
-                }
-
-                \Mail::send('emails.reset-password', [
-                    'affiliator' => $affiliator,
-                    'resetLink' => $resetLink
-                ], function($mail) use ($affiliator) {
-                    $mail->to($affiliator->email, $affiliator->full_name)
-                         ->subject('Reset Password - HM Tour');
-                });
-
-                return back()->with('success', 'Link reset password telah dikirim ke email Anda.');
-            } catch (\Exception $e) {
-                \Log::error('Email send failed', [
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
-                    'email' => $affiliator->email
-                ]);
-                return back()->withErrors(['error' => 'Gagal mengirim email: ' . $e->getMessage() . '. Silakan coba lagi atau gunakan opsi WhatsApp.']);
-            }
+            \Log::error('Failed to send WhatsApp reset link', [
+                'email' => $request->email,
+                'phone' => $affiliator->phone_number,
+                'token_exists' => !empty(env('FONNTE_TOKEN'))
+            ]);
+            return back()->withErrors(['error' => 'Gagal mengirim WhatsApp. Silakan coba lagi atau hubungi administrator.']);
         }
     }
 
