@@ -20,6 +20,7 @@ class AffiliateReferral extends Model
         'commission_type',
         'commission_rate',
         'voucher_discount',
+        'total_pax',
         'status',
         'termin',
         'termin_1_amount',

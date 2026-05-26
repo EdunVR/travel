@@ -32,9 +32,15 @@
 </div>
 
 <!-- Status -->
-<div class="px-6 py-3 bg-yellow-50 border-b border-yellow-100 flex items-center gap-2">
-<span class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>
-<span class="text-yellow-700 text-sm font-semibold">Status: PENDING - Menunggu Pembayaran</span>
+<div class="px-6 py-3 {{ ($booking->paid_amount ?? 0) > 0 ? 'bg-blue-50 border-b border-blue-100' : 'bg-yellow-50 border-b border-yellow-100' }} flex items-center gap-2">
+<span class="w-2 h-2 rounded-full {{ ($booking->paid_amount ?? 0) > 0 ? 'bg-blue-400' : 'bg-yellow-400' }} animate-pulse"></span>
+<span class="{{ ($booking->paid_amount ?? 0) > 0 ? 'text-blue-700' : 'text-yellow-700' }} text-sm font-semibold">
+@if(($booking->paid_amount ?? 0) > 0)
+Status: PEMBAYARAN SEBAGIAN - Sisa Rp {{ number_format($grandTotal - ($booking->paid_amount ?? 0), 0, ',', '.') }}
+@else
+Status: PENDING - Menunggu Pembayaran
+@endif
+</span>
 </div>
 
 <!-- Body -->
@@ -363,29 +369,39 @@ Invoice resmi untuk pembayaran Anda
 <div>
 <div class="font-bold text-gray-900">
 @php
-// Prioritas: custom_payment_amount > payment_type calculation
-$paymentAmount = $grandTotal - ($booking->paid_amount ?? 0); // Default = sisa tagihan
+// Prioritas: custom_payment_amount > remaining balance
+$paidAmount = $booking->paid_amount ?? 0;
+$remainingBalance = $grandTotal - $paidAmount;
+$isFirstPayment = ($paidAmount == 0);
+$paymentAmount = $remainingBalance; // Default = sisa tagihan
 
 if (!empty($booking->custom_payment_amount)) {
     // Jika admin set custom amount
-    $paymentAmount = min($booking->custom_payment_amount, $paymentAmount);
+    $paymentAmount = min($booking->custom_payment_amount, $remainingBalance);
     $paymentLabel = 'Jumlah yang Ditentukan Admin';
     $paymentDetail = '';
-} elseif ($booking->payment_type === 'full') {
-    $paymentLabel = 'Bayar Lunas';
-    $paymentDetail = '';
-} else {
-    // DP
-    if ($booking->dp_option === '25_percent') {
-        $paymentAmount = min(round($grandTotal * 0.25), $paymentAmount);
-        $paymentLabel = 'Bayar DP (25%)';
+} elseif ($isFirstPayment) {
+    // Pembayaran pertama - tampilkan opsi DP
+    if ($booking->payment_type === 'full') {
+        $paymentLabel = 'Bayar Lunas';
         $paymentDetail = '';
     } else {
-        // DP 10 juta x pax
-        $paymentAmount = min($dp10MillionPerPax, $paymentAmount);
-        $paymentLabel = 'Bayar DP';
-        $paymentDetail = 'Rp 10 juta x ' . $totalPax . ' pax';
+        // DP
+        if ($booking->dp_option === '25_percent') {
+            $paymentAmount = min(round($grandTotal * 0.25), $remainingBalance);
+            $paymentLabel = 'Bayar DP (25%)';
+            $paymentDetail = '';
+        } else {
+            // DP 10 juta x pax
+            $paymentAmount = min($dp10MillionPerPax, $remainingBalance);
+            $paymentLabel = 'Bayar DP';
+            $paymentDetail = 'Rp 10 juta x ' . $totalPax . ' pax';
+        }
     }
+} else {
+    // Pembayaran ke-2 dst - tampilkan sisa tagihan saja
+    $paymentLabel = 'Pembayaran Selanjutnya';
+    $paymentDetail = 'Sisa tagihan Anda';
 }
 @endphp
 {{ $paymentLabel }}
@@ -396,6 +412,8 @@ if (!empty($booking->custom_payment_amount)) {
 <div class="text-xs text-gray-500 mt-1">
 @if(!empty($booking->custom_payment_amount))
 Jumlah pembayaran telah diatur oleh admin
+@elseif(!$isFirstPayment)
+Silakan transfer sesuai nominal yang tertera
 @else
 Pilihan pembayaran Anda
 @endif
@@ -412,6 +430,22 @@ Rp {{ number_format($paymentAmount, 0, ',', '.') }}
 </svg>
 <div class="text-xs text-blue-700">
 <span class="font-semibold">Catatan:</span> Jumlah pembayaran ini telah disesuaikan oleh admin. Silakan transfer sesuai nominal yang tertera di atas.
+</div>
+</div>
+@endif
+@if(!$isFirstPayment && $paidAmount > 0)
+<div class="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3">
+<div class="flex justify-between text-xs text-gray-600 mb-1">
+<span>Total Tagihan</span>
+<span>Rp {{ number_format($grandTotal, 0, ',', '.') }}</span>
+</div>
+<div class="flex justify-between text-xs text-green-600 mb-1">
+<span>Sudah Dibayar</span>
+<span>Rp {{ number_format($paidAmount, 0, ',', '.') }}</span>
+</div>
+<div class="flex justify-between text-xs font-bold text-gray-900 pt-1 border-t border-gray-200">
+<span>Sisa Tagihan</span>
+<span>Rp {{ number_format($remainingBalance, 0, ',', '.') }}</span>
 </div>
 </div>
 @endif

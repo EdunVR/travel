@@ -48,15 +48,38 @@ class CustomerManagementController extends Controller
         $tipeFilter = $request->get('tipe_filter', 'all');
         $search = $request->get('search', '');
 
+        // Get accessible outlet IDs for this user
+        $accessibleOutletIds = $this->getAccessibleOutletIds();
+
         $query = Member::with(['tipe', 'outlet'])
             ->withTotalPiutang();
 
-        // Apply outlet filter based on user access
-        $query = $this->applyOutletFilter($query, 'id_outlet');
+        // Apply outlet filter: tampilkan member yang:
+        // 1. id_outlet-nya ada di accessible outlets, ATAU
+        // 2. punya booking (jamaah_bookings) di accessible outlets
+        if (!empty($accessibleOutletIds)) {
+            $user = auth()->user();
+            if (!$user->hasRole('super_admin')) {
+                $query->where(function($q) use ($accessibleOutletIds) {
+                    $q->whereIn('id_outlet', $accessibleOutletIds)
+                      ->orWhereHas('jamaahBookings', function($bq) use ($accessibleOutletIds) {
+                          $bq->whereIn('id_outlet', $accessibleOutletIds);
+                      });
+                });
+            }
+        } else {
+            // User has no outlet access
+            $query->whereRaw('1 = 0');
+        }
 
         // Additional outlet filter from request (multiple outlets)
         if (!empty($outletIds) && is_array($outletIds)) {
-            $query->whereIn('id_outlet', $outletIds);
+            $query->where(function($q) use ($outletIds) {
+                $q->whereIn('id_outlet', $outletIds)
+                  ->orWhereHas('jamaahBookings', function($bq) use ($outletIds) {
+                      $bq->whereIn('id_outlet', $outletIds);
+                  });
+            });
         }
 
         // Filter tipe
@@ -114,14 +137,14 @@ class CustomerManagementController extends Controller
                 'required',
                 \Illuminate\Validation\Rule::exists('outlets', 'id_outlet')
             ],
-            'pas_foto' => 'nullable|image|max:2048',
-            'ktp_foto' => 'nullable|image|max:2048',
+            'pas_foto' => 'nullable|mimes:jpg,jpeg,png|max:5120',
+            'ktp_foto' => 'nullable|mimes:jpg,jpeg,png,pdf|max:5120',
             'ktp_nik' => 'nullable|string|max:20',
             'ktp_nama' => 'nullable|string|max:255',
             'ktp_tempat_lahir' => 'nullable|string|max:255',
             'ktp_tanggal_lahir' => 'nullable|date',
             'ktp_alamat' => 'nullable|string',
-            'passport_foto' => 'nullable|image|max:2048',
+            'passport_foto' => 'nullable|mimes:jpg,jpeg,png,pdf|max:5120',
             'passport_nomor' => 'nullable|string|max:20',
             'passport_nama' => 'nullable|string|max:255',
             'passport_tanggal_lahir' => 'nullable|date',
@@ -162,6 +185,8 @@ class CustomerManagementController extends Controller
                 'ktp_nik', 'ktp_nama', 'ktp_tempat_lahir', 'ktp_tanggal_lahir', 'ktp_alamat',
                 'passport_nomor', 'passport_nama', 'passport_tanggal_lahir', 
                 'passport_tanggal_kadaluarsa', 'passport_kewarganegaraan',
+                'passport_title', 'passport_gender', 'passport_tanggal_terbit',
+                'passport_kantor_terbit', 'passport_tempat_lahir',
                 // Jamaah-specific fields
                 'is_jamaah', 'jamaah_type', 'mahram_name', 'mahram_relationship', 'mahram_phone',
                 'mahram_ktp_nik', 'health_conditions', 'emergency_contact_name', 
@@ -207,7 +232,7 @@ class CustomerManagementController extends Controller
                 }
                 
                 // Validate mahram for female jamaah under 45
-                if ($data['gender'] === 'female' && !empty($data['ktp_tanggal_lahir'])) {
+                if (($data['gender'] ?? null) === 'female' && !empty($data['ktp_tanggal_lahir'])) {
                     $age = \Carbon\Carbon::parse($data['ktp_tanggal_lahir'])->age;
                     if ($age < 45 && empty($data['mahram_name'])) {
                         return response()->json([
@@ -219,16 +244,16 @@ class CustomerManagementController extends Controller
                 }
                 
                 // Validate age requirements
-                if (!empty($data['ktp_tanggal_lahir']) && !empty($data['jamaah_type'])) {
+                if (!empty($data['ktp_tanggal_lahir']) && !empty($data['jamaah_type'] ?? null)) {
                     $age = \Carbon\Carbon::parse($data['ktp_tanggal_lahir'])->age;
-                    if ($data['jamaah_type'] === 'umrah' && $age < 12) {
+                    if (($data['jamaah_type'] ?? null) === 'umrah' && $age < 12) {
                         return response()->json([
                             'success' => false,
                             'message' => 'Jamaah must be at least 12 years old for Umrah',
                             'errors' => ['ktp_tanggal_lahir' => ['Jamaah must be at least 12 years old for Umrah']]
                         ], 422);
                     }
-                    if ($data['jamaah_type'] === 'hajj' && $age < 18) {
+                    if (($data['jamaah_type'] ?? null) === 'hajj' && $age < 18) {
                         return response()->json([
                             'success' => false,
                             'message' => 'Jamaah must be at least 18 years old for Hajj',
@@ -266,6 +291,23 @@ class CustomerManagementController extends Controller
             
             if ($request->hasFile('sertifikat_kesehatan_foto')) {
                 $data['sertifikat_kesehatan_foto'] = $request->file('sertifikat_kesehatan_foto')->store('pelanggan/sertifikat_kesehatan', 'public');
+            }
+            
+            // Handle manifest document uploads
+            if ($request->hasFile('akta_lahir_foto')) {
+                $data['akta_lahir_foto'] = $request->file('akta_lahir_foto')->store('pelanggan/akta_lahir', 'public');
+            }
+            if ($request->hasFile('kartu_keluarga_foto')) {
+                $data['kartu_keluarga_foto'] = $request->file('kartu_keluarga_foto')->store('pelanggan/kartu_keluarga', 'public');
+            }
+            if ($request->hasFile('buku_nikah_foto')) {
+                $data['buku_nikah_foto'] = $request->file('buku_nikah_foto')->store('pelanggan/buku_nikah', 'public');
+            }
+            if ($request->hasFile('vaksin_foto')) {
+                $data['vaksin_foto'] = $request->file('vaksin_foto')->store('pelanggan/vaksin', 'public');
+            }
+            if ($request->hasFile('bpjs_foto')) {
+                $data['bpjs_foto'] = $request->file('bpjs_foto')->store('pelanggan/bpjs', 'public');
             }
             
             // Generate kode member - ambil yang terbesar dari semua outlet
@@ -343,14 +385,14 @@ class CustomerManagementController extends Controller
                 'required',
                 \Illuminate\Validation\Rule::exists('outlets', 'id_outlet')
             ],
-            'pas_foto' => 'nullable|image|max:2048',
-            'ktp_foto' => 'nullable|image|max:2048',
+            'pas_foto' => 'nullable|mimes:jpg,jpeg,png|max:5120',
+            'ktp_foto' => 'nullable|mimes:jpg,jpeg,png,pdf|max:5120',
             'ktp_nik' => 'nullable|string|max:20',
             'ktp_nama' => 'nullable|string|max:255',
             'ktp_tempat_lahir' => 'nullable|string|max:255',
             'ktp_tanggal_lahir' => 'nullable|date',
             'ktp_alamat' => 'nullable|string',
-            'passport_foto' => 'nullable|image|max:2048',
+            'passport_foto' => 'nullable|mimes:jpg,jpeg,png,pdf|max:5120',
             'passport_nomor' => 'nullable|string|max:20',
             'passport_nama' => 'nullable|string|max:255',
             'passport_tanggal_lahir' => 'nullable|date',
@@ -394,6 +436,8 @@ class CustomerManagementController extends Controller
                 'ktp_nik', 'ktp_nama', 'ktp_tempat_lahir', 'ktp_tanggal_lahir', 'ktp_alamat',
                 'passport_nomor', 'passport_nama', 'passport_tanggal_lahir', 
                 'passport_tanggal_kadaluarsa', 'passport_kewarganegaraan',
+                'passport_title', 'passport_gender', 'passport_tanggal_terbit',
+                'passport_kantor_terbit', 'passport_tempat_lahir',
                 // Jamaah-specific fields
                 'is_jamaah', 'jamaah_type', 'mahram_name', 'mahram_relationship', 'mahram_phone',
                 'mahram_ktp_nik', 'health_conditions', 'emergency_contact_name', 
@@ -439,7 +483,7 @@ class CustomerManagementController extends Controller
                 }
                 
                 // Validate mahram for female jamaah under 45
-                if ($data['gender'] === 'female' && !empty($data['ktp_tanggal_lahir'])) {
+                if (($data['gender'] ?? null) === 'female' && !empty($data['ktp_tanggal_lahir'])) {
                     $age = \Carbon\Carbon::parse($data['ktp_tanggal_lahir'])->age;
                     if ($age < 45 && empty($data['mahram_name'])) {
                         return response()->json([
@@ -451,16 +495,16 @@ class CustomerManagementController extends Controller
                 }
                 
                 // Validate age requirements
-                if (!empty($data['ktp_tanggal_lahir']) && !empty($data['jamaah_type'])) {
+                if (!empty($data['ktp_tanggal_lahir']) && !empty($data['jamaah_type'] ?? null)) {
                     $age = \Carbon\Carbon::parse($data['ktp_tanggal_lahir'])->age;
-                    if ($data['jamaah_type'] === 'umrah' && $age < 12) {
+                    if (($data['jamaah_type'] ?? null) === 'umrah' && $age < 12) {
                         return response()->json([
                             'success' => false,
                             'message' => 'Jamaah must be at least 12 years old for Umrah',
                             'errors' => ['ktp_tanggal_lahir' => ['Jamaah must be at least 12 years old for Umrah']]
                         ], 422);
                     }
-                    if ($data['jamaah_type'] === 'hajj' && $age < 18) {
+                    if (($data['jamaah_type'] ?? null) === 'hajj' && $age < 18) {
                         return response()->json([
                             'success' => false,
                             'message' => 'Jamaah must be at least 18 years old for Hajj',
@@ -524,6 +568,38 @@ class CustomerManagementController extends Controller
                 $data['sertifikat_kesehatan_foto'] = $request->file('sertifikat_kesehatan_foto')->store('pelanggan/sertifikat_kesehatan', 'public');
             }
             
+            // Handle manifest document uploads
+            if ($request->hasFile('akta_lahir_foto')) {
+                if ($member->akta_lahir_foto && \Storage::disk('public')->exists($member->akta_lahir_foto)) {
+                    \Storage::disk('public')->delete($member->akta_lahir_foto);
+                }
+                $data['akta_lahir_foto'] = $request->file('akta_lahir_foto')->store('pelanggan/akta_lahir', 'public');
+            }
+            if ($request->hasFile('kartu_keluarga_foto')) {
+                if ($member->kartu_keluarga_foto && \Storage::disk('public')->exists($member->kartu_keluarga_foto)) {
+                    \Storage::disk('public')->delete($member->kartu_keluarga_foto);
+                }
+                $data['kartu_keluarga_foto'] = $request->file('kartu_keluarga_foto')->store('pelanggan/kartu_keluarga', 'public');
+            }
+            if ($request->hasFile('buku_nikah_foto')) {
+                if ($member->buku_nikah_foto && \Storage::disk('public')->exists($member->buku_nikah_foto)) {
+                    \Storage::disk('public')->delete($member->buku_nikah_foto);
+                }
+                $data['buku_nikah_foto'] = $request->file('buku_nikah_foto')->store('pelanggan/buku_nikah', 'public');
+            }
+            if ($request->hasFile('vaksin_foto')) {
+                if ($member->vaksin_foto && \Storage::disk('public')->exists($member->vaksin_foto)) {
+                    \Storage::disk('public')->delete($member->vaksin_foto);
+                }
+                $data['vaksin_foto'] = $request->file('vaksin_foto')->store('pelanggan/vaksin', 'public');
+            }
+            if ($request->hasFile('bpjs_foto')) {
+                if ($member->bpjs_foto && \Storage::disk('public')->exists($member->bpjs_foto)) {
+                    \Storage::disk('public')->delete($member->bpjs_foto);
+                }
+                $data['bpjs_foto'] = $request->file('bpjs_foto')->store('pelanggan/bpjs', 'public');
+            }
+            
             $member->update($data);
 
             DB::commit();
@@ -583,6 +659,86 @@ class CustomerManagementController extends Controller
                 'success' => false,
                 'message' => 'Gagal menghapus pelanggan: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Upload dokumen member (manifest) — untuk admin
+     * POST /admin/crm/pelanggan/{id}/upload-doc
+     */
+    public function uploadMemberDocument(Request $request, $id)
+    {
+        $request->validate([
+            'doc_type' => 'required|string|in:passport_foto,ktp_foto,akta_lahir_foto,kartu_keluarga_foto,buku_nikah_foto,vaksin_foto,bpjs_foto,pas_foto',
+            'file'     => 'required|mimes:jpg,jpeg,png,pdf|max:5120',
+        ]);
+
+        $docType = $request->input('doc_type');
+
+        $folderMap = [
+            'passport_foto'        => 'pelanggan/passport',
+            'ktp_foto'             => 'pelanggan/ktp',
+            'akta_lahir_foto'      => 'pelanggan/akta_lahir',
+            'kartu_keluarga_foto'  => 'pelanggan/kartu_keluarga',
+            'buku_nikah_foto'      => 'pelanggan/buku_nikah',
+            'vaksin_foto'          => 'pelanggan/vaksin',
+            'bpjs_foto'            => 'pelanggan/bpjs',
+            'pas_foto'             => 'pelanggan/pas_foto',
+        ];
+        $folder = $folderMap[$docType] ?? 'pelanggan/dokumen';
+
+        try {
+            $member = Member::findOrFail($id);
+            $this->validateOutletAccess($member->id_outlet);
+
+            // Hapus file lama
+            if ($member->$docType && \Storage::disk('public')->exists($member->$docType)) {
+                \Storage::disk('public')->delete($member->$docType);
+            }
+
+            $path = $request->file('file')->store($folder, 'public');
+            $member->update([$docType => $path]);
+
+            return response()->json([
+                'success'   => true,
+                'message'   => 'Dokumen berhasil diupload',
+                'file_url'  => asset('storage/' . $path),
+                'file_path' => $path,
+                'is_pdf'    => strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'pdf',
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('uploadMemberDocument error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal upload: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Hapus dokumen member (manifest) — untuk admin
+     * DELETE /admin/crm/pelanggan/{id}/delete-doc
+     */
+    public function deleteMemberDocument(Request $request, $id)
+    {
+        $request->validate([
+            'doc_type' => 'required|string|in:passport_foto,ktp_foto,akta_lahir_foto,kartu_keluarga_foto,buku_nikah_foto,vaksin_foto,bpjs_foto,pas_foto',
+        ]);
+
+        $docType = $request->input('doc_type');
+
+        try {
+            $member = Member::findOrFail($id);
+            $this->validateOutletAccess($member->id_outlet);
+
+            if ($member->$docType && \Storage::disk('public')->exists($member->$docType)) {
+                \Storage::disk('public')->delete($member->$docType);
+            }
+            $member->update([$docType => null]);
+
+            return response()->json(['success' => true, 'message' => 'Dokumen berhasil dihapus']);
+
+        } catch (\Exception $e) {
+            \Log::error('deleteMemberDocument error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal hapus: ' . $e->getMessage()], 500);
         }
     }
 
@@ -858,193 +1014,113 @@ class CustomerManagementController extends Controller
     }
 
     /**
-     * Process KTP OCR - Extract data from KTP image
+     * Extract text from a file using Google Vision (primary) or Tesseract (fallback).
+     * Supports both images and PDFs.
+     *
+     * @param string $filePath  Absolute path to the file
+     * @param string $lang      Language hint for Tesseract fallback ('ind' or 'eng')
+     * @return string|null
+     */
+    private function getTextFromFile(string $filePath, string $lang = 'ind'): ?string
+    {
+        // --- Primary: Google Cloud Vision ---
+        $vision = new \App\Services\GoogleVisionService();
+        if ($vision->isAvailable()) {
+            \Log::info('Using Google Vision OCR for: ' . basename($filePath));
+            $text = $vision->extractText($filePath);
+            if (!empty($text)) {
+                \Log::info('Google Vision OCR success, length: ' . strlen($text));
+                return $text;
+            }
+            \Log::warning('Google Vision returned empty text, falling back to Tesseract');
+        }
+
+        // --- Fallback: Tesseract ---
+        $mimeType = mime_content_type($filePath);
+        if ($mimeType === 'application/pdf') {
+            \Log::warning('Tesseract cannot process PDF, skipping fallback');
+            return null;
+        }
+
+        if (!$this->isTesseractAvailable()) {
+            \Log::warning('Tesseract not available');
+            return null;
+        }
+
+        \Log::info('Using Tesseract OCR fallback for: ' . basename($filePath));
+        $processedPath = $this->preprocessImage($filePath);
+        $results = [];
+
+        foreach ([3, 4, 6, 11] as $psm) {
+            try {
+                $text = \OnePointHub\LaravelOcr\Facades\Ocr::scan($processedPath, $lang, $psm);
+                if (!empty($text)) {
+                    $results[] = ['text' => $text, 'length' => strlen($text)];
+                }
+            } catch (\Exception $e) {
+                \Log::warning("Tesseract PSM $psm failed: " . $e->getMessage());
+            }
+        }
+
+        if ($processedPath !== $filePath) {
+            @unlink($processedPath);
+        }
+
+        if (empty($results)) {
+            return null;
+        }
+
+        usort($results, fn($a, $b) => $b['length'] - $a['length']);
+        return $results[0]['text'];
+    }
+
+    /**
+     * Process KTP OCR - Extract data from KTP image or PDF
      */
     private function processKtpOcr($image)
     {
         try {
-            // Get the real path of uploaded file BEFORE storing
+            // Resolve file path
             $uploadedPath = $image->getRealPath();
-            \Log::info('Uploaded file real path: ' . $uploadedPath);
-            \Log::info('Uploaded file exists: ' . (file_exists($uploadedPath) ? 'YES' : 'NO'));
-            
-            // If uploaded file exists, use it directly for OCR
             if (file_exists($uploadedPath)) {
-                \Log::info('Using uploaded file directly for OCR');
                 $fullPath = $uploadedPath;
                 $needsCleanup = false;
             } else {
-                // Fallback: Try to store and retrieve
-                $tempPath = $image->store('temp', 'local');
-                \Log::info('File stored at Laravel path: ' . $tempPath);
-                
-                // Convert path separators
-                $tempPath = str_replace('/', DIRECTORY_SEPARATOR, $tempPath);
+                $tempPath = str_replace('/', DIRECTORY_SEPARATOR, $image->store('temp', 'local'));
                 $fullPath = storage_path('app' . DIRECTORY_SEPARATOR . $tempPath);
                 $needsCleanup = true;
-                
-                \Log::info('Stored file path: ' . $fullPath);
-                \Log::info('Stored file exists: ' . (file_exists($fullPath) ? 'YES' : 'NO'));
-                
-                if (!file_exists($fullPath)) {
-                    return [
-                        'nik' => '',
-                        'nama' => '',
-                        'tempat_lahir' => '',
-                        'tanggal_lahir' => '',
-                        'alamat' => '',
-                        'error' => 'File tidak dapat diproses. Silakan coba lagi.'
-                    ];
-                }
             }
-            
-            \Log::info('Processing KTP OCR for file: ' . $fullPath);
-            
-            // Preprocess image for better OCR results
-            $processedPath = $this->preprocessImage($fullPath);
-            
-            // Perform OCR
-            try {
-                // Check if Tesseract is available and set path
-                if (!$this->isTesseractAvailable()) {
-                    \Log::warning('Tesseract OCR not available');
-                    
-                    // Clean up
-                    if ($processedPath !== $fullPath) {
-                        @unlink($processedPath);
-                    }
-                    
-                    return [
-                        'nik' => '',
-                        'nama' => '',
-                        'tempat_lahir' => '',
-                        'tanggal_lahir' => '',
-                        'alamat' => '',
-                        'error' => 'Tesseract OCR belum terinstall di server. Silakan isi data secara manual.'
-                    ];
-                }
-                
-                // Use Facade OCR with Indonesian language
-                \Log::info('Running OCR with multiple PSM modes for best results');
-                
-                // Try multiple PSM modes that work well for KTP
-                // PSM 3 = Fully automatic page segmentation (best for full page)
-                // PSM 4 = Assume a single column of text of variable sizes (good for forms)
-                // PSM 6 = Assume a single uniform block of text (default)
-                // PSM 11 = Sparse text. Find as much text as possible in no particular order
-                
-                $results = [];
-                
-                // Try processed image with different PSM modes
-                foreach ([3, 4, 6, 11] as $psm) {
-                    try {
-                        $text = Ocr::scan($processedPath, 'ind', $psm);
-                        $results[] = [
-                            'text' => $text,
-                            'label' => "processed PSM $psm",
-                            'length' => strlen($text)
-                        ];
-                        \Log::info("PSM $psm result length: " . strlen($text));
-                    } catch (\Exception $e) {
-                        \Log::warning("PSM $psm failed: " . $e->getMessage());
-                    }
-                }
-                
-                // Try original image with PSM 3 and 4
-                foreach ([3, 4] as $psm) {
-                    try {
-                        $text = Ocr::scan($fullPath, 'ind', $psm);
-                        $results[] = [
-                            'text' => $text,
-                            'label' => "original PSM $psm",
-                            'length' => strlen($text)
-                        ];
-                        \Log::info("Original PSM $psm result length: " . strlen($text));
-                    } catch (\Exception $e) {
-                        \Log::warning("Original PSM $psm failed: " . $e->getMessage());
-                    }
-                }
-                
-                if (empty($results)) {
-                    throw new \Exception('All OCR attempts failed');
-                }
-                
-                // Score each result based on quality indicators
-                foreach ($results as &$result) {
-                    $score = $result['length']; // Base score is length
-                    
-                    // Bonus for NIK (16 digits) - very important
-                    if (preg_match('/\b\d{16}\b/', $result['text'])) {
-                        $score += 200;
-                        \Log::info($result['label'] . ' has NIK (+200)');
-                    }
-                    
-                    // Bonus for date pattern
-                    if (preg_match('/\d{1,2}[-\/]\d{1,2}[-\/]\d{4}/', $result['text'])) {
-                        $score += 100;
-                        \Log::info($result['label'] . ' has date (+100)');
-                    }
-                    
-                    // Bonus for common KTP keywords
-                    $keywords = ['NIK', 'Nama', 'Alamat', 'Lahir', 'Pekerjaan', 'Agama'];
-                    foreach ($keywords as $keyword) {
-                        if (stripos($result['text'], $keyword) !== false) {
-                            $score += 20;
-                        }
-                    }
-                    
-                    // Bonus for RT/RW pattern (common in Indonesian addresses)
-                    if (preg_match('/RT[\/\s]*\d+[\/\s]*RW[\/\s]*\d+/i', $result['text'])) {
-                        $score += 50;
-                        \Log::info($result['label'] . ' has RT/RW (+50)');
-                    }
-                    
-                    $result['score'] = $score;
-                }
-                
-                // Sort by score (highest first)
-                usort($results, function($a, $b) {
-                    return $b['score'] - $a['score'];
-                });
-                
-                $bestResult = $results[0];
-                $text = $bestResult['text'];
-                
-                \Log::info('Using best result: ' . $bestResult['label'] . ' (score: ' . $bestResult['score'] . ', length: ' . $bestResult['length'] . ')');
-                \Log::info('Final KTP OCR Text: ' . $text);
-                
-            } catch (\Exception $ocrException) {
-                \Log::error('OCR completely failed: ' . $ocrException->getMessage());
-                
-                // Clean up
-                if ($processedPath !== $fullPath) {
-                    @unlink($processedPath);
-                }
-                
-                return [
-                    'nik' => '',
-                    'nama' => '',
-                    'tempat_lahir' => '',
-                    'tanggal_lahir' => '',
-                    'alamat' => '',
-                    'error' => 'OCR gagal memproses gambar. Pastikan foto KTP jelas dan tidak blur.'
-                ];
+
+            if (!file_exists($fullPath)) {
+                return ['nik' => '', 'nama' => '', 'tempat_lahir' => '', 'tanggal_lahir' => '', 'alamat' => '',
+                        'error' => 'File tidak dapat diproses. Silakan coba lagi.'];
             }
-            
-            // Parse the extracted text
-            $data = $this->parseKtpText($text);
-            
-            // Clean up temporary files
-            if ($processedPath !== $fullPath) {
-                @unlink($processedPath);
+
+            \Log::info('Processing KTP OCR for: ' . basename($fullPath));
+
+            // Extract text via Google Vision (primary) or Tesseract (fallback)
+            $text = $this->getTextFromFile($fullPath, 'ind');
+
+            if ($needsCleanup) {
+                @unlink($fullPath);
             }
-            
-            return $data;
-            
+
+            if (empty($text)) {
+                return ['nik' => '', 'nama' => '', 'tempat_lahir' => '', 'tanggal_lahir' => '', 'alamat' => '',
+                        'error' => 'OCR tidak dapat mengekstrak teks. Pastikan file jelas dan tidak blur.'];
+            }
+
+            return $this->parseKtpText($text);
+
         } catch (\Exception $e) {
             \Log::error('KTP OCR Error: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
-            
+            return ['nik' => '', 'nama' => '', 'tempat_lahir' => '', 'tanggal_lahir' => '', 'alamat' => '',
+                    'error' => 'Terjadi kesalahan: ' . $e->getMessage()];
+        }
+    }
+    
+    /**
+     * Check if Tesseract is available
             return [
                 'nik' => '',
                 'nama' => '',
@@ -1105,45 +1181,12 @@ class CustomerManagementController extends Controller
     private function performOcr($imagePath)
     {
         try {
-            // Check if Tesseract is available
-            if (!$this->isTesseractAvailable()) {
-                throw new \Exception('Tesseract OCR not available');
+            // Try Google Vision first
+            $text = $this->getTextFromFile($imagePath, 'eng');
+            if (!empty($text)) {
+                return $text;
             }
-
-            // Preprocess image for better OCR
-            $processedPath = $this->preprocessImage($imagePath);
-
-            // Try multiple PSM modes for best results
-            $results = [];
-            foreach ([3, 4, 6] as $psm) {
-                try {
-                    $text = Ocr::scan($processedPath, 'eng', $psm);
-                    $results[] = [
-                        'text' => $text,
-                        'length' => strlen($text),
-                        'psm' => $psm
-                    ];
-                } catch (\Exception $e) {
-                    \Log::warning("PSM $psm failed: " . $e->getMessage());
-                }
-            }
-
-            // Clean up processed image if different from original
-            if ($processedPath !== $imagePath) {
-                @unlink($processedPath);
-            }
-
-            if (empty($results)) {
-                throw new \Exception('All OCR attempts failed');
-            }
-
-            // Pick best result (longest text)
-            usort($results, function($a, $b) {
-                return $b['length'] - $a['length'];
-            });
-
-            return $results[0]['text'];
-
+            throw new \Exception('OCR returned empty result');
         } catch (\Exception $e) {
             \Log::error('performOcr error: ' . $e->getMessage());
             throw $e;
@@ -1275,197 +1318,47 @@ class CustomerManagementController extends Controller
     }
 
     /**
-     * Process Passport OCR - Extract data from Passport image
+     * Process Passport OCR - Extract data from Passport image or PDF
      */
     private function processPassportOcr($image)
     {
         try {
-            // Get the real path of uploaded file BEFORE storing
+            // Resolve file path
             $uploadedPath = $image->getRealPath();
-            \Log::info('Uploaded file real path: ' . $uploadedPath);
-            \Log::info('Uploaded file exists: ' . (file_exists($uploadedPath) ? 'YES' : 'NO'));
-            
-            // If uploaded file exists, use it directly for OCR
             if (file_exists($uploadedPath)) {
-                \Log::info('Using uploaded file directly for OCR');
                 $fullPath = $uploadedPath;
                 $needsCleanup = false;
             } else {
-                // Fallback: Try to store and retrieve
-                $tempPath = $image->store('temp', 'local');
-                \Log::info('File stored at Laravel path: ' . $tempPath);
-                
-                // Convert path separators
-                $tempPath = str_replace('/', DIRECTORY_SEPARATOR, $tempPath);
+                $tempPath = str_replace('/', DIRECTORY_SEPARATOR, $image->store('temp', 'local'));
                 $fullPath = storage_path('app' . DIRECTORY_SEPARATOR . $tempPath);
                 $needsCleanup = true;
-                
-                \Log::info('Stored file path: ' . $fullPath);
-                \Log::info('Stored file exists: ' . (file_exists($fullPath) ? 'YES' : 'NO'));
-                
-                if (!file_exists($fullPath)) {
-                    return [
-                        'nomor' => '',
-                        'nama' => '',
-                        'tanggal_lahir' => '',
-                        'tanggal_kadaluarsa' => '',
-                        'kewarganegaraan' => '',
-                        'error' => 'File tidak dapat diproses. Silakan coba lagi.'
-                    ];
-                }
             }
-            
-            \Log::info('Processing Passport OCR for file: ' . $fullPath);
-            
-            // Preprocess image for better OCR results
-            $processedPath = $this->preprocessImage($fullPath);
-            
-            // Perform OCR
-            try {
-                // Check if Tesseract is available
-                if (!$this->isTesseractAvailable()) {
-                    \Log::warning('Tesseract OCR not available');
-                    
-                    // Clean up
-                    if ($processedPath !== $fullPath) {
-                        @unlink($processedPath);
-                    }
-                    
-                    return [
-                        'nomor' => '',
-                        'nama' => '',
-                        'tanggal_lahir' => '',
-                        'tanggal_kadaluarsa' => '',
-                        'kewarganegaraan' => '',
-                        'error' => 'Tesseract OCR belum terinstall di server. Silakan isi data secara manual.'
-                    ];
-                }
-                
-                // Use Facade OCR with English language (passport is in English)
-                \Log::info('Running Passport OCR with multiple PSM modes for best results');
-                
-                // Try multiple PSM modes for passport
-                // PSM 3 = Fully automatic page segmentation
-                // PSM 4 = Assume a single column of text
-                // PSM 6 = Assume a single uniform block of text
-                
-                $results = [];
-                
-                // Try processed image with different PSM modes
-                foreach ([3, 4, 6] as $psm) {
-                    try {
-                        $text = Ocr::scan($processedPath, 'eng', $psm);
-                        $results[] = [
-                            'text' => $text,
-                            'label' => "processed PSM $psm",
-                            'length' => strlen($text)
-                        ];
-                        \Log::info("PSM $psm result length: " . strlen($text));
-                    } catch (\Exception $e) {
-                        \Log::warning("PSM $psm failed: " . $e->getMessage());
-                    }
-                }
-                
-                // Try original image with PSM 3
-                try {
-                    $text = Ocr::scan($fullPath, 'eng', 3);
-                    $results[] = [
-                        'text' => $text,
-                        'label' => "original PSM 3",
-                        'length' => strlen($text)
-                    ];
-                    \Log::info("Original PSM 3 result length: " . strlen($text));
-                } catch (\Exception $e) {
-                    \Log::warning("Original PSM 3 failed: " . $e->getMessage());
-                }
-                
-                if (empty($results)) {
-                    throw new \Exception('All OCR attempts failed');
-                }
-                
-                // Score each result based on quality indicators
-                foreach ($results as &$result) {
-                    $score = $result['length']; // Base score is length
-                    
-                    // Bonus for MRZ pattern (P<IDN or P<)
-                    if (preg_match('/P<[A-Z]{3}/', $result['text'])) {
-                        $score += 300;
-                        \Log::info($result['label'] . ' has MRZ pattern (+300)');
-                    }
-                    
-                    // Bonus for passport number pattern
-                    if (preg_match('/[A-Z]\d{7,8}/', $result['text'])) {
-                        $score += 100;
-                        \Log::info($result['label'] . ' has passport number (+100)');
-                    }
-                    
-                    // Bonus for date pattern
-                    if (preg_match('/\d{6}/', $result['text'])) {
-                        $score += 50;
-                    }
-                    
-                    // Bonus for common passport keywords
-                    $keywords = ['PASSPORT', 'REPUBLIC', 'INDONESIA', 'NATIONALITY', 'DATE'];
-                    foreach ($keywords as $keyword) {
-                        if (stripos($result['text'], $keyword) !== false) {
-                            $score += 20;
-                        }
-                    }
-                    
-                    $result['score'] = $score;
-                }
-                
-                // Sort by score (highest first)
-                usort($results, function($a, $b) {
-                    return $b['score'] - $a['score'];
-                });
-                
-                $bestResult = $results[0];
-                $text = $bestResult['text'];
-                
-                \Log::info('Using best result: ' . $bestResult['label'] . ' (score: ' . $bestResult['score'] . ', length: ' . $bestResult['length'] . ')');
-                \Log::info('Final Passport OCR Text: ' . $text);
-                
-            } catch (\Exception $ocrException) {
-                \Log::error('Passport OCR completely failed: ' . $ocrException->getMessage());
-                
-                // Clean up
-                if ($processedPath !== $fullPath) {
-                    @unlink($processedPath);
-                }
-                
-                return [
-                    'nomor' => '',
-                    'nama' => '',
-                    'tanggal_lahir' => '',
-                    'tanggal_kadaluarsa' => '',
-                    'kewarganegaraan' => '',
-                    'error' => 'OCR gagal memproses gambar. Pastikan foto passport jelas dan tidak blur.'
-                ];
+
+            if (!file_exists($fullPath)) {
+                return ['nomor' => '', 'nama' => '', 'tanggal_lahir' => '', 'tanggal_kadaluarsa' => '', 'kewarganegaraan' => '',
+                        'error' => 'File tidak dapat diproses. Silakan coba lagi.'];
             }
-            
-            // Parse the extracted text
-            $data = $this->parsePassportText($text);
-            
-            // Clean up temporary files
-            if ($processedPath !== $fullPath) {
-                @unlink($processedPath);
+
+            \Log::info('Processing Passport OCR for: ' . basename($fullPath));
+
+            // Extract text via Google Vision (primary) or Tesseract (fallback)
+            $text = $this->getTextFromFile($fullPath, 'eng');
+
+            if ($needsCleanup) {
+                @unlink($fullPath);
             }
-            
-            return $data;
-            
+
+            if (empty($text)) {
+                return ['nomor' => '', 'nama' => '', 'tanggal_lahir' => '', 'tanggal_kadaluarsa' => '', 'kewarganegaraan' => '',
+                        'error' => 'OCR tidak dapat mengekstrak teks. Pastikan file jelas dan tidak blur.'];
+            }
+
+            return $this->parsePassportText($text);
+
         } catch (\Exception $e) {
             \Log::error('Passport OCR Error: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
-            
-            return [
-                'nomor' => '',
-                'nama' => '',
-                'tanggal_lahir' => '',
-                'tanggal_kadaluarsa' => '',
-                'kewarganegaraan' => '',
-                'error' => 'Terjadi kesalahan saat memproses gambar: ' . $e->getMessage()
-            ];
+            return ['nomor' => '', 'nama' => '', 'tanggal_lahir' => '', 'tanggal_kadaluarsa' => '', 'kewarganegaraan' => '',
+                    'error' => 'Terjadi kesalahan: ' . $e->getMessage()];
         }
     }
     

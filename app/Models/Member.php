@@ -33,6 +33,11 @@ class Member extends Model
         'passport_tanggal_lahir',
         'passport_tanggal_kadaluarsa',
         'passport_kewarganegaraan',
+        'passport_title',
+        'passport_gender',
+        'passport_tanggal_terbit',
+        'passport_kantor_terbit',
+        'passport_tempat_lahir',
         // Visa fields
         'visa_foto',
         'visa_nomor',
@@ -74,7 +79,13 @@ class Member extends Model
         'room_preference',
         'special_requests',
         'gender',
-        'family_members'
+        'family_members',
+        // Dokumen manifest tambahan
+        'akta_lahir_foto',
+        'kartu_keluarga_foto',
+        'buku_nikah_foto',
+        'vaksin_foto',
+        'bpjs_foto',
     ];
 
     protected $casts = [

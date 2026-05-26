@@ -64,6 +64,12 @@
     <script src="<?php echo e(asset('js/desktop-responsive-scaling.js')); ?>"></script>
     
     <script src="<?php echo e(asset('js/alpine-helpers.js')); ?>"></script>
+    <script>
+        // Global helper: format number with thousand separator
+        function formatNumber(num) {
+            return new Intl.NumberFormat('id-ID').format(num || 0);
+        }
+    </script>
     <script src="<?php echo e(asset('js/production-form-fix.js')); ?>"></script>
     <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">

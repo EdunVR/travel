@@ -42,4 +42,8 @@ return [
         'url' => env('FONNTE_URL', 'https://api.fonnte.com/send'),
     ],
 
+    'google_vision' => [
+        'api_key' => env('GOOGLE_VISION_API_KEY'),
+    ],
+
 ];

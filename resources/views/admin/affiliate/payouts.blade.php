@@ -123,8 +123,8 @@
                         <td class="px-4 py-3 text-center">
                             @if($payout->status === 'pending')
                             <div class="flex justify-center gap-1">
-                                <form action="{{ route('admin.inventaris.affiliate.payout.approve', $payout) }}" method="POST">
-                                    @csrf @method('PATCH')
+                                <form action="{{ route('admin.inventaris.affiliate.payouts.approve', $payout) }}" method="POST">
+                                    @csrf
                                     <button type="submit" onclick="return confirm('Approve payout ini?')"
                                             class="p-1.5 rounded-lg bg-green-50 border border-green-200 text-green-600 hover:bg-green-100 transition" title="Approve">
                                         <i class="fas fa-check text-xs"></i>
@@ -165,7 +165,7 @@
     <div class="bg-white rounded-2xl shadow-float w-full max-w-sm mx-4 p-6">
         <h3 class="font-bold text-slate-900 mb-4">Tolak Withdraw</h3>
         <form id="rejectPayoutForm" method="POST">
-            @csrf @method('PATCH')
+            @csrf
             <div class="mb-4">
                 <label class="block text-sm font-medium text-slate-700 mb-1">Alasan Penolakan</label>
                 <textarea name="reason" rows="3"
@@ -188,7 +188,7 @@
 
 <script>
 function rejectPayout(id) {
-    document.getElementById('rejectPayoutForm').action = '{{ url("admin/inventaris/affiliate/manage/payout") }}/' + id + '/reject';
+    document.getElementById('rejectPayoutForm').action = '{{ url("admin/inventaris/affiliate/payouts") }}/' + id + '/reject';
     document.getElementById('rejectPayoutModal').classList.remove('hidden');
 }
 </script>

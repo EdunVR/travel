@@ -258,6 +258,10 @@ class JamaahBooking extends Model
             + ($this->equipment_cost ?? 0) + ($this->upgrade_cost ?? 0)
             - ($this->discount_amount ?? 0);
 
+        // Add BookingAddon items (perlengkapan dari website)
+        $addonsTotal = $this->addons()->sum(\DB::raw('harga * qty'));
+        $grandTotal += $addonsTotal;
+
         // Add handling fee if enabled
         if ($this->travelPackage && $this->travelPackage->include_handling_lounge_fee && $this->travelPackage->handling_lounge_fee_amount > 0) {
             $grandTotal += $this->travelPackage->handling_lounge_fee_amount;

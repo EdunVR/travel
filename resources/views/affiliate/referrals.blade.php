@@ -53,6 +53,7 @@
                     <tr>
                         <th class="text-left px-4 py-3 font-semibold text-gray-600">Paket</th>
                         <th class="text-left px-4 py-3 font-semibold text-gray-600">Customer</th>
+                        <th class="text-center px-4 py-3 font-semibold text-gray-600">Pax</th>
                         <th class="text-right px-4 py-3 font-semibold text-gray-600">Order Amount</th>
                         <th class="text-right px-4 py-3 font-semibold text-gray-600">Komisi</th>
                         <th class="text-center px-4 py-3 font-semibold text-gray-600">Tanggal</th>
@@ -70,11 +71,19 @@
                             <div class="text-gray-700">{{ $ref->booking->member->nama ?? $ref->booking->member->full_name ?? 'N/A' }}</div>
                             <div class="text-xs text-gray-400">{{ $ref->booking->member->telepon ?? '' }}</div>
                         </td>
+                        <td class="px-4 py-3 text-center text-gray-600">
+                            {{ $ref->total_pax ?? 1 }}
+                        </td>
                         <td class="px-4 py-3 text-right text-gray-600">
                             Rp {{ number_format($ref->order_amount, 0, ',', '.') }}
                         </td>
                         <td class="px-4 py-3 text-right font-bold text-green-600">
                             Rp {{ number_format($ref->commission_amount, 0, ',', '.') }}
+                            @if(($ref->total_pax ?? 1) > 1)
+                            <div class="text-xs text-gray-400 font-normal mt-0.5">
+                                Rp {{ number_format($ref->commission_amount / ($ref->total_pax ?? 1), 0, ',', '.') }} x {{ $ref->total_pax }} pax
+                            </div>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-center text-gray-600">
                             {{ $ref->order_date->format('d M Y') }}
@@ -102,7 +111,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="text-center py-12 text-gray-400">
+                        <td colspan="8" class="text-center py-12 text-gray-400">
                             <i class="fas fa-inbox text-4xl mb-3 block"></i>
                             Belum ada referral
                         </td>

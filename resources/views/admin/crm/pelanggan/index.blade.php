@@ -371,11 +371,38 @@
             </div>
 
             {{-- Tab Content: Manifest --}}
+            {{-- Sesuai dengan form manifest publik: Passport, KTP/Akta Lahir (usia), dokumen tambahan, anggota keluarga --}}
             <div x-show="activeTab === 'manifest'" class="space-y-6">
-              {{-- Pas Foto --}}
+
+              {{-- Tandai sebagai Jamaah (paling atas) --}}
+              <div class="border border-primary-200 bg-primary-50 rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <label class="block text-sm font-semibold text-primary-800">
+                      <i class='bx bx-mosque'></i> Status Jamaah
+                    </label>
+                    <p class="text-xs text-primary-600 mt-0.5">Aktifkan untuk mengisi data manifest perjalanan</p>
+                  </div>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" x-model="formData.is_jamaah" 
+                           class="rounded border-slate-300 text-primary-600 focus:ring-primary-200 w-5 h-5">
+                    <span class="text-sm font-semibold text-primary-700">Tandai sebagai Jamaah</span>
+                  </label>
+                </div>
+              </div>
+
+              {{-- Info usia jamaah --}}
+              <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                <i class='bx bx-info-circle'></i>
+                <strong>Catatan:</strong> Form KTP/Akta Lahir ditampilkan berdasarkan usia jamaah.
+                Usia dihitung dari <strong>Tanggal Lahir KTP</strong> di bawah.
+                Anak &lt; 17 tahun: KTP disembunyikan, Akta Lahir wajib.
+              </div>
+
+              {{-- Pas Foto (Opsional) --}}
               <div class="border border-slate-200 rounded-lg p-4">
                 <label class="block text-sm font-medium text-slate-700 mb-3">
-                  <i class='bx bx-user-circle'></i> Pas Foto
+                  <i class='bx bx-user-circle'></i> Pas Foto 4x6 <span class="text-xs text-slate-400">(opsional)</span>
                 </label>
                 <div class="flex items-start gap-4">
                   <div class="flex-shrink-0">
@@ -396,10 +423,11 @@
                 </div>
               </div>
 
-              {{-- Foto KTP --}}
-              <div class="border border-slate-200 rounded-lg p-4">
+              {{-- Foto KTP (hanya untuk dewasa >= 17 tahun) --}}
+              <div class="border border-slate-200 rounded-lg p-4" x-show="getAgeFromKtp() === null || getAgeFromKtp() >= 17">
                 <label class="block text-sm font-medium text-slate-700 mb-3">
-                  <i class='bx bx-id-card'></i> Foto KTP
+                  <i class='bx bx-id-card'></i> KTP <span class="text-red-500 text-xs">*</span>
+                  <span class="text-xs text-slate-400 font-normal">(dewasa ≥ 17 tahun)</span>
                 </label>
                 <div class="space-y-4">
                   <div class="flex items-start gap-4">
@@ -408,30 +436,33 @@
                         <template x-if="formData.ktp_foto_preview">
                           <img :src="formData.ktp_foto_preview" class="w-full h-full object-cover">
                         </template>
-                        <template x-if="!formData.ktp_foto_preview">
+                        <template x-if="formData.ktp_foto_is_pdf">
+                          <div class="text-center p-2">
+                            <i class='bx bxs-file-pdf text-4xl text-red-500'></i>
+                            <p class="text-xs text-slate-500 mt-1">PDF terupload</p>
+                          </div>
+                        </template>
+                        <template x-if="!formData.ktp_foto_preview && !formData.ktp_foto_is_pdf">
                           <i class='bx bx-image text-4xl text-slate-400'></i>
                         </template>
                       </div>
+                      <template x-if="(formData.ktp_foto_preview || formData.ktp_foto_is_pdf) && editMode">
+                        <div class="flex gap-1 mt-2">
+                          <a :href="formData.ktp_foto_preview" target="_blank" class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"><i class='bx bx-download'></i> Unduh</a>
+                          <button type="button" @click="deleteAdminDocument('ktp_foto')" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"><i class='bx bx-trash'></i> Hapus</button>
+                        </div>
+                      </template>
                     </div>
                     <div class="flex-1">
-                      <input type="file" @change="handleKtpUpload($event)" accept="image/*" 
+                      <input type="file" @change="handleKtpUpload($event)" accept="image/*,.pdf" 
                              class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
-                      <p class="text-xs text-slate-500 mt-2">Format: JPG, PNG. Max 2MB. Data akan diekstrak otomatis.</p>
+                      <p class="text-xs text-slate-500 mt-2">Format: JPG, PNG, PDF. Max 5MB.</p>
                       <div x-show="ktpProcessing" class="mt-2 text-sm text-primary-600">
                         <i class='bx bx-loader-alt bx-spin'></i> Memproses OCR...
                       </div>
                     </div>
-                  </div>
-                  
-                  {{-- KTP Form Fields --}}
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-200">
                     <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">NIK</label>
-                      <input type="text" x-model="formData.ktp_nik" 
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Nama</label>
+                      <label class="block text-xs font-medium text-slate-600 mb-1">Nama di KTP</label>
                       <input type="text" x-model="formData.ktp_nama" 
                              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
                     </div>
@@ -442,11 +473,11 @@
                     </div>
                     <div>
                       <label class="block text-xs font-medium text-slate-600 mb-1">Tanggal Lahir</label>
-                      <input type="date" x-model="formData.ktp_tanggal_lahir" 
+                      <input type="date" x-model="formData.ktp_tanggal_lahir" @change="$forceUpdate()"
                              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
                     </div>
                     <div class="md:col-span-2">
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Alamat</label>
+                      <label class="block text-xs font-medium text-slate-600 mb-1">Alamat KTP</label>
                       <textarea x-model="formData.ktp_alamat" rows="2"
                                 class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500"></textarea>
                     </div>
@@ -454,34 +485,81 @@
                 </div>
               </div>
 
-              {{-- Foto Passport --}}
+              {{-- Akta Lahir (hanya untuk anak < 17 tahun) --}}
+              <div class="border border-orange-200 bg-orange-50 rounded-lg p-4" x-show="getAgeFromKtp() !== null && getAgeFromKtp() < 17">
+                <div class="flex items-center gap-2 mb-3">
+                  <i class='bx bx-file text-orange-600'></i>
+                  <label class="block text-sm font-medium text-orange-800">
+                    Akta Lahir <span class="text-red-500 text-xs">*</span>
+                    <span class="text-xs text-orange-600 font-normal">(anak &lt; 17 tahun — KTP tidak diperlukan)</span>
+                  </label>
+                </div>
+                <div class="bg-orange-100 border border-orange-300 rounded-lg p-2 mb-3 text-xs text-orange-800">
+                  <i class='bx bx-info-circle'></i>
+                  Jamaah ini berusia <strong x-text="getAgeFromKtp() + ' tahun'"></strong>. KTP tidak diperlukan, upload Akta Lahir sebagai gantinya.
+                </div>
+                <div class="flex items-start gap-4">
+                  <div class="flex-shrink-0">
+                    <div class="w-48 h-32 border-2 border-dashed border-orange-300 rounded-lg overflow-hidden bg-white flex items-center justify-center">
+                      <template x-if="formData.akta_lahir_preview">
+                        <img :src="formData.akta_lahir_preview" class="w-full h-full object-cover">
+                      </template>
+                      <template x-if="!formData.akta_lahir_preview">
+                        <i class='bx bx-file text-4xl text-orange-300'></i>
+                      </template>
+                    </div>
+                  </div>
+                  <div class="flex-1">
+                    <input type="file" @change="handleAktaLahirUpload($event)" accept="image/*,.pdf" 
+                           class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+                    <p class="text-xs text-slate-500 mt-2">Format: JPG, PNG, PDF. Max 5MB.</p>
+                    <div class="mt-3">
+                      <label class="block text-xs font-medium text-slate-600 mb-1">Tanggal Lahir (dari Akta)</label>
+                      <input type="date" x-model="formData.ktp_tanggal_lahir" @change="$forceUpdate()"
+                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {{-- Passport --}}
               <div class="border border-slate-200 rounded-lg p-4">
                 <label class="block text-sm font-medium text-slate-700 mb-3">
-                  <i class='bx bx-book'></i> Foto Passport
+                  <i class='bx bx-book'></i> Passport <span class="text-red-500 text-xs">*</span>
                 </label>
                 <div class="space-y-4">
                   <div class="flex items-start gap-4">
                     <div class="flex-shrink-0">
                       <div class="w-48 h-32 border-2 border-dashed border-slate-300 rounded-lg overflow-hidden bg-slate-50 flex items-center justify-center">
-                        <template x-if="formData.passport_foto_preview">
+                        <template x-if="formData.passport_foto_preview && !formData.passport_foto_preview.endsWith('.pdf')">
                           <img :src="formData.passport_foto_preview" class="w-full h-full object-cover">
+                        </template>
+                        <template x-if="formData.passport_foto_preview && formData.passport_foto_preview.endsWith('.pdf')">
+                          <div class="text-center p-2">
+                            <i class='bx bxs-file-pdf text-4xl text-red-500'></i>
+                            <p class="text-xs text-slate-500 mt-1">PDF tersimpan</p>
+                          </div>
                         </template>
                         <template x-if="!formData.passport_foto_preview">
                           <i class='bx bx-image text-4xl text-slate-400'></i>
                         </template>
                       </div>
+                      <template x-if="formData.passport_foto_preview && editMode">
+                        <div class="flex gap-1 mt-2">
+                          <a :href="formData.passport_foto_preview" target="_blank" class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"><i class='bx bx-download'></i> Unduh</a>
+                          <button type="button" @click="deleteAdminDocument('passport_foto')" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"><i class='bx bx-trash'></i> Hapus</button>
+                        </div>
+                      </template>
                     </div>
                     <div class="flex-1">
-                      <input type="file" @change="handlePassportUpload($event)" accept="image/*" 
+                      <input type="file" @change="handlePassportUpload($event)" accept="image/*,.pdf" 
                              class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
-                      <p class="text-xs text-slate-500 mt-2">Format: JPG, PNG. Max 2MB. Data akan diekstrak otomatis.</p>
+                      <p class="text-xs text-slate-500 mt-2">Format: JPG, PNG, PDF. Max 5MB.</p>
                       <div x-show="passportProcessing" class="mt-2 text-sm text-primary-600">
                         <i class='bx bx-loader-alt bx-spin'></i> Memproses OCR...
                       </div>
                     </div>
                   </div>
-                  
-                  {{-- Passport Form Fields --}}
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-200">
                     <div>
                       <label class="block text-xs font-medium text-slate-600 mb-1">Nomor Passport</label>
@@ -489,8 +567,33 @@
                              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
                     </div>
                     <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Nama</label>
+                      <label class="block text-xs font-medium text-slate-600 mb-1">Nama Lengkap (Full Name)</label>
                       <input type="text" x-model="formData.passport_nama" 
+                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                    </div>
+                    <div>
+                      <label class="block text-xs font-medium text-slate-600 mb-1">Title</label>
+                      <select x-model="formData.passport_title" 
+                              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                        <option value="">-- Pilih --</option>
+                        <option value="MR">MR</option>
+                        <option value="MRS">MRS</option>
+                        <option value="MS">MS</option>
+                        <option value="MSTR">MSTR</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-medium text-slate-600 mb-1">Gender</label>
+                      <select x-model="formData.passport_gender" 
+                              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                        <option value="">-- Pilih --</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-medium text-slate-600 mb-1">Tempat Lahir (Birth City)</label>
+                      <input type="text" x-model="formData.passport_tempat_lahir" 
                              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
                     </div>
                     <div>
@@ -499,7 +602,12 @@
                              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
                     </div>
                     <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Tanggal Kadaluarsa</label>
+                      <label class="block text-xs font-medium text-slate-600 mb-1">Tanggal Terbit (Issued Date)</label>
+                      <input type="date" x-model="formData.passport_tanggal_terbit" 
+                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                    </div>
+                    <div>
+                      <label class="block text-xs font-medium text-slate-600 mb-1">Tanggal Kadaluarsa <span class="text-red-500">*</span></label>
                       <input type="date" x-model="formData.passport_tanggal_kadaluarsa" 
                              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
                     </div>
@@ -508,238 +616,122 @@
                       <input type="text" x-model="formData.passport_kewarganegaraan" 
                              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              {{-- Foto Visa --}}
-              <div class="border border-slate-200 rounded-lg p-4">
-                <label class="block text-sm font-medium text-slate-700 mb-3">
-                  <i class='bx bx-file-blank'></i> Foto Visa
-                </label>
-                <div class="space-y-4">
-                  <div class="flex items-start gap-4">
-                    <div class="flex-shrink-0">
-                      <div class="w-48 h-32 border-2 border-dashed border-slate-300 rounded-lg overflow-hidden bg-slate-50 flex items-center justify-center">
-                        <template x-if="formData.visa_foto_preview">
-                          <img :src="formData.visa_foto_preview" class="w-full h-full object-cover">
-                        </template>
-                        <template x-if="!formData.visa_foto_preview">
-                          <i class='bx bx-image text-4xl text-slate-400'></i>
-                        </template>
-                      </div>
-                    </div>
-                    <div class="flex-1">
-                      <input type="file" @change="handleVisaUpload($event)" accept="image/*" 
-                             class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
-                      <p class="text-xs text-slate-500 mt-2">Format: JPG, PNG. Max 2MB. Data akan diekstrak otomatis.</p>
-                      <div x-show="visaProcessing" class="mt-2 text-sm text-primary-600">
-                        <i class='bx bx-loader-alt bx-spin'></i> Memproses OCR...
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {{-- Visa Form Fields --}}
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-200">
                     <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Nomor Visa</label>
-                      <input type="text" x-model="formData.visa_nomor" 
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Tipe Visa</label>
-                      <input type="text" x-model="formData.visa_tipe" 
-                             placeholder="Tourist, Business, Umrah, dll"
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Tanggal Terbit</label>
-                      <input type="date" x-model="formData.visa_tanggal_terbit" 
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Tanggal Kadaluarsa</label>
-                      <input type="date" x-model="formData.visa_tanggal_kadaluarsa" 
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Negara</label>
-                      <input type="text" x-model="formData.visa_negara" 
-                             placeholder="Saudi Arabia, UAE, dll"
+                      <label class="block text-xs font-medium text-slate-600 mb-1">Kantor Penerbit (Office Issued)</label>
+                      <input type="text" x-model="formData.passport_kantor_terbit" 
                              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
                     </div>
                   </div>
                 </div>
               </div>
 
-              {{-- Foto Tiket --}}
-              <div class="border border-slate-200 rounded-lg p-4">
-                <label class="block text-sm font-medium text-slate-700 mb-3">
-                  <i class='bx bx-plane-alt'></i> Foto Tiket Pesawat
-                </label>
-                <div class="space-y-4">
-                  <div class="flex items-start gap-4">
-                    <div class="flex-shrink-0">
-                      <div class="w-48 h-32 border-2 border-dashed border-slate-300 rounded-lg overflow-hidden bg-slate-50 flex items-center justify-center">
-                        <template x-if="formData.tiket_foto_preview">
-                          <img :src="formData.tiket_foto_preview" class="w-full h-full object-cover">
-                        </template>
-                        <template x-if="!formData.tiket_foto_preview">
-                          <i class='bx bx-image text-4xl text-slate-400'></i>
-                        </template>
-                      </div>
-                    </div>
-                    <div class="flex-1">
-                      <input type="file" @change="handleTiketUpload($event)" accept="image/*" 
-                             class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
-                      <p class="text-xs text-slate-500 mt-2">Format: JPG, PNG, PDF. Max 2MB.</p>
-                    </div>
+              {{-- Dokumen Tambahan (grid 2 kolom) --}}
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {{-- Kartu Keluarga --}}
+                <div class="border border-slate-200 rounded-lg p-4">
+                  <label class="block text-sm font-medium text-slate-700 mb-2">
+                    <i class='bx bx-group'></i> Kartu Keluarga <span class="text-red-500 text-xs">*</span>
+                  </label>
+                  <div class="w-full h-24 border-2 border-dashed border-slate-300 rounded-lg overflow-hidden bg-slate-50 flex items-center justify-center mb-2">
+                    <template x-if="formData.kartu_keluarga_preview && !formData.kartu_keluarga_preview.endsWith('.pdf')">
+                      <img :src="formData.kartu_keluarga_preview" class="w-full h-full object-cover">
+                    </template>
+                    <template x-if="formData.kartu_keluarga_preview && formData.kartu_keluarga_preview.endsWith('.pdf')">
+                      <div class="text-center p-2"><i class='bx bxs-file-pdf text-3xl text-red-500'></i><p class="text-xs text-slate-500">PDF</p></div>
+                    </template>
+                    <template x-if="!formData.kartu_keluarga_preview">
+                      <i class='bx bx-image text-3xl text-slate-400'></i>
+                    </template>
                   </div>
-                  
-                  {{-- Tiket Form Fields --}}
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-200">
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Nomor Tiket</label>
-                      <input type="text" x-model="formData.tiket_nomor" 
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                  <template x-if="formData.kartu_keluarga_preview && editMode">
+                    <div class="flex gap-1 mb-2">
+                      <a :href="formData.kartu_keluarga_preview" target="_blank" class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"><i class='bx bx-download'></i> Unduh</a>
+                      <button type="button" @click="deleteAdminDocument('kartu_keluarga_foto')" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"><i class='bx bx-trash'></i> Hapus</button>
                     </div>
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Maskapai</label>
-                      <input type="text" x-model="formData.tiket_maskapai" 
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
-                    <div class="md:col-span-2">
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Rute</label>
-                      <input type="text" x-model="formData.tiket_rute" 
-                             placeholder="CGK - JED - CGK"
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Tanggal Berangkat</label>
-                      <input type="datetime-local" x-model="formData.tiket_tanggal_berangkat" 
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Tanggal Pulang</label>
-                      <input type="datetime-local" x-model="formData.tiket_tanggal_pulang" 
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
+                  </template>
+                  <input type="file" @change="handleKartuKeluargaUpload($event); if(editMode) uploadAdminDocument('kartu_keluarga_foto', $event.target.files[0])" accept="image/*,.pdf" 
+                         class="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
+                </div>
+
+                {{-- Buku Nikah --}}
+                <div class="border border-slate-200 rounded-lg p-4">
+                  <label class="block text-sm font-medium text-slate-700 mb-2">
+                    <i class='bx bx-book-heart'></i> Buku Nikah <span class="text-xs text-slate-400">(jika menikah)</span>
+                  </label>
+                  <div class="w-full h-24 border-2 border-dashed border-slate-300 rounded-lg overflow-hidden bg-slate-50 flex items-center justify-center mb-2">
+                    <template x-if="formData.buku_nikah_preview && !formData.buku_nikah_preview.endsWith('.pdf')">
+                      <img :src="formData.buku_nikah_preview" class="w-full h-full object-cover">
+                    </template>
+                    <template x-if="formData.buku_nikah_preview && formData.buku_nikah_preview.endsWith('.pdf')">
+                      <div class="text-center p-2"><i class='bx bxs-file-pdf text-3xl text-red-500'></i><p class="text-xs text-slate-500">PDF</p></div>
+                    </template>
+                    <template x-if="!formData.buku_nikah_preview">
+                      <i class='bx bx-image text-3xl text-slate-400'></i>
+                    </template>
                   </div>
+                  <template x-if="formData.buku_nikah_preview && editMode">
+                    <div class="flex gap-1 mb-2">
+                      <a :href="formData.buku_nikah_preview" target="_blank" class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"><i class='bx bx-download'></i> Unduh</a>
+                      <button type="button" @click="deleteAdminDocument('buku_nikah_foto')" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"><i class='bx bx-trash'></i> Hapus</button>
+                    </div>
+                  </template>
+                  <input type="file" @change="handleBukuNikahUpload($event); if(editMode) uploadAdminDocument('buku_nikah_foto', $event.target.files[0])" accept="image/*,.pdf" 
+                         class="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
+                </div>
+
+                {{-- Vaksin Meningitis --}}
+                <div class="border border-slate-200 rounded-lg p-4">
+                  <label class="block text-sm font-medium text-slate-700 mb-2">
+                    <i class='bx bx-injection'></i> Buku Kuning Vaksin <span class="text-xs text-slate-400">(opsional)</span>
+                  </label>
+                  <div class="w-full h-24 border-2 border-dashed border-slate-300 rounded-lg overflow-hidden bg-slate-50 flex items-center justify-center mb-2">
+                    <template x-if="formData.vaksin_preview && !formData.vaksin_preview.endsWith('.pdf')">
+                      <img :src="formData.vaksin_preview" class="w-full h-full object-cover">
+                    </template>
+                    <template x-if="formData.vaksin_preview && formData.vaksin_preview.endsWith('.pdf')">
+                      <div class="text-center p-2"><i class='bx bxs-file-pdf text-3xl text-red-500'></i><p class="text-xs text-slate-500">PDF</p></div>
+                    </template>
+                    <template x-if="!formData.vaksin_preview">
+                      <i class='bx bx-image text-3xl text-slate-400'></i>
+                    </template>
+                  </div>
+                  <template x-if="formData.vaksin_preview && editMode">
+                    <div class="flex gap-1 mb-2">
+                      <a :href="formData.vaksin_preview" target="_blank" class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"><i class='bx bx-download'></i> Unduh</a>
+                      <button type="button" @click="deleteAdminDocument('vaksin_foto')" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"><i class='bx bx-trash'></i> Hapus</button>
+                    </div>
+                  </template>
+                  <input type="file" @change="handleVaksinUpload($event); if(editMode) uploadAdminDocument('vaksin_foto', $event.target.files[0])" accept="image/*,.pdf" 
+                         class="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
+                </div>
+
+                {{-- BPJS --}}
+                <div class="border border-slate-200 rounded-lg p-4">
+                  <label class="block text-sm font-medium text-slate-700 mb-2">
+                    <i class='bx bx-card'></i> BPJS/KIS/ASKES <span class="text-xs text-slate-400">(opsional)</span>
+                  </label>
+                  <div class="w-full h-24 border-2 border-dashed border-slate-300 rounded-lg overflow-hidden bg-slate-50 flex items-center justify-center mb-2">
+                    <template x-if="formData.bpjs_preview && !formData.bpjs_preview.endsWith('.pdf')">
+                      <img :src="formData.bpjs_preview" class="w-full h-full object-cover">
+                    </template>
+                    <template x-if="formData.bpjs_preview && formData.bpjs_preview.endsWith('.pdf')">
+                      <div class="text-center p-2"><i class='bx bxs-file-pdf text-3xl text-red-500'></i><p class="text-xs text-slate-500">PDF</p></div>
+                    </template>
+                    <template x-if="!formData.bpjs_preview">
+                      <i class='bx bx-image text-3xl text-slate-400'></i>
+                    </template>
+                  </div>
+                  <template x-if="formData.bpjs_preview && editMode">
+                    <div class="flex gap-1 mb-2">
+                      <a :href="formData.bpjs_preview" target="_blank" class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"><i class='bx bx-download'></i> Unduh</a>
+                      <button type="button" @click="deleteAdminDocument('bpjs_foto')" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"><i class='bx bx-trash'></i> Hapus</button>
+                    </div>
+                  </template>
+                  <input type="file" @change="handleBpjsUpload($event); if(editMode) uploadAdminDocument('bpjs_foto', $event.target.files[0])" accept="image/*,.pdf" 
+                         class="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
                 </div>
               </div>
-
-              {{-- Foto Asuransi --}}
-              <div class="border border-slate-200 rounded-lg p-4">
-                <label class="block text-sm font-medium text-slate-700 mb-3">
-                  <i class='bx bx-shield'></i> Foto Asuransi Perjalanan
-                </label>
-                <div class="space-y-4">
-                  <div class="flex items-start gap-4">
-                    <div class="flex-shrink-0">
-                      <div class="w-48 h-32 border-2 border-dashed border-slate-300 rounded-lg overflow-hidden bg-slate-50 flex items-center justify-center">
-                        <template x-if="formData.asuransi_foto_preview">
-                          <img :src="formData.asuransi_foto_preview" class="w-full h-full object-cover">
-                        </template>
-                        <template x-if="!formData.asuransi_foto_preview">
-                          <i class='bx bx-image text-4xl text-slate-400'></i>
-                        </template>
-                      </div>
-                    </div>
-                    <div class="flex-1">
-                      <input type="file" @change="handleAsuransiUpload($event)" accept="image/*" 
-                             class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
-                      <p class="text-xs text-slate-500 mt-2">Format: JPG, PNG, PDF. Max 2MB.</p>
-                    </div>
-                  </div>
-                  
-                  {{-- Asuransi Form Fields --}}
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-200">
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Nomor Polis</label>
-                      <input type="text" x-model="formData.asuransi_nomor_polis" 
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Provider</label>
-                      <input type="text" x-model="formData.asuransi_provider" 
-                             placeholder="Allianz, AXA, dll"
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Tanggal Mulai</label>
-                      <input type="date" x-model="formData.asuransi_tanggal_mulai" 
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Tanggal Akhir</label>
-                      <input type="date" x-model="formData.asuransi_tanggal_akhir" 
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {{-- Foto Sertifikat Kesehatan --}}
-              <div class="border border-slate-200 rounded-lg p-4">
-                <label class="block text-sm font-medium text-slate-700 mb-3">
-                  <i class='bx bx-plus-medical'></i> Foto Sertifikat Kesehatan
-                </label>
-                <div class="space-y-4">
-                  <div class="flex items-start gap-4">
-                    <div class="flex-shrink-0">
-                      <div class="w-48 h-32 border-2 border-dashed border-slate-300 rounded-lg overflow-hidden bg-slate-50 flex items-center justify-center">
-                        <template x-if="formData.sertifikat_kesehatan_foto_preview">
-                          <img :src="formData.sertifikat_kesehatan_foto_preview" class="w-full h-full object-cover">
-                        </template>
-                        <template x-if="!formData.sertifikat_kesehatan_foto_preview">
-                          <i class='bx bx-image text-4xl text-slate-400'></i>
-                        </template>
-                      </div>
-                    </div>
-                    <div class="flex-1">
-                      <input type="file" @change="handleSertifikatKesehatanUpload($event)" accept="image/*" 
-                             class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
-                      <p class="text-xs text-slate-500 mt-2">Format: JPG, PNG. Max 2MB. Data akan diekstrak otomatis.</p>
-                      <div x-show="sertifikatKesehatanProcessing" class="mt-2 text-sm text-primary-600">
-                        <i class='bx bx-loader-alt bx-spin'></i> Memproses OCR...
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {{-- Sertifikat Kesehatan Form Fields --}}
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-200">
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Nomor Sertifikat</label>
-                      <input type="text" x-model="formData.sertifikat_kesehatan_nomor" 
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Jenis</label>
-                      <input type="text" x-model="formData.sertifikat_kesehatan_jenis" 
-                             placeholder="Vaksinasi, Medical Check-up, dll"
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Tanggal Terbit</label>
-                      <input type="date" x-model="formData.sertifikat_kesehatan_tanggal_terbit" 
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Tanggal Kadaluarsa</label>
-                      <input type="date" x-model="formData.sertifikat_kesehatan_tanggal_kadaluarsa" 
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
-                    <div class="md:col-span-2">
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Penerbit</label>
-                      <input type="text" x-model="formData.sertifikat_kesehatan_penerbit" 
-                             placeholder="Rumah Sakit, Klinik, dll"
-                             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {{-- Anggota Keluarga --}}
+              {{-- Anggota Keluarga dengan Manifest --}}
               <div class="border border-slate-200 rounded-lg p-4">
                 <div class="flex items-center justify-between mb-3">
                   <label class="block text-sm font-medium text-slate-700">
@@ -821,130 +813,221 @@
                           <span x-text="getFamilyMemberAgeCategory(member.tanggal_lahir).priceInfo"></span>
                         </div>
                       </template>
+
+                      {{-- Form Manifest Anggota Keluarga --}}
+                      <div class="mt-3 border-t border-slate-200 pt-3">
+                        <button type="button" @click="member.showManifest = !member.showManifest"
+                                class="flex items-center gap-2 text-xs font-semibold text-primary-700 hover:text-primary-900">
+                          <i class="bx" :class="member.showManifest ? 'bx-chevron-up' : 'bx-chevron-down'"></i>
+                          <i class='bx bx-id-card'></i>
+                          <span x-text="member.showManifest ? 'Sembunyikan Manifest' : 'Isi Manifest Dokumen'"></span>
+                        </button>
+
+                        <div x-show="member.showManifest" x-transition class="mt-3 space-y-3">
+                          <!-- Passport Anggota -->
+                          <div class="bg-white border border-slate-200 rounded-lg p-3">
+                            <p class="text-xs font-semibold text-slate-700 mb-2"><i class='bx bx-book'></i> Passport</p>
+                            <!-- Upload Passport -->
+                            <div class="border-2 border-dashed border-slate-300 rounded-lg p-3 text-center mb-2 hover:border-primary-400 transition-all">
+                              <input type="file" :id="'member_passport_foto_' + idx" accept="image/*,.pdf" class="hidden"
+                                     @change="handleMemberPassportUpload($event, idx)">
+                              <label :for="'member_passport_foto_' + idx" class="cursor-pointer">
+                                <template x-if="member.passport_foto_preview">
+                                  <div>
+                                    <img :src="member.passport_foto_preview" class="h-16 mx-auto rounded object-cover mb-1">
+                                    <div class="text-xs text-green-600 font-semibold">✅ Klik untuk ganti</div>
+                                  </div>
+                                </template>
+                                <template x-if="!member.passport_foto_preview">
+                                  <div>
+                                    <i class='bx bx-cloud-upload text-2xl text-slate-400'></i>
+                                    <div class="text-xs text-slate-500 mt-1">Upload Passport (OCR)</div>
+                                  </div>
+                                </template>
+                              </label>
+                              <div x-show="member.passportProcessing" class="text-xs text-primary-600 mt-1">
+                                <i class='bx bx-loader-alt bx-spin'></i> Memproses OCR...
+                              </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                              <div>
+                                <label class="block text-xs text-slate-500 mb-1">Nomor Passport</label>
+                                <input type="text" x-model="member.passport_nomor" placeholder="A1234567"
+                                       class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-primary-500">
+                              </div>
+                              <div>
+                                <label class="block text-xs text-slate-500 mb-1">Nama Lengkap</label>
+                                <input type="text" x-model="member.passport_nama"
+                                       class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-primary-500">
+                              </div>
+                              <div>
+                                <label class="block text-xs text-slate-500 mb-1">Title</label>
+                                <select x-model="member.passport_title"
+                                        class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-primary-500">
+                                  <option value="">-- Pilih --</option>
+                                  <option value="MR">MR</option>
+                                  <option value="MRS">MRS</option>
+                                  <option value="MS">MS</option>
+                                  <option value="MSTR">MSTR</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label class="block text-xs text-slate-500 mb-1">Gender</label>
+                                <select x-model="member.passport_gender"
+                                        class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-primary-500">
+                                  <option value="">-- Pilih --</option>
+                                  <option value="Male">Male</option>
+                                  <option value="Female">Female</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label class="block text-xs text-slate-500 mb-1">Tempat Lahir</label>
+                                <input type="text" x-model="member.passport_tempat_lahir" placeholder="Kota"
+                                       class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-primary-500">
+                              </div>
+                              <div>
+                                <label class="block text-xs text-slate-500 mb-1">Tgl Lahir</label>
+                                <input type="date" x-model="member.passport_tanggal_lahir"
+                                       class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-primary-500">
+                              </div>
+                              <div>
+                                <label class="block text-xs text-slate-500 mb-1">Tgl Terbit</label>
+                                <input type="date" x-model="member.passport_tanggal_terbit"
+                                       class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-primary-500">
+                              </div>
+                              <div>
+                                <label class="block text-xs text-slate-500 mb-1">Tgl Kadaluarsa <span class="text-red-500">*</span></label>
+                                <input type="date" x-model="member.passport_tanggal_kadaluarsa"
+                                       class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-primary-500">
+                              </div>
+                              <div>
+                                <label class="block text-xs text-slate-500 mb-1">Kewarganegaraan</label>
+                                <input type="text" x-model="member.passport_kewarganegaraan" placeholder="Indonesia"
+                                       class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-primary-500">
+                              </div>
+                              <div>
+                                <label class="block text-xs text-slate-500 mb-1">Kantor Penerbit</label>
+                                <input type="text" x-model="member.passport_kantor_terbit" placeholder="Kantor Imigrasi"
+                                       class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-primary-500">
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- KTP atau Akta Lahir berdasarkan usia -->
+                          <template x-if="!member.tanggal_lahir || getMemberAge(member.tanggal_lahir) >= 17">
+                            <div class="bg-white border border-slate-200 rounded-lg p-3">
+                              <p class="text-xs font-semibold text-slate-700 mb-2"><i class='bx bx-id-card'></i> KTP</p>
+                              <!-- Upload KTP -->
+                              <div class="border-2 border-dashed border-slate-300 rounded-lg p-3 text-center mb-2 hover:border-primary-400 transition-all">
+                                <input type="file" :id="'member_ktp_foto_' + idx" accept="image/*,.pdf" class="hidden"
+                                       @change="handleMemberKtpUpload($event, idx)">
+                                <label :for="'member_ktp_foto_' + idx" class="cursor-pointer">
+                                  <template x-if="member.ktp_foto_preview">
+                                    <div>
+                                      <img :src="member.ktp_foto_preview" class="h-16 mx-auto rounded object-cover mb-1">
+                                      <div class="text-xs text-green-600 font-semibold">✅ Klik untuk ganti</div>
+                                    </div>
+                                  </template>
+                                  <template x-if="!member.ktp_foto_preview">
+                                    <div>
+                                      <i class='bx bx-cloud-upload text-2xl text-slate-400'></i>
+                                      <div class="text-xs text-slate-500 mt-1">Upload KTP (OCR)</div>
+                                    </div>
+                                  </template>
+                                </label>
+                                <div x-show="member.ktpProcessing" class="text-xs text-primary-600 mt-1">
+                                  <i class='bx bx-loader-alt bx-spin'></i> Memproses OCR...
+                                </div>
+                              </div>
+                              <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label class="block text-xs text-slate-500 mb-1">NIK (16 digit)</label>
+                                  <input type="text" x-model="member.ktp_nik" maxlength="16" placeholder="16 digit"
+                                         class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-primary-500">
+                                </div>
+                                <div>
+                                  <label class="block text-xs text-slate-500 mb-1">Nama di KTP</label>
+                                  <input type="text" x-model="member.ktp_nama"
+                                         class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-primary-500">
+                                </div>
+                                <div>
+                                  <label class="block text-xs text-slate-500 mb-1">Tempat Lahir</label>
+                                  <input type="text" x-model="member.ktp_tempat_lahir"
+                                         class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-primary-500">
+                                </div>
+                                <div>
+                                  <label class="block text-xs text-slate-500 mb-1">Alamat KTP</label>
+                                  <input type="text" x-model="member.ktp_alamat"
+                                         class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-primary-500">
+                                </div>
+                              </div>
+                            </div>
+                          </template>
+
+                          <template x-if="member.tanggal_lahir && getMemberAge(member.tanggal_lahir) < 17">
+                            <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                              <p class="text-xs font-semibold text-orange-800 mb-2">
+                                <i class='bx bx-file'></i> Akta Lahir
+                                <span class="text-red-500">*</span>
+                                <span class="font-normal text-orange-600">(anak &lt; 17 tahun)</span>
+                              </p>
+                              <div class="text-xs text-orange-700 mb-2">
+                                Usia: <strong x-text="getMemberAge(member.tanggal_lahir) + ' tahun'"></strong> — KTP tidak diperlukan
+                              </div>
+                              <input type="file" @change="handleMemberAktaLahir($event, idx)" accept="image/*,.pdf"
+                                     class="block w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-orange-100 file:text-orange-700">
+                              <template x-if="member.akta_lahir_preview">
+                                <img :src="member.akta_lahir_preview" class="mt-2 h-16 rounded border border-orange-200 object-cover">
+                              </template>
+                            </div>
+                          </template>
+
+                          <!-- Dokumen tambahan anggota -->
+                          <div class="bg-white border border-slate-200 rounded-lg p-3">
+                            <p class="text-xs font-semibold text-slate-700 mb-2"><i class='bx bx-file-blank'></i> Dokumen Lainnya</p>
+                            <div class="grid grid-cols-2 gap-2">
+                              <div>
+                                <label class="block text-xs text-slate-500 mb-1">Kartu Keluarga <span class="text-red-500">*</span></label>
+                                <input type="file" @change="handleMemberKartuKeluarga($event, idx)" accept="image/*,.pdf"
+                                       class="block w-full text-xs text-slate-500 file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-primary-50 file:text-primary-700">
+                                <template x-if="member.kartu_keluarga_preview">
+                                  <img :src="member.kartu_keluarga_preview" class="mt-1 h-12 rounded border object-cover">
+                                </template>
+                              </div>
+                              <div>
+                                <label class="block text-xs text-slate-500 mb-1">Buku Nikah <span class="text-slate-400">(jika menikah)</span></label>
+                                <input type="file" @change="handleMemberBukuNikah($event, idx)" accept="image/*,.pdf"
+                                       class="block w-full text-xs text-slate-500 file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-primary-50 file:text-primary-700">
+                                <template x-if="member.buku_nikah_preview">
+                                  <img :src="member.buku_nikah_preview" class="mt-1 h-12 rounded border object-cover">
+                                </template>
+                              </div>
+                              <div>
+                                <label class="block text-xs text-slate-500 mb-1">Vaksin Meningitis <span class="text-slate-400">(opsional)</span></label>
+                                <input type="file" @change="handleMemberVaksin($event, idx)" accept="image/*,.pdf"
+                                       class="block w-full text-xs text-slate-500 file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-primary-50 file:text-primary-700">
+                                <template x-if="member.vaksin_preview">
+                                  <img :src="member.vaksin_preview" class="mt-1 h-12 rounded border object-cover">
+                                </template>
+                              </div>
+                              <div>
+                                <label class="block text-xs text-slate-500 mb-1">BPJS/KIS <span class="text-slate-400">(opsional)</span></label>
+                                <input type="file" @change="handleMemberBpjs($event, idx)" accept="image/*,.pdf"
+                                       class="block w-full text-xs text-slate-500 file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-primary-50 file:text-primary-700">
+                                <template x-if="member.bpjs_preview">
+                                  <img :src="member.bpjs_preview" class="mt-1 h-12 rounded border object-cover">
+                                </template>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </template>
                 </div>
               </div>
 
-              {{-- Jamaah Information --}}
-              <div class="border border-slate-200 rounded-lg p-4">
-                <div class="flex items-center justify-between mb-3">
-                  <label class="block text-sm font-medium text-slate-700">
-                    <i class='bx bx-mosque'></i> Data Jamaah
-                  </label>
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" x-model="formData.is_jamaah" 
-                           class="rounded border-slate-300 text-primary-600 focus:ring-primary-200">
-                    <span class="text-sm text-slate-600">Tandai sebagai Jamaah</span>
-                  </label>
-                </div>
-
-                <div x-show="formData.is_jamaah" x-transition class="space-y-4">
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Tipe Jamaah</label>
-                      <select x-model="formData.jamaah_type" 
-                              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                        <option value="">Pilih Tipe</option>
-                        <option value="hajj">Hajj</option>
-                        <option value="umrah">Umrah</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Jenis Kelamin</label>
-                      <select x-model="formData.gender" 
-                              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                        <option value="">Pilih Jenis Kelamin</option>
-                        <option value="male">Laki-laki</option>
-                        <option value="female">Perempuan</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label class="block text-xs font-medium text-slate-600 mb-1">Preferensi Kamar</label>
-                      <select x-model="formData.room_preference" 
-                              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                        <option value="">Pilih Preferensi</option>
-                        <option value="single">Single</option>
-                        <option value="double">Double</option>
-                        <option value="triple">Triple</option>
-                        <option value="quad">Quad</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {{-- Mahram Information --}}
-                  <div class="border-t border-slate-200 pt-4">
-                    <label class="block text-sm font-medium text-slate-700 mb-3">
-                      <i class='bx bx-user-check'></i> Informasi Mahram
-                      <span class="text-xs text-slate-500 font-normal">(Wajib untuk jamaah perempuan di bawah 45 tahun)</span>
-                    </label>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Nama Mahram</label>
-                        <input type="text" x-model="formData.mahram_name" 
-                               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                      </div>
-                      <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Hubungan</label>
-                        <input type="text" x-model="formData.mahram_relationship" 
-                               placeholder="Contoh: Suami, Ayah, Saudara"
-                               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                      </div>
-                      <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Telepon Mahram</label>
-                        <input type="text" x-model="formData.mahram_phone" 
-                               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                      </div>
-                      <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">NIK Mahram</label>
-                        <input type="text" x-model="formData.mahram_ktp_nik" 
-                               maxlength="16"
-                               placeholder="16 digit"
-                               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                      </div>
-                    </div>
-                  </div>
-
-                  {{-- Health and Emergency Contact --}}
-                  <div class="border-t border-slate-200 pt-4">
-                    <label class="block text-sm font-medium text-slate-700 mb-3">
-                      <i class='bx bx-health'></i> Kesehatan & Kontak Darurat
-                    </label>
-                    <div class="space-y-3">
-                      <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Kondisi Kesehatan</label>
-                        <textarea x-model="formData.health_conditions" rows="2"
-                                  placeholder="Riwayat penyakit, alergi, atau kondisi kesehatan khusus"
-                                  class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500"></textarea>
-                      </div>
-                      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div>
-                          <label class="block text-xs font-medium text-slate-600 mb-1">Nama Kontak Darurat</label>
-                          <input type="text" x-model="formData.emergency_contact_name" 
-                                 class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                        </div>
-                        <div>
-                          <label class="block text-xs font-medium text-slate-600 mb-1">Telepon Kontak Darurat</label>
-                          <input type="text" x-model="formData.emergency_contact_phone" 
-                                 class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                        </div>
-                        <div>
-                          <label class="block text-xs font-medium text-slate-600 mb-1">Hubungan</label>
-                          <input type="text" x-model="formData.emergency_contact_relationship" 
-                                 placeholder="Contoh: Istri, Anak"
-                                 class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                        </div>
-                      </div>
-                      <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Permintaan Khusus</label>
-                        <textarea x-model="formData.special_requests" rows="2"
-                                  placeholder="Permintaan khusus terkait perjalanan"
-                                  class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500"></textarea>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {{-- Data Jamaah (tipe, gender, mahram, dll) - REMOVED per user request --}}
             </div>
 
             <div class="flex justify-end gap-3 mt-6">
@@ -1069,6 +1152,11 @@
           passport_tanggal_lahir: '',
           passport_tanggal_kadaluarsa: '',
           passport_kewarganegaraan: '',
+          passport_title: '',
+          passport_gender: '',
+          passport_tanggal_terbit: '',
+          passport_kantor_terbit: '',
+          passport_tempat_lahir: '',
           // Jamaah-specific fields
           is_jamaah: false,
           jamaah_type: '',
@@ -1083,7 +1171,18 @@
           room_preference: '',
           special_requests: '',
           gender: '',
-          family_members: []
+          family_members: [],
+          // Dokumen tambahan manifest
+          akta_lahir: null,
+          akta_lahir_preview: null,
+          kartu_keluarga: null,
+          kartu_keluarga_preview: null,
+          buku_nikah: null,
+          buku_nikah_preview: null,
+          vaksin: null,
+          vaksin_preview: null,
+          bpjs: null,
+          bpjs_preview: null,
         },
         detailData: null,
         statistics: {
@@ -1339,7 +1438,7 @@
                 ktp_nik: data.data.ktp_nik || '',
                 ktp_nama: data.data.ktp_nama || '',
                 ktp_tempat_lahir: data.data.ktp_tempat_lahir || '',
-                ktp_tanggal_lahir: data.data.ktp_tanggal_lahir || '',
+                ktp_tanggal_lahir: data.data.ktp_tanggal_lahir ? data.data.ktp_tanggal_lahir.substring(0, 10) : '',
                 ktp_alamat: data.data.ktp_alamat || '',
                 passport_foto: null,
                 passport_foto_preview: data.data.passport_foto ? `{{ url('storage') }}/${data.data.passport_foto}` : null,
@@ -1348,6 +1447,27 @@
                 passport_tanggal_lahir: data.data.passport_tanggal_lahir || '',
                 passport_tanggal_kadaluarsa: data.data.passport_tanggal_kadaluarsa || '',
                 passport_kewarganegaraan: data.data.passport_kewarganegaraan || '',
+                passport_title: data.data.passport_title || '',
+                passport_gender: data.data.passport_gender || '',
+                passport_tanggal_terbit: data.data.passport_tanggal_terbit || '',
+                passport_kantor_terbit: data.data.passport_kantor_terbit || '',
+                passport_tempat_lahir: data.data.passport_tempat_lahir || '',
+                // Dokumen manifest tambahan
+                akta_lahir: null,
+                akta_lahir_preview: data.data.akta_lahir_foto ? `{{ url('storage') }}/${data.data.akta_lahir_foto}` : null,
+                akta_lahir_foto_path: data.data.akta_lahir_foto || null,
+                kartu_keluarga: null,
+                kartu_keluarga_preview: data.data.kartu_keluarga_foto ? `{{ url('storage') }}/${data.data.kartu_keluarga_foto}` : null,
+                kartu_keluarga_foto_path: data.data.kartu_keluarga_foto || null,
+                buku_nikah: null,
+                buku_nikah_preview: data.data.buku_nikah_foto ? `{{ url('storage') }}/${data.data.buku_nikah_foto}` : null,
+                buku_nikah_foto_path: data.data.buku_nikah_foto || null,
+                vaksin: null,
+                vaksin_preview: data.data.vaksin_foto ? `{{ url('storage') }}/${data.data.vaksin_foto}` : null,
+                vaksin_foto_path: data.data.vaksin_foto || null,
+                bpjs: null,
+                bpjs_preview: data.data.bpjs_foto ? `{{ url('storage') }}/${data.data.bpjs_foto}` : null,
+                bpjs_foto_path: data.data.bpjs_foto || null,
                 // Jamaah-specific fields
                 is_jamaah: data.data.is_jamaah || false,
                 jamaah_type: data.data.jamaah_type || '',
@@ -1362,7 +1482,21 @@
                 room_preference: data.data.room_preference || '',
                 special_requests: data.data.special_requests || '',
                 gender: data.data.gender || '',
-                family_members: Array.isArray(data.data.family_members) ? data.data.family_members : (data.data.family_members ? JSON.parse(data.data.family_members) : [])
+                family_members: (function(fm) {
+                  if (!fm) return [];
+                  if (Array.isArray(fm)) return fm;
+                  // Handle string (possibly double-encoded)
+                  try {
+                    var parsed = JSON.parse(fm);
+                    if (Array.isArray(parsed)) return parsed;
+                    // Double-encoded: parse again
+                    if (typeof parsed === 'string') {
+                      var parsed2 = JSON.parse(parsed);
+                      return Array.isArray(parsed2) ? parsed2 : [];
+                    }
+                    return [];
+                  } catch(e) { return []; }
+                })(data.data.family_members)
               };
               
               // Load tipes for the selected outlet first
@@ -1407,11 +1541,20 @@
             }
             
             if (this.formData[key] !== null && this.formData[key] !== '') {
-              if (key === 'pas_foto' || key === 'ktp_foto' || key === 'passport_foto') {
+              if (key === 'pas_foto' || key === 'ktp_foto' || key === 'passport_foto' || key === 'akta_lahir' || key === 'kartu_keluarga' || key === 'buku_nikah' || key === 'vaksin' || key === 'bpjs') {
                 if (this.formData[key] instanceof File) {
-                  formData.append(key, this.formData[key]);
+                  // Map local field names to server field names
+                  const fileFieldMap = {
+                    'akta_lahir': 'akta_lahir_foto',
+                    'kartu_keluarga': 'kartu_keluarga_foto',
+                    'buku_nikah': 'buku_nikah_foto',
+                    'vaksin': 'vaksin_foto',
+                    'bpjs': 'bpjs_foto',
+                  };
+                  const serverKey = fileFieldMap[key] || key;
+                  formData.append(serverKey, this.formData[key]);
                 }
-              } else {
+              } else if (!key.includes('_path')) {
                 formData.append(key, this.formData[key]);
               }
             }
@@ -1490,16 +1633,18 @@
           const file = event.target.files[0];
           if (!file) return;
 
-          // Validate file size (max 2MB)
-          if (file.size > 2 * 1024 * 1024) {
-            alert('Ukuran file maksimal 2MB');
+          // Validate file size (max 5MB)
+          if (file.size > 5 * 1024 * 1024) {
+            alert('Ukuran file maksimal 5MB');
             event.target.value = '';
             return;
           }
 
           // Validate file type
-          if (!file.type.startsWith('image/')) {
-            alert('File harus berupa gambar');
+          const isImage = file.type.startsWith('image/');
+          const isPdf = file.type === 'application/pdf';
+          if (!isImage && !isPdf) {
+            alert('File harus berupa gambar (JPG/PNG) atau PDF');
             event.target.value = '';
             return;
           }
@@ -1507,13 +1652,19 @@
           this.formData.ktp_foto = file;
           
           // Create preview
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            this.formData.ktp_foto_preview = e.target.result;
-          };
-          reader.readAsDataURL(file);
+          if (isPdf) {
+            this.formData.ktp_foto_preview = null; // No image preview for PDF
+            this.formData.ktp_foto_is_pdf = true;
+          } else {
+            this.formData.ktp_foto_is_pdf = false;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              this.formData.ktp_foto_preview = e.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
 
-          // Process OCR
+          // Process OCR untuk gambar dan PDF (Google Vision support keduanya)
           await this.processKtpOcr(file);
         },
 
@@ -1524,7 +1675,7 @@
           formData.append('image', file);
 
           try {
-            const response = await fetch('{{ route("crm.pelanggan.ocr.ktp") }}', {
+            const response = await fetch('{{ route("admin.crm.pelanggan.ocr.ktp") }}', {
               method: 'POST',
               headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -1568,16 +1719,18 @@
           const file = event.target.files[0];
           if (!file) return;
 
-          // Validate file size (max 2MB)
-          if (file.size > 2 * 1024 * 1024) {
-            alert('Ukuran file maksimal 2MB');
+          // Validate file size (max 5MB)
+          if (file.size > 5 * 1024 * 1024) {
+            alert('Ukuran file maksimal 5MB');
             event.target.value = '';
             return;
           }
 
           // Validate file type
-          if (!file.type.startsWith('image/')) {
-            alert('File harus berupa gambar');
+          const isImage = file.type.startsWith('image/');
+          const isPdf = file.type === 'application/pdf';
+          if (!isImage && !isPdf) {
+            alert('File harus berupa gambar (JPG/PNG) atau PDF');
             event.target.value = '';
             return;
           }
@@ -1585,13 +1738,19 @@
           this.formData.passport_foto = file;
           
           // Create preview
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            this.formData.passport_foto_preview = e.target.result;
-          };
-          reader.readAsDataURL(file);
+          if (isPdf) {
+            this.formData.passport_foto_preview = null; // No image preview for PDF
+            this.formData.passport_foto_is_pdf = true;
+          } else {
+            this.formData.passport_foto_is_pdf = false;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              this.formData.passport_foto_preview = e.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
 
-          // Process OCR
+          // Process OCR untuk gambar dan PDF (Google Vision support keduanya)
           await this.processPassportOcr(file);
         },
 
@@ -1602,7 +1761,7 @@
           formData.append('image', file);
 
           try {
-            const response = await fetch('{{ route("crm.pelanggan.ocr.passport") }}', {
+            const response = await fetch('{{ route("admin.crm.pelanggan.ocr.passport") }}', {
               method: 'POST',
               headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -1666,7 +1825,7 @@
           formData.append('image', file);
 
           try {
-            const response = await fetch('{{ route("crm.pelanggan.ocr.visa") }}', {
+            const response = await fetch('{{ route("admin.crm.pelanggan.ocr.visa") }}', {
               method: 'POST',
               headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -1767,7 +1926,7 @@
           formData.append('image', file);
 
           try {
-            const response = await fetch('{{ route("crm.pelanggan.ocr.sertifikat-kesehatan") }}', {
+            const response = await fetch('{{ route("admin.crm.pelanggan.ocr.sertifikat-kesehatan") }}', {
               method: 'POST',
               headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -1886,7 +2045,24 @@
 
         addFamilyMember() {
           this.formData.family_members.push({
-            nama: '', hubungan: '', nik: '', tanggal_lahir: '', no_passport: '', telepon: ''
+            // Data dasar
+            nama: '', hubungan: '', nik: '', tanggal_lahir: '', no_passport: '', telepon: '',
+            // Toggle manifest form
+            showManifest: false,
+            // Passport (lengkap)
+            passport_nomor: '', passport_nama: '', passport_tanggal_lahir: '', passport_tanggal_kadaluarsa: '',
+            passport_title: '', passport_gender: '', passport_tanggal_terbit: '',
+            passport_kantor_terbit: '', passport_tempat_lahir: '', passport_kewarganegaraan: '',
+            passport_foto: null, passport_foto_preview: null, passportProcessing: false,
+            // KTP
+            ktp_nik: '', ktp_nama: '', ktp_tempat_lahir: '', ktp_alamat: '',
+            ktp_foto: null, ktp_foto_preview: null, ktpProcessing: false,
+            // Dokumen upload (file objects + previews)
+            akta_lahir: null, akta_lahir_preview: null,
+            kartu_keluarga: null, kartu_keluarga_preview: null,
+            buku_nikah: null, buku_nikah_preview: null,
+            vaksin: null, vaksin_preview: null,
+            bpjs: null, bpjs_preview: null,
           });
         },
 
@@ -1920,6 +2096,271 @@
               color: 'bg-green-100 text-green-700',
               priceInfo: 'Dewasa: Harga penuh sesuai paket yang dipilih'
             };
+          }
+        },
+
+        // Hitung usia dari ktp_tanggal_lahir — digunakan untuk show/hide KTP vs Akta Lahir
+        getAgeFromKtp() {
+          const tgl = this.formData.ktp_tanggal_lahir;
+          if (!tgl) return null;
+          const birth = new Date(tgl);
+          const today = new Date();
+          let age = today.getFullYear() - birth.getFullYear();
+          const m = today.getMonth() - birth.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+          return age;
+        },
+
+        // Hitung usia anggota keluarga
+        getMemberAge(tanggalLahir) {
+          if (!tanggalLahir) return null;
+          const birth = new Date(tanggalLahir);
+          const today = new Date();
+          let age = today.getFullYear() - birth.getFullYear();
+          const m = today.getMonth() - birth.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+          return age;
+        },
+
+        handleMemberAktaLahir(event, idx) {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => { this.formData.family_members[idx].akta_lahir_preview = e.target.result; };
+          reader.readAsDataURL(file);
+          this.formData.family_members[idx].akta_lahir = file;
+        },
+
+        async handleMemberPassportUpload(event, idx) {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => { this.formData.family_members[idx].passport_foto_preview = e.target.result; };
+          reader.readAsDataURL(file);
+          this.formData.family_members[idx].passport_foto = file;
+          this.formData.family_members[idx].passportProcessing = true;
+          const fd = new FormData();
+          fd.append('passport_image', file);
+          try {
+            const res = await fetch('{{ route("admin.crm.pelanggan.ocr.passport") }}', {
+              method: 'POST',
+              headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+              body: fd
+            });
+            const data = await res.json();
+            if (data.success) {
+              const m = this.formData.family_members[idx];
+              if (data.data.passport_nomor) m.passport_nomor = data.data.passport_nomor;
+              if (data.data.passport_nama) m.passport_nama = data.data.passport_nama;
+              if (data.data.passport_tanggal_lahir) m.passport_tanggal_lahir = data.data.passport_tanggal_lahir;
+              if (data.data.passport_tanggal_kadaluarsa) m.passport_tanggal_kadaluarsa = data.data.passport_tanggal_kadaluarsa;
+            }
+          } catch(e) {}
+          this.formData.family_members[idx].passportProcessing = false;
+        },
+
+        async handleMemberKtpUpload(event, idx) {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => { this.formData.family_members[idx].ktp_foto_preview = e.target.result; };
+          reader.readAsDataURL(file);
+          this.formData.family_members[idx].ktp_foto = file;
+          this.formData.family_members[idx].ktpProcessing = true;
+          const fd = new FormData();
+          fd.append('ktp_image', file);
+          try {
+            const res = await fetch('{{ route("admin.crm.pelanggan.ocr.ktp") }}', {
+              method: 'POST',
+              headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+              body: fd
+            });
+            const data = await res.json();
+            if (data.success) {
+              const m = this.formData.family_members[idx];
+              if (data.data.ktp_nik) m.ktp_nik = data.data.ktp_nik;
+              if (data.data.ktp_nama) m.ktp_nama = data.data.ktp_nama;
+              if (data.data.ktp_tempat_lahir) m.ktp_tempat_lahir = data.data.ktp_tempat_lahir;
+              if (data.data.ktp_tanggal_lahir) m.ktp_tanggal_lahir = data.data.ktp_tanggal_lahir;
+              if (data.data.ktp_alamat) m.ktp_alamat = data.data.ktp_alamat;
+            }
+          } catch(e) {}
+          this.formData.family_members[idx].ktpProcessing = false;
+        },
+
+        handleMemberKartuKeluarga(event, idx) {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => { this.formData.family_members[idx].kartu_keluarga_preview = e.target.result; };
+          reader.readAsDataURL(file);
+          this.formData.family_members[idx].kartu_keluarga = file;
+        },
+
+        handleMemberBukuNikah(event, idx) {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => { this.formData.family_members[idx].buku_nikah_preview = e.target.result; };
+          reader.readAsDataURL(file);
+          this.formData.family_members[idx].buku_nikah = file;
+        },
+
+        handleMemberVaksin(event, idx) {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => { this.formData.family_members[idx].vaksin_preview = e.target.result; };
+          reader.readAsDataURL(file);
+          this.formData.family_members[idx].vaksin = file;
+        },
+
+        handleMemberBpjs(event, idx) {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => { this.formData.family_members[idx].bpjs_preview = e.target.result; };
+          reader.readAsDataURL(file);
+          this.formData.family_members[idx].bpjs = file;
+        },
+
+        handleAktaLahirUpload(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => { this.formData.akta_lahir_preview = e.target.result; };
+          reader.readAsDataURL(file);
+          this.formData.akta_lahir = file;
+        },
+
+        handleKartuKeluargaUpload(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => { this.formData.kartu_keluarga_preview = e.target.result; };
+          reader.readAsDataURL(file);
+          this.formData.kartu_keluarga = file;
+        },
+
+        handleBukuNikahUpload(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => { this.formData.buku_nikah_preview = e.target.result; };
+          reader.readAsDataURL(file);
+          this.formData.buku_nikah = file;
+        },
+
+        handleVaksinUpload(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => { this.formData.vaksin_preview = e.target.result; };
+          reader.readAsDataURL(file);
+          this.formData.vaksin = file;
+        },
+
+        handleBpjsUpload(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => { this.formData.bpjs_preview = e.target.result; };
+          reader.readAsDataURL(file);
+          this.formData.bpjs = file;
+        },
+
+        /**
+         * Upload dokumen langsung ke server (admin)
+         * docType: passport_foto, ktp_foto, akta_lahir_foto, kartu_keluarga_foto, buku_nikah_foto, vaksin_foto, bpjs_foto, pas_foto
+         */
+        async uploadAdminDocument(docType, file) {
+          if (!this.editId || !file) return;
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('doc_type', docType);
+
+          try {
+            const res = await fetch(`{{ url('admin/crm/pelanggan') }}/${this.editId}/upload-doc`, {
+              method: 'POST',
+              headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+              body: formData
+            });
+            const data = await res.json();
+            if (data.success) {
+              // Update preview based on docType
+              const previewMap = {
+                'passport_foto': 'passport_foto_preview',
+                'ktp_foto': 'ktp_foto_preview',
+                'pas_foto': 'pas_foto_preview',
+                'akta_lahir_foto': 'akta_lahir_preview',
+                'kartu_keluarga_foto': 'kartu_keluarga_preview',
+                'buku_nikah_foto': 'buku_nikah_preview',
+                'vaksin_foto': 'vaksin_preview',
+                'bpjs_foto': 'bpjs_preview',
+              };
+              const pathMap = {
+                'akta_lahir_foto': 'akta_lahir_foto_path',
+                'kartu_keluarga_foto': 'kartu_keluarga_foto_path',
+                'buku_nikah_foto': 'buku_nikah_foto_path',
+                'vaksin_foto': 'vaksin_foto_path',
+                'bpjs_foto': 'bpjs_foto_path',
+              };
+              if (previewMap[docType]) {
+                this.formData[previewMap[docType]] = data.file_url;
+              }
+              if (pathMap[docType]) {
+                this.formData[pathMap[docType]] = data.file_path;
+              }
+            } else {
+              alert('Gagal upload: ' + (data.message || 'Error'));
+            }
+          } catch(e) {
+            alert('Error jaringan saat upload');
+          }
+        },
+
+        /**
+         * Hapus dokumen dari server (admin)
+         */
+        async deleteAdminDocument(docType) {
+          if (!this.editId) return;
+          if (!confirm('Hapus dokumen ini?')) return;
+
+          try {
+            const res = await fetch(`{{ url('admin/crm/pelanggan') }}/${this.editId}/delete-doc`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+              },
+              body: JSON.stringify({ doc_type: docType })
+            });
+            const data = await res.json();
+            if (data.success) {
+              const previewMap = {
+                'passport_foto': 'passport_foto_preview',
+                'ktp_foto': 'ktp_foto_preview',
+                'pas_foto': 'pas_foto_preview',
+                'akta_lahir_foto': 'akta_lahir_preview',
+                'kartu_keluarga_foto': 'kartu_keluarga_preview',
+                'buku_nikah_foto': 'buku_nikah_preview',
+                'vaksin_foto': 'vaksin_preview',
+                'bpjs_foto': 'bpjs_preview',
+              };
+              const pathMap = {
+                'akta_lahir_foto': 'akta_lahir_foto_path',
+                'kartu_keluarga_foto': 'kartu_keluarga_foto_path',
+                'buku_nikah_foto': 'buku_nikah_foto_path',
+                'vaksin_foto': 'vaksin_foto_path',
+                'bpjs_foto': 'bpjs_foto_path',
+              };
+              if (previewMap[docType]) this.formData[previewMap[docType]] = null;
+              if (pathMap[docType]) this.formData[pathMap[docType]] = null;
+            } else {
+              alert('Gagal hapus: ' + (data.message || 'Error'));
+            }
+          } catch(e) {
+            alert('Error jaringan saat hapus');
           }
         },
 

@@ -181,7 +181,8 @@ class AffiliateTrackingService
     }
 
     /**
-     * Verify sale (dipanggil saat pembayaran LUNAS/pelunasan - release termin 1)
+     * Verify sale (dipanggil saat pembayaran LUNAS/pelunasan)
+     * Marks referral as verified (booking paid), fee stays in pending_balance
      */
     public function verifySale($bookingId)
     {
@@ -193,12 +194,13 @@ class AffiliateTrackingService
             return false;
         }
 
-        // Release termin 1 (50%) saat pelunasan
-        return $referral->affiliator->releaseTermin1($referral->id);
+        // Mark booking as paid (fee stays in pending_balance)
+        return $referral->affiliator->markBookingPaid($referral->id);
     }
 
     /**
-     * Release termin 2 (dipanggil saat tanggal keberangkatan tiba)
+     * Release to available balance (dipanggil saat tanggal keberangkatan tiba)
+     * Moves fee from pending_balance to available_balance
      */
     public function releaseTermin2ByBooking($bookingId)
     {
@@ -210,7 +212,7 @@ class AffiliateTrackingService
             return false;
         }
 
-        return $referral->affiliator->releaseTermin2($referral->id);
+        return $referral->affiliator->releaseToAvailable($referral->id);
     }
 
     /**

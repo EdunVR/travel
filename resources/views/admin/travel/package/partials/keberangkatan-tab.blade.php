@@ -66,11 +66,11 @@
                                title="Cetak Stiker Koper">
                                 <i class='bx bx-briefcase text-amber-600'></i> Koper
                             </a>
-                            <button x-on:click="downloadManifest(kb.id)"
+                            <a :href="`{{ url('') }}/admin/inventaris/travel/keberangkatan/${kb.id}/manage-manifest`"
                                     class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs"
-                                    title="Download Manifest">
+                                    title="Kelola & Download Manifest">
                                 <i class='bx bx-file-pdf text-red-600'></i> Manifest
-                            </button>
+                            </a>
                             <button x-on:click="openRoomlistSetting(kb)"
                                     class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs"
                                     title="Roomlist Setting">

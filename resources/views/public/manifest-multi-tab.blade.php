@@ -11,14 +11,12 @@
     <style>
         * { font-family: 'Nunito', sans-serif; }
         .bg-green-gradient { background: linear-gradient(135deg, #2E7D32, #4CAF50); }
-        .tab-active { @apply border-green-500 text-green-600 bg-green-50; }
-        .tab-inactive { @apply border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50; }
+        .tab-btn { flex-shrink:0; padding:16px 24px; border-bottom:3px solid transparent; font-weight:600; font-size:14px; transition:all 0.2s; color:#4B5563; cursor:pointer; background:none; }
+        .tab-btn:hover { color:#111827; background:#F9FAFB; }
+        .tab-btn.is-active { border-bottom-color:#16a34a; color:#16a34a; background:#f0fdf4; }
         .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .tab-content.active { display: block; animation: fadeIn 0.25s ease; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -120,6 +118,7 @@
         // Data from Laravel
         const booking = @json($booking);
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const storageUrl = '{{ url("storage") }}';
         
         // State
         let currentTab = 0;
@@ -134,47 +133,98 @@
         });
 
         function initializeJamaahData() {
-            // Main jamaah
+            // Jamaah utama — coba semua kemungkinan field tanggal lahir
+            const mainTgl = booking.jamaah?.ktp_tanggal_lahir 
+                         || booking.jamaah?.passport_tanggal_lahir 
+                         || booking.jamaah?.tanggal_lahir 
+                         || null;
+
+            // Pre-fill data jamaah utama dari database (Member model)
+            const mainData = {
+                passport_nomor: booking.jamaah?.passport_nomor || '',
+                passport_nama: booking.jamaah?.passport_nama || '',
+                passport_tanggal_lahir: booking.jamaah?.passport_tanggal_lahir || '',
+                passport_tanggal_kadaluarsa: booking.jamaah?.passport_tanggal_kadaluarsa || '',
+                passport_kewarganegaraan: booking.jamaah?.passport_kewarganegaraan || 'Indonesia',
+                passport_title: booking.jamaah?.passport_title || '',
+                passport_gender: booking.jamaah?.passport_gender || '',
+                passport_tanggal_terbit: booking.jamaah?.passport_tanggal_terbit || '',
+                passport_kantor_terbit: booking.jamaah?.passport_kantor_terbit || '',
+                passport_tempat_lahir: booking.jamaah?.passport_tempat_lahir || '',
+                ktp_nik: booking.jamaah?.ktp_nik || '',
+                ktp_nama: booking.jamaah?.ktp_nama || '',
+                ktp_tempat_lahir: booking.jamaah?.ktp_tempat_lahir || '',
+                ktp_tanggal_lahir: booking.jamaah?.ktp_tanggal_lahir || '',
+                ktp_alamat: booking.jamaah?.ktp_alamat || '',
+            };
+
             jamaahData.push({
                 index: 0,
                 nama: booking.jamaah?.nama || 'Jamaah Utama',
-                tanggal_lahir: booking.jamaah?.ktp_tanggal_lahir || booking.jamaah?.passport_tanggal_lahir || null,
+                tanggal_lahir: mainTgl,
                 isMain: true,
-                data: {}
+                data: mainData,
+                // Foto yang sudah ada di database
+                passport_foto_url: booking.jamaah?.passport_foto ? storageUrl + '/' + booking.jamaah.passport_foto : null,
+                ktp_foto_url: booking.jamaah?.ktp_foto ? storageUrl + '/' + booking.jamaah.ktp_foto : null,
+                akta_lahir_foto_url: booking.jamaah?.akta_lahir_foto ? storageUrl + '/' + booking.jamaah.akta_lahir_foto : null,
+                kartu_keluarga_foto_url: booking.jamaah?.kartu_keluarga_foto ? storageUrl + '/' + booking.jamaah.kartu_keluarga_foto : null,
+                buku_nikah_foto_url: booking.jamaah?.buku_nikah_foto ? storageUrl + '/' + booking.jamaah.buku_nikah_foto : null,
+                vaksin_foto_url: booking.jamaah?.vaksin_foto ? storageUrl + '/' + booking.jamaah.vaksin_foto : null,
+                bpjs_foto_url: booking.jamaah?.bpjs_foto ? storageUrl + '/' + booking.jamaah.bpjs_foto : null,
+                pas_foto_url: booking.jamaah?.pas_foto ? storageUrl + '/' + booking.jamaah.pas_foto : null,
             });
 
-            // Family members - Get from booking.family_members_booking
-            console.log('Booking data:', booking);
-            console.log('Family members from booking:', booking.family_members_booking);
-            
+            console.log('Jamaah utama tanggal_lahir:', mainTgl, '| age:', calculateAge(mainTgl));
+            console.log('Jamaah utama pre-fill data:', mainData);
+
+            // Anggota keluarga dari family_members_booking
             let familyMembers = booking.family_members_booking;
-            
-            // Parse if string
             if (typeof familyMembers === 'string') {
-                try {
-                    familyMembers = JSON.parse(familyMembers);
-                    console.log('Parsed family members:', familyMembers);
-                } catch (e) {
-                    console.error('Failed to parse family_members_booking:', e);
-                    familyMembers = [];
-                }
+                try { familyMembers = JSON.parse(familyMembers); } catch(e) { familyMembers = []; }
             }
-            
-            // Add family members
-            if (Array.isArray(familyMembers) && familyMembers.length > 0) {
-                familyMembers.forEach((member, idx) => {
-                    jamaahData.push({
-                        index: idx + 1,
-                        nama: member.nama || `Anggota Keluarga ${idx + 1}`,
-                        tanggal_lahir: member.tanggal_lahir || null,
-                        isMain: false,
-                        data: {}
-                    });
+            if (!Array.isArray(familyMembers)) familyMembers = [];
+
+            familyMembers.forEach((member, idx) => {
+                const tgl = member.tanggal_lahir || null;
+                // Pre-fill data anggota keluarga dari family_members_booking jika ada
+                const memberData = {
+                    passport_nomor: member.passport_nomor || member.no_passport || '',
+                    passport_nama: member.passport_nama || member.nama || '',
+                    passport_tanggal_lahir: member.passport_tanggal_lahir || '',
+                    passport_tanggal_kadaluarsa: member.passport_tanggal_kadaluarsa || '',
+                    passport_kewarganegaraan: member.passport_kewarganegaraan || 'Indonesia',
+                    passport_title: member.passport_title || '',
+                    passport_gender: member.passport_gender || '',
+                    passport_tanggal_terbit: member.passport_tanggal_terbit || '',
+                    passport_kantor_terbit: member.passport_kantor_terbit || '',
+                    passport_tempat_lahir: member.passport_tempat_lahir || '',
+                    ktp_nik: member.ktp_nik || member.nik || '',
+                    ktp_nama: member.ktp_nama || member.nama || '',
+                    ktp_tempat_lahir: member.ktp_tempat_lahir || '',
+                    ktp_tanggal_lahir: member.ktp_tanggal_lahir || tgl || '',
+                    ktp_alamat: member.ktp_alamat || '',
+                };
+                jamaahData.push({
+                    index: idx + 1,
+                    nama: member.nama || ('Anggota Keluarga ' + (idx + 1)),
+                    tanggal_lahir: tgl,
+                    isMain: false,
+                    data: memberData,
+                    // File URLs dari family_members_booking
+                    passport_foto_url: member.passport_foto ? storageUrl + '/' + member.passport_foto : null,
+                    ktp_foto_url: member.ktp_foto ? storageUrl + '/' + member.ktp_foto : null,
+                    akta_lahir_foto_url: member.akta_lahir_foto ? storageUrl + '/' + member.akta_lahir_foto : null,
+                    kartu_keluarga_foto_url: member.kartu_keluarga_foto ? storageUrl + '/' + member.kartu_keluarga_foto : null,
+                    buku_nikah_foto_url: member.buku_nikah_foto ? storageUrl + '/' + member.buku_nikah_foto : null,
+                    vaksin_foto_url: member.vaksin_foto ? storageUrl + '/' + member.vaksin_foto : null,
+                    bpjs_foto_url: member.bpjs_foto ? storageUrl + '/' + member.bpjs_foto : null,
+                    pas_foto_url: member.pas_foto ? storageUrl + '/' + member.pas_foto : null,
                 });
-                console.log('Total jamaah after adding family:', jamaahData.length);
-            } else {
-                console.log('No family members found or not an array');
-            }
+                console.log('Anggota ' + (idx+1) + ' tanggal_lahir:', tgl, '| age:', calculateAge(tgl));
+            });
+
+            console.log('Total jamaah:', jamaahData.length);
         }
 
         function renderTabs() {
@@ -183,31 +233,27 @@
                 <button type="button" 
                         onclick="switchTab(${idx})"
                         id="tab-${idx}"
-                        class="flex-shrink-0 px-6 py-4 border-b-2 font-semibold text-sm transition-colors ${idx === 0 ? 'tab-active' : 'tab-inactive'}">
-                    <div class="flex items-center gap-2">
+                        class="tab-btn ${idx === 0 ? 'is-active' : ''}">
+                    <div style="display:flex;align-items:center;gap:8px;">
                         <span>${jamaah.nama}</span>
-                        <span id="badge-${idx}" class="inline-flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full bg-red-500 text-white">
-                            8
-                        </span>
+                        <span id="badge-${idx}" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;font-size:11px;font-weight:700;border-radius:50%;background:#ef4444;color:#fff;">?</span>
                     </div>
                 </button>
             `).join('');
         }
 
         function switchTab(index) {
-            // Save current tab data before switching
-            saveCurrentTabData(false); // false = don't show alert
+            saveCurrentTabData(false);
             
-            // Update tab styles
+            // Update tab button styles
             jamaahData.forEach((_, idx) => {
-                const tab = document.getElementById(`tab-${idx}`);
-                const content = document.getElementById(`tab-content-${idx}`);
-                
+                const tab = document.getElementById('tab-' + idx);
+                const content = document.getElementById('tab-content-' + idx);
                 if (idx === index) {
-                    tab.className = tab.className.replace('tab-inactive', 'tab-active');
+                    tab.classList.add('is-active');
                     if (content) content.classList.add('active');
                 } else {
-                    tab.className = tab.className.replace('tab-active', 'tab-inactive');
+                    tab.classList.remove('is-active');
                     if (content) content.classList.remove('active');
                 }
             });
@@ -231,7 +277,9 @@
             const container = document.getElementById('tabContentContainer');
             container.innerHTML = jamaahData.map((jamaah, index) => {
                 const age = calculateAge(jamaah.tanggal_lahir);
-                const isChild = age !== null && age < 17;
+                // Only treat as child if we have a valid age AND it's < 17
+                // If tanggal_lahir is null/unknown, default to adult (show KTP)
+                const isChild = age !== null && age >= 0 && age < 17;
                 
                 return `
                 <div id="tab-content-${index}" class="tab-content ${index === 0 ? 'active' : ''}">
@@ -244,7 +292,81 @@
             jamaahData.forEach((_, idx) => loadTabData(idx));
         }
 
+        function generateDocUploadHTML(index, docType, label, icon, existingUrl, isPdf, required, note) {
+            const hasFile = !!existingUrl;
+            const reqBadge = required ? '<span class="text-red-500">*</span>' : '<span class="text-gray-500">(opsional)</span>';
+            const noteHtml = note ? '<p class="text-xs text-blue-600 mt-1">' + note + '</p>' : '';
+            
+            let previewHtml = '';
+            if (hasFile) {
+                if (isPdf) {
+                    previewHtml = `
+                        <div class="flex items-center gap-3 p-2 bg-green-50 rounded-lg">
+                            <i class='bx bxs-file-pdf text-3xl text-red-500'></i>
+                            <div class="flex-1 text-left">
+                                <div class="text-xs font-semibold text-green-700">\u2705 Dokumen PDF tersimpan</div>
+                            </div>
+                            <a href="${existingUrl}" target="_blank" class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600" title="Unduh">
+                                <i class='bx bx-download'></i>
+                            </a>
+                            <button type="button" onclick="deleteDocument(${index}, '${docType}')" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600" title="Hapus">
+                                <i class='bx bx-trash'></i>
+                            </button>
+                        </div>`;
+                } else {
+                    previewHtml = `
+                        <div class="flex items-center gap-3 p-2 bg-green-50 rounded-lg">
+                            <img src="${existingUrl}" class="h-16 w-16 object-cover rounded border">
+                            <div class="flex-1 text-left">
+                                <div class="text-xs font-semibold text-green-700">\u2705 Foto tersimpan</div>
+                            </div>
+                            <a href="${existingUrl}" target="_blank" class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600" title="Unduh">
+                                <i class='bx bx-download'></i>
+                            </a>
+                            <button type="button" onclick="deleteDocument(${index}, '${docType}')" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600" title="Hapus">
+                                <i class='bx bx-trash'></i>
+                            </button>
+                        </div>`;
+                }
+            }
+
+            return `
+                <div class="border-2 border-gray-200 rounded-xl p-4" id="doc_container_${docType}_${index}">
+                    <h4 class="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        <i class='bx ${icon} text-green-600'></i>
+                        ${label} ${reqBadge}
+                    </h4>
+                    <div id="doc_preview_${docType}_${index}">
+                        ${previewHtml}
+                    </div>
+                    <div class="mt-2">
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-green-500 transition-all">
+                            <input type="file" id="file_${docType}_${index}" accept="image/*,.pdf" class="hidden" 
+                                   onchange="uploadDocument(${index}, '${docType}', this)">
+                            <label for="file_${docType}_${index}" class="cursor-pointer">
+                                <i class='bx bx-cloud-upload text-2xl text-gray-400'></i>
+                                <div class="text-xs text-gray-600">${hasFile ? 'Ganti file' : 'Upload'} (JPG/PNG/PDF, max 5MB)</div>
+                            </label>
+                        </div>
+                    </div>
+                    ${noteHtml}
+                </div>
+            `;
+        }
+
         function generateTabContentHTML(index, jamaah, age, isChild) {
+            // Get existing file URLs
+            const passportUrl = jamaah.passport_foto_url || null;
+            const ktpUrl = jamaah.ktp_foto_url || null;
+            const aktaUrl = jamaah.akta_lahir_foto_url || null;
+            const kkUrl = jamaah.kartu_keluarga_foto_url || null;
+            const nikahUrl = jamaah.buku_nikah_foto_url || null;
+            const vaksinUrl = jamaah.vaksin_foto_url || null;
+            const bpjsUrl = jamaah.bpjs_foto_url || null;
+            const pasFotoUrl = jamaah.pas_foto_url || null;
+
+            const isPdf = (url) => url && url.toLowerCase().endsWith('.pdf');
+
             return `
                 <div id="manifestForm-${index}" class="space-y-6">
                     <input type="hidden" name="jamaah_index" value="${index}">
@@ -258,14 +380,20 @@
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Upload Foto Passport</label>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Upload Foto/PDF Passport</label>
+                                <div id="doc_preview_passport_foto_${index}">
+                                    ${passportUrl ? (isPdf(passportUrl) ? 
+                                        '<div class="flex items-center gap-3 p-2 bg-green-50 rounded-lg mb-2"><i class=\'bx bxs-file-pdf text-3xl text-red-500\'></i><div class="flex-1 text-left"><div class="text-xs font-semibold text-green-700">\u2705 PDF Passport tersimpan</div></div><a href="' + passportUrl + '" target="_blank" class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"><i class=\'bx bx-download\'></i></a><button type="button" onclick="deleteDocument(' + index + ', \'passport_foto\')" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"><i class=\'bx bx-trash\'></i></button></div>' :
+                                        '<div class="flex items-center gap-3 p-2 bg-green-50 rounded-lg mb-2"><img src="' + passportUrl + '" class="h-16 w-16 object-cover rounded border"><div class="flex-1 text-left"><div class="text-xs font-semibold text-green-700">\u2705 Foto Passport tersimpan</div></div><a href="' + passportUrl + '" target="_blank" class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"><i class=\'bx bx-download\'></i></a><button type="button" onclick="deleteDocument(' + index + ', \'passport_foto\')" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"><i class=\'bx bx-trash\'></i></button></div>'
+                                    ) : ''}
+                                </div>
                                 <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-green-500 transition-all">
-                                    <input type="file" id="passport_foto_${index}" accept="image/*" class="hidden" onchange="handlePassportUpload(${index}, this)">
+                                    <input type="file" id="passport_foto_${index}" accept="image/*,.pdf" class="hidden" onchange="handlePassportUpload(${index}, this)">
                                     <label for="passport_foto_${index}" class="cursor-pointer">
-                                        <div id="passport_preview_${index}">
+                                        <div id="passport_upload_status_${index}">
                                             <i class='bx bx-cloud-upload text-4xl text-gray-400'></i>
-                                            <div class="text-sm font-semibold text-gray-700 mt-2">Klik untuk upload</div>
-                                            <div class="text-xs text-gray-500">JPG, PNG (Max 5MB)</div>
+                                            <div class="text-sm font-semibold text-gray-700 mt-2">${passportUrl ? 'Ganti file' : 'Klik untuk upload'}</div>
+                                            <div class="text-xs text-gray-500">JPG, PNG, PDF (Max 5MB) — OCR otomatis</div>
                                         </div>
                                     </label>
                                 </div>
@@ -279,10 +407,39 @@
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Nama di Passport</label>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Nama Lengkap (Full Name)</label>
                                 <input type="text" id="passport_nama_${index}"
                                        class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500"
                                        placeholder="Sesuai passport">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Title</label>
+                                <select id="passport_title_${index}"
+                                        class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="MR">MR</option>
+                                    <option value="MRS">MRS</option>
+                                    <option value="MS">MS</option>
+                                    <option value="MSTR">MSTR</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Gender</label>
+                                <select id="passport_gender_${index}"
+                                        class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Tempat Lahir (Birth City)</label>
+                                <input type="text" id="passport_tempat_lahir_${index}"
+                                       class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500"
+                                       placeholder="Kota lahir">
                             </div>
                             
                             <div>
@@ -292,33 +449,36 @@
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Tanggal Kadaluarsa *</label>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Tanggal Terbit (Issued Date)</label>
+                                <input type="date" id="passport_tanggal_terbit_${index}"
+                                       class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Tanggal Kadaluarsa (Expire Date) *</label>
                                 <input type="date" id="passport_tanggal_kadaluarsa_${index}" required
                                        class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500">
                             </div>
                             
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Kewarganegaraan</label>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Kewarganegaraan (Nationality)</label>
                                 <input type="text" id="passport_kewarganegaraan_${index}" value="Indonesia"
                                        class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Kantor Penerbit (Office Issued)</label>
+                                <input type="text" id="passport_kantor_terbit_${index}"
+                                       class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500"
+                                       placeholder="Kantor Imigrasi">
                             </div>
                         </div>
                     </div>
 
-                    <!-- KTP Section (Hidden for children < 17 years) -->
-                    ${isChild ? `
-                    <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
-                        <div class="flex items-start gap-3">
-                            <i class='bx bx-info-circle text-2xl text-blue-600 flex-shrink-0'></i>
-                            <div class="text-sm text-blue-800">
-                                <p class="font-bold mb-1">ℹ️ Informasi Anak Dibawah 17 Tahun</p>
-                                <p>Jamaah ini berusia <strong>${age} tahun</strong>. Untuk anak dibawah 17 tahun, <strong>KTP tidak diperlukan</strong>. Silakan upload <strong>Akta Lahir</strong> sebagai gantinya.</p>
-                            </div>
-                        </div>
-                    </div>
-                    ` : ''}
+                    <!-- KTP Section -->
+                    ${isChild ? '<div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4"><div class="flex items-start gap-3"><i class=\'bx bx-info-circle text-2xl text-blue-600 flex-shrink-0\'></i><div class="text-sm text-blue-800"><p class="font-bold mb-1">\u2139\uFE0F Informasi Anak Dibawah 17 Tahun</p><p>Jamaah ini berusia <strong>' + age + ' tahun</strong>. KTP tidak diperlukan, upload <strong>Akta Lahir</strong> sebagai gantinya.</p></div></div></div>' : ''}
                     
-                    <div class="border-2 border-gray-200 rounded-xl p-6 ${isChild ? 'hidden' : ''}" id="ktp_section_${index}">
+                    <div class="border-2 border-gray-200 rounded-xl p-6" id="ktp_section_${index}" style="${isChild ? 'display:none' : 'display:block'}">
                         <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                             <i class='bx bx-id-card text-green-600'></i>
                             KTP <span class="text-red-500">*</span>
@@ -326,14 +486,20 @@
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Upload Foto KTP</label>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Upload Foto/PDF KTP</label>
+                                <div id="doc_preview_ktp_foto_${index}">
+                                    ${ktpUrl ? (isPdf(ktpUrl) ? 
+                                        '<div class="flex items-center gap-3 p-2 bg-green-50 rounded-lg mb-2"><i class=\'bx bxs-file-pdf text-3xl text-red-500\'></i><div class="flex-1 text-left"><div class="text-xs font-semibold text-green-700">\u2705 PDF KTP tersimpan</div></div><a href="' + ktpUrl + '" target="_blank" class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"><i class=\'bx bx-download\'></i></a><button type="button" onclick="deleteDocument(' + index + ', \'ktp_foto\')" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"><i class=\'bx bx-trash\'></i></button></div>' :
+                                        '<div class="flex items-center gap-3 p-2 bg-green-50 rounded-lg mb-2"><img src="' + ktpUrl + '" class="h-16 w-16 object-cover rounded border"><div class="flex-1 text-left"><div class="text-xs font-semibold text-green-700">\u2705 Foto KTP tersimpan</div></div><a href="' + ktpUrl + '" target="_blank" class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"><i class=\'bx bx-download\'></i></a><button type="button" onclick="deleteDocument(' + index + ', \'ktp_foto\')" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"><i class=\'bx bx-trash\'></i></button></div>'
+                                    ) : ''}
+                                </div>
                                 <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-green-500 transition-all">
-                                    <input type="file" id="ktp_foto_${index}" accept="image/*" class="hidden" onchange="handleKtpUpload(${index}, this)">
+                                    <input type="file" id="ktp_foto_${index}" accept="image/*,.pdf" class="hidden" onchange="handleKtpUpload(${index}, this)">
                                     <label for="ktp_foto_${index}" class="cursor-pointer">
-                                        <div id="ktp_preview_${index}">
+                                        <div id="ktp_upload_status_${index}">
                                             <i class='bx bx-cloud-upload text-4xl text-gray-400'></i>
-                                            <div class="text-sm font-semibold text-gray-700 mt-2">Klik untuk upload</div>
-                                            <div class="text-xs text-gray-500">JPG, PNG (Max 5MB)</div>
+                                            <div class="text-sm font-semibold text-gray-700 mt-2">${ktpUrl ? 'Ganti file' : 'Klik untuk upload'}</div>
+                                            <div class="text-xs text-gray-500">JPG, PNG, PDF (Max 5MB) — OCR otomatis</div>
                                         </div>
                                     </label>
                                 </div>
@@ -374,88 +540,39 @@
 
                     <!-- Additional Documents -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Pas Foto 4x6 (Optional) -->
-                        <div class="border-2 border-gray-200 rounded-xl p-4">
-                            <h4 class="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                                <i class='bx bx-user-circle text-green-600'></i>
-                                Pas Foto 4x6 <span class="text-gray-500">(opsional)</span>
-                            </h4>
-                            <input type="file" id="pas_foto_${index}" accept="image/*" class="text-sm">
-                        </div>
-
-                        <!-- Kartu Keluarga -->
-                        <div class="border-2 border-gray-200 rounded-xl p-4">
-                            <h4 class="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                                <i class='bx bx-group text-green-600'></i>
-                                Kartu Keluarga <span class="text-red-500">*</span>
-                            </h4>
-                            <input type="file" id="kartu_keluarga_${index}" accept="image/*" class="text-sm">
-                        </div>
-
-                        <!-- Buku Nikah -->
-                        <div class="border-2 border-gray-200 rounded-xl p-4">
-                            <h4 class="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                                <i class='bx bx-book-heart text-green-600'></i>
-                                Buku Nikah <span class="text-yellow-500">(jika menikah)</span>
-                            </h4>
-                            <input type="file" id="buku_nikah_${index}" accept="image/*" class="text-sm">
-                        </div>
-
-                        <!-- Akta Lahir (Only for children < 17 years) -->
-                        ${isChild ? `
-                        <div class="border-2 border-gray-200 rounded-xl p-4">
-                            <h4 class="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                                <i class='bx bx-file text-green-600'></i>
-                                Akta Lahir <span class="text-red-500">*</span>
-                            </h4>
-                            <input type="file" id="akta_lahir_${index}" accept="image/*" class="text-sm" required>
-                            <p class="text-xs text-blue-600 mt-1">⚠️ Wajib untuk anak dibawah 17 tahun</p>
-                        </div>
-                        ` : ''}
-
-                        <!-- Vaksin Meningitis -->
-                        <div class="border-2 border-gray-200 rounded-xl p-4">
-                            <h4 class="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                                <i class='bx bx-injection text-green-600'></i>
-                                Buku Kuning Vaksin <span class="text-gray-500">(opsional)</span>
-                            </h4>
-                            <input type="file" id="vaksin_meningitis_${index}" accept="image/*" class="text-sm">
-                        </div>
-
-                        <!-- BPJS -->
-                        <div class="border-2 border-gray-200 rounded-xl p-4">
-                            <h4 class="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                                <i class='bx bx-card text-green-600'></i>
-                                BPJS/KIS/ASKES <span class="text-gray-500">(opsional)</span>
-                            </h4>
-                            <input type="file" id="bpjs_${index}" accept="image/*" class="text-sm">
-                        </div>
+                        ${generateDocUploadHTML(index, 'pas_foto', 'Pas Foto 4x6', 'bx-user-circle', pasFotoUrl, isPdf(pasFotoUrl), false, '')}
+                        ${generateDocUploadHTML(index, 'kartu_keluarga_foto', 'Kartu Keluarga', 'bx-group', kkUrl, isPdf(kkUrl), true, '')}
+                        ${generateDocUploadHTML(index, 'buku_nikah_foto', 'Buku Nikah', 'bx-book-heart', nikahUrl, isPdf(nikahUrl), false, '')}
+                        ${isChild ? generateDocUploadHTML(index, 'akta_lahir_foto', 'Akta Lahir', 'bx-file', aktaUrl, isPdf(aktaUrl), true, '\u26A0\uFE0F Wajib untuk anak dibawah 17 tahun') : ''}
+                        ${generateDocUploadHTML(index, 'vaksin_foto', 'Buku Kuning Vaksin', 'bx-injection', vaksinUrl, isPdf(vaksinUrl), false, '')}
+                        ${generateDocUploadHTML(index, 'bpjs_foto', 'BPJS/KIS/ASKES', 'bx-card', bpjsUrl, isPdf(bpjsUrl), false, '')}
                     </div>
 
                 </div>
             `;
-
-            `;
         }
+
 
         function handlePassportUpload(index, input) {
             if (!input.files || !input.files[0]) return;
             
             const file = input.files[0];
-            const preview = document.getElementById(`passport_preview_${index}`);
+            const isPdf = file.type === 'application/pdf';
+            const statusEl = document.getElementById(`passport_upload_status_${index}`);
             
-            preview.innerHTML = `
+            statusEl.innerHTML = `
                 <i class='bx bx-loader-alt bx-spin text-4xl text-blue-500'></i>
-                <div class="text-sm font-semibold text-blue-700 mt-2">Memproses OCR...</div>
+                <div class="text-sm font-semibold text-blue-700 mt-2">Memproses OCR${isPdf ? ' PDF' : ''}...</div>
             `;
 
-            const formData = new FormData();
-            formData.append('passport_image', file);
+            // 1. OCR first
+            const ocrForm = new FormData();
+            ocrForm.append('passport_image', file);
 
             fetch('{{ route("public.manifest.ocr-passport") }}', {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': csrfToken },
-                body: formData
+                body: ocrForm
             })
             .then(response => response.json())
             .then(data => {
@@ -465,20 +582,17 @@
                     document.getElementById(`passport_tanggal_lahir_${index}`).value = data.data.passport_tanggal_lahir || '';
                     document.getElementById(`passport_tanggal_kadaluarsa_${index}`).value = data.data.passport_tanggal_kadaluarsa || '';
                     document.getElementById(`passport_kewarganegaraan_${index}`).value = data.data.passport_kewarganegaraan || 'Indonesia';
-                    
-                    preview.innerHTML = `
-                        <i class='bx bx-check-circle text-4xl text-green-500'></i>
-                        <div class="text-sm font-semibold text-green-700 mt-2">✅ OCR Berhasil!</div>
-                    `;
-                } else {
-                    throw new Error('OCR failed');
+                    document.getElementById(`passport_title_${index}`).value = data.data.passport_title || '';
+                    document.getElementById(`passport_gender_${index}`).value = data.data.passport_gender || '';
+                    document.getElementById(`passport_tanggal_terbit_${index}`).value = data.data.passport_tanggal_terbit || '';
+                    document.getElementById(`passport_kantor_terbit_${index}`).value = data.data.passport_kantor_terbit || '';
+                    document.getElementById(`passport_tempat_lahir_${index}`).value = data.data.passport_tempat_lahir || '';
                 }
             })
-            .catch(error => {
-                preview.innerHTML = `
-                    <i class='bx bx-error-circle text-4xl text-yellow-500'></i>
-                    <div class="text-sm font-semibold text-yellow-700 mt-2">⚠️ OCR gagal, isi manual</div>
-                `;
+            .catch(() => {})
+            .finally(() => {
+                // 2. Upload file to server regardless of OCR result
+                uploadDocumentToServer(index, 'passport_foto', file, statusEl);
             });
         }
 
@@ -486,20 +600,22 @@
             if (!input.files || !input.files[0]) return;
             
             const file = input.files[0];
-            const preview = document.getElementById(`ktp_preview_${index}`);
+            const isPdf = file.type === 'application/pdf';
+            const statusEl = document.getElementById(`ktp_upload_status_${index}`);
             
-            preview.innerHTML = `
+            statusEl.innerHTML = `
                 <i class='bx bx-loader-alt bx-spin text-4xl text-blue-500'></i>
-                <div class="text-sm font-semibold text-blue-700 mt-2">Memproses OCR...</div>
+                <div class="text-sm font-semibold text-blue-700 mt-2">Memproses OCR${isPdf ? ' PDF' : ''}...</div>
             `;
 
-            const formData = new FormData();
-            formData.append('ktp_image', file);
+            // 1. OCR first
+            const ocrForm = new FormData();
+            ocrForm.append('ktp_image', file);
 
             fetch('{{ route("public.manifest.ocr-ktp") }}', {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': csrfToken },
-                body: formData
+                body: ocrForm
             })
             .then(response => response.json())
             .then(data => {
@@ -509,21 +625,105 @@
                     document.getElementById(`ktp_tempat_lahir_${index}`).value = data.data.ktp_tempat_lahir || '';
                     document.getElementById(`ktp_tanggal_lahir_${index}`).value = data.data.ktp_tanggal_lahir || '';
                     document.getElementById(`ktp_alamat_${index}`).value = data.data.ktp_alamat || '';
-                    
-                    preview.innerHTML = `
-                        <i class='bx bx-check-circle text-4xl text-green-500'></i>
-                        <div class="text-sm font-semibold text-green-700 mt-2">✅ OCR Berhasil!</div>
-                    `;
-                } else {
-                    throw new Error('OCR failed');
                 }
             })
-            .catch(error => {
-                preview.innerHTML = `
-                    <i class='bx bx-error-circle text-4xl text-yellow-500'></i>
-                    <div class="text-sm font-semibold text-yellow-700 mt-2">⚠️ OCR gagal, isi manual</div>
-                `;
+            .catch(() => {})
+            .finally(() => {
+                // 2. Upload file to server regardless of OCR result
+                uploadDocumentToServer(index, 'ktp_foto', file, statusEl);
             });
+        }
+
+        /**
+         * Upload any document to server (used by additional docs and after OCR)
+         */
+        function uploadDocument(index, docType, input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const container = document.getElementById(`doc_preview_${docType}_${index}`);
+            if (container) container.innerHTML = '<div class="text-xs text-blue-600"><i class="bx bx-loader-alt bx-spin"></i> Mengupload...</div>';
+            uploadDocumentToServer(index, docType, file, null);
+        }
+
+        function uploadDocumentToServer(index, docType, file, statusEl) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('doc_type', docType);
+            formData.append('member_index', index);
+
+            fetch('{{ route("public.booking.manifest.upload-doc", $booking->id) }}', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Update preview
+                    const previewEl = document.getElementById(`doc_preview_${docType}_${index}`);
+                    if (previewEl) {
+                        if (data.is_pdf) {
+                            previewEl.innerHTML = `
+                                <div class="flex items-center gap-3 p-2 bg-green-50 rounded-lg mb-2">
+                                    <i class='bx bxs-file-pdf text-3xl text-red-500'></i>
+                                    <div class="flex-1 text-left"><div class="text-xs font-semibold text-green-700">\u2705 PDF tersimpan</div></div>
+                                    <a href="${data.file_url}" target="_blank" class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"><i class='bx bx-download'></i></a>
+                                    <button type="button" onclick="deleteDocument(${index}, '${docType}')" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"><i class='bx bx-trash'></i></button>
+                                </div>`;
+                        } else {
+                            previewEl.innerHTML = `
+                                <div class="flex items-center gap-3 p-2 bg-green-50 rounded-lg mb-2">
+                                    <img src="${data.file_url}" class="h-16 w-16 object-cover rounded border">
+                                    <div class="flex-1 text-left"><div class="text-xs font-semibold text-green-700">\u2705 Foto tersimpan</div></div>
+                                    <a href="${data.file_url}" target="_blank" class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"><i class='bx bx-download'></i></a>
+                                    <button type="button" onclick="deleteDocument(${index}, '${docType}')" class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"><i class='bx bx-trash'></i></button>
+                                </div>`;
+                        }
+                    }
+                    if (statusEl) {
+                        statusEl.innerHTML = `<i class='bx bx-check-circle text-2xl text-green-500'></i><div class="text-xs text-green-700">Tersimpan! Klik untuk ganti</div>`;
+                    }
+                    updateBadge(index);
+                } else {
+                    if (statusEl) statusEl.innerHTML = `<div class="text-xs text-red-600">\u26A0\uFE0F Gagal upload</div>`;
+                }
+            })
+            .catch(() => {
+                if (statusEl) statusEl.innerHTML = `<div class="text-xs text-red-600">\u26A0\uFE0F Error jaringan</div>`;
+            });
+        }
+
+        /**
+         * Delete document from server
+         */
+        function deleteDocument(index, docType) {
+            if (!confirm('Hapus dokumen ini?')) return;
+
+            fetch('{{ route("public.booking.manifest.delete-doc", $booking->id) }}', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({ doc_type: docType, member_index: index })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Clear preview
+                    const previewEl = document.getElementById(`doc_preview_${docType}_${index}`);
+                    if (previewEl) previewEl.innerHTML = '';
+                    // Reset status for passport/ktp
+                    const statusEl = document.getElementById(`${docType === 'passport_foto' ? 'passport' : 'ktp'}_upload_status_${index}`);
+                    if (statusEl) {
+                        statusEl.innerHTML = `<i class='bx bx-cloud-upload text-4xl text-gray-400'></i><div class="text-sm font-semibold text-gray-700 mt-2">Klik untuk upload</div><div class="text-xs text-gray-500">JPG, PNG, PDF (Max 5MB)</div>`;
+                    }
+                    updateBadge(index);
+                } else {
+                    alert('\u26A0\uFE0F ' + (data.message || 'Gagal menghapus'));
+                }
+            })
+            .catch(() => alert('\u26A0\uFE0F Error jaringan'));
         }
 
         function saveCurrentTabData(showAlert = true) {
@@ -534,6 +734,11 @@
                 passport_tanggal_lahir: document.getElementById(`passport_tanggal_lahir_${index}`)?.value || '',
                 passport_tanggal_kadaluarsa: document.getElementById(`passport_tanggal_kadaluarsa_${index}`)?.value || '',
                 passport_kewarganegaraan: document.getElementById(`passport_kewarganegaraan_${index}`)?.value || '',
+                passport_title: document.getElementById(`passport_title_${index}`)?.value || '',
+                passport_gender: document.getElementById(`passport_gender_${index}`)?.value || '',
+                passport_tanggal_terbit: document.getElementById(`passport_tanggal_terbit_${index}`)?.value || '',
+                passport_kantor_terbit: document.getElementById(`passport_kantor_terbit_${index}`)?.value || '',
+                passport_tempat_lahir: document.getElementById(`passport_tempat_lahir_${index}`)?.value || '',
                 ktp_nik: document.getElementById(`ktp_nik_${index}`)?.value || '',
                 ktp_nama: document.getElementById(`ktp_nama_${index}`)?.value || '',
                 ktp_tempat_lahir: document.getElementById(`ktp_tempat_lahir_${index}`)?.value || '',
@@ -553,37 +758,66 @@
         }
 
         function saveAllData() {
-            // Save all tabs
+            // Collect all tab data first
             jamaahData.forEach((_, idx) => {
                 const data = {
+                    index: idx,
                     passport_nomor: document.getElementById(`passport_nomor_${idx}`)?.value || '',
                     passport_nama: document.getElementById(`passport_nama_${idx}`)?.value || '',
                     passport_tanggal_lahir: document.getElementById(`passport_tanggal_lahir_${idx}`)?.value || '',
                     passport_tanggal_kadaluarsa: document.getElementById(`passport_tanggal_kadaluarsa_${idx}`)?.value || '',
                     passport_kewarganegaraan: document.getElementById(`passport_kewarganegaraan_${idx}`)?.value || '',
+                    passport_title: document.getElementById(`passport_title_${idx}`)?.value || '',
+                    passport_gender: document.getElementById(`passport_gender_${idx}`)?.value || '',
+                    passport_tanggal_terbit: document.getElementById(`passport_tanggal_terbit_${idx}`)?.value || '',
+                    passport_kantor_terbit: document.getElementById(`passport_kantor_terbit_${idx}`)?.value || '',
+                    passport_tempat_lahir: document.getElementById(`passport_tempat_lahir_${idx}`)?.value || '',
                     ktp_nik: document.getElementById(`ktp_nik_${idx}`)?.value || '',
                     ktp_nama: document.getElementById(`ktp_nama_${idx}`)?.value || '',
                     ktp_tempat_lahir: document.getElementById(`ktp_tempat_lahir_${idx}`)?.value || '',
                     ktp_tanggal_lahir: document.getElementById(`ktp_tanggal_lahir_${idx}`)?.value || '',
                     ktp_alamat: document.getElementById(`ktp_alamat_${idx}`)?.value || '',
-                    akta_lahir: document.getElementById(`akta_lahir_${idx}`)?.files?.[0]?.name || '',
                 };
-
                 jamaahData[idx].data = data;
                 localStorage.setItem(`manifest_${booking.id}_${idx}`, JSON.stringify(data));
                 updateBadge(idx);
             });
-            
-            alert('✅ Semua data berhasil disimpan! Terima kasih.');
-            // TODO: Submit all data to server
+
+            // Submit to server
+            const payload = jamaahData.map((j, idx) => ({ index: idx, ...j.data }));
+
+            fetch('{{ route("public.booking.manifest.save-data", $booking->id) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({ jamaah_data: payload })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ Semua data berhasil disimpan!');
+                } else {
+                    alert('⚠️ ' + (data.message || 'Gagal menyimpan data'));
+                }
+            })
+            .catch(() => {
+                alert('⚠️ Terjadi kesalahan jaringan. Data tersimpan lokal, coba lagi.');
+            });
         }
 
         function loadSavedData() {
             jamaahData.forEach((jamaah, idx) => {
-                const saved = localStorage.getItem(`manifest_${booking.id}_${idx}`);
+                const saved = localStorage.getItem('manifest_' + booking.id + '_' + idx);
                 if (saved) {
-                    jamaah.data = JSON.parse(saved);
+                    try {
+                        const parsed = JSON.parse(saved);
+                        // Merge: localStorage overrides database data
+                        jamaah.data = Object.assign({}, jamaah.data, parsed);
+                    } catch(e) {}
                 }
+                // If no localStorage, data from database is already set in initializeJamaahData
             });
         }
 
@@ -603,28 +837,45 @@
             const data = jamaahData[index].data || {};
             const jamaah = jamaahData[index];
             const age = calculateAge(jamaah.tanggal_lahir);
-            const isChild = age !== null && age < 17;
+            const isChild = age !== null && age >= 0 && age < 17;
             
-            // Required fields based on age
+            // Required text fields
             let required = ['passport_nomor', 'passport_tanggal_kadaluarsa'];
-            
             if (isChild) {
-                // Children < 17: Akta Lahir required, KTP not required
-                required.push('akta_lahir');
+                // Anak: perlu akta lahir (file)
             } else {
-                // Adults >= 17: KTP required, Akta Lahir optional
                 required.push('ktp_nik');
             }
             
-            // Count missing required fields
-            const missing = required.filter(field => !data[field]).length;
+            // Count missing text fields
+            let missing = required.filter(field => !data[field]).length;
             
-            const badge = document.getElementById(`badge-${index}`);
+            // Check required file uploads (passport, KTP/akta, kartu keluarga)
+            const passportFileEl = document.getElementById(`doc_preview_passport_foto_${index}`);
+            const hasPassportFile = passportFileEl && passportFileEl.innerHTML.trim().length > 0;
+            if (!hasPassportFile && !jamaah.passport_foto_url) missing++;
+            
+            if (isChild) {
+                const aktaFileEl = document.getElementById(`doc_preview_akta_lahir_foto_${index}`);
+                const hasAktaFile = aktaFileEl && aktaFileEl.innerHTML.trim().length > 0;
+                if (!hasAktaFile && !jamaah.akta_lahir_foto_url) missing++;
+            } else {
+                const ktpFileEl = document.getElementById(`doc_preview_ktp_foto_${index}`);
+                const hasKtpFile = ktpFileEl && ktpFileEl.innerHTML.trim().length > 0;
+                if (!hasKtpFile && !jamaah.ktp_foto_url) missing++;
+            }
+            
+            const kkFileEl = document.getElementById(`doc_preview_kartu_keluarga_foto_${index}`);
+            const hasKkFile = kkFileEl && kkFileEl.innerHTML.trim().length > 0;
+            if (!hasKkFile && !jamaah.kartu_keluarga_foto_url) missing++;
+            
+            const badge = document.getElementById('badge-' + index);
+            if (!badge) return;
             if (missing === 0) {
-                badge.className = 'inline-flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full bg-green-500 text-white';
+                badge.style.background = '#16a34a';
                 badge.innerHTML = '✓';
             } else {
-                badge.className = 'inline-flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full bg-red-500 text-white';
+                badge.style.background = '#ef4444';
                 badge.textContent = missing;
             }
         }

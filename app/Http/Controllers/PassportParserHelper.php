@@ -21,7 +21,12 @@ trait PassportParserHelper
             'nama' => '',
             'tanggal_lahir' => '',
             'tanggal_kadaluarsa' => '',
-            'kewarganegaraan' => ''
+            'kewarganegaraan' => '',
+            'title' => '',
+            'gender' => '',
+            'tanggal_terbit' => '',
+            'kantor_terbit' => '',
+            'tempat_lahir' => '',
         ];
         
         \Log::info('=== PARSING PASSPORT TEXT (NEW) ===');
@@ -88,13 +93,14 @@ trait PassportParserHelper
                 }
             }
             
-            // MRZ Line 2: PASSPORTNUMBER<NATIONALITY<BIRTHDATE<SEX<EXPIRYDATE<<<<<<<<<<<<<
-            // Format: [Passport No][Check][Country][Birth Date][Check][Sex][Expiry Date][Check][Personal No]
-            // Example: A1234567<IDN9001011<M2501011<<<<<<<<<<<<<<<06
-            if (preg_match('/([A-Z0-9]{8,9})([A-Z]{3})(\d{6})(\d)([MF<])(\d{6})(\d)/i', $line, $matches)) {
-                \Log::info('MRZ Line 2 found: ' . $line);
+            // MRZ Line 2: TD3 format (44 chars)
+            // Format: [PassportNo 9][Check 1][Country 3][BirthDate 6][Check 1][Sex 1][ExpiryDate 6][Check 1][PersonalNo+Filler]
+            // Example: E5444606<1IDN9005271M3310230320505270500654
+            // PassportNo can contain < as filler (e.g., E5444606<)
+            if (preg_match('/([A-Z0-9<]{9})(\d)([A-Z]{3})(\d{6})(\d)([MF])(\d{6})(\d)/i', $line, $matches)) {
+                \Log::info('MRZ Line 2 found (TD3): ' . $line);
                 
-                // Passport number (8-9 chars including check digit)
+                // Passport number (9 chars, strip < fillers)
                 $passportNo = rtrim($matches[1], '<');
                 if (strlen($passportNo) >= 7) {
                     $data['nomor'] = strtoupper($passportNo);
@@ -102,18 +108,29 @@ trait PassportParserHelper
                 }
                 
                 // Birth date (YYMMDD format)
-                $birthDate = $matches[3];
+                $birthDate = $matches[4];
                 if (strlen($birthDate) == 6) {
                     $data['tanggal_lahir'] = $this->parseMrzDate($birthDate);
                     \Log::info('✓ Tanggal lahir found (MRZ): ' . $data['tanggal_lahir']);
                 }
                 
                 // Expiry date (YYMMDD format)
-                $expiryDate = $matches[6];
+                $expiryDate = $matches[7];
                 if (strlen($expiryDate) == 6) {
                     $data['tanggal_kadaluarsa'] = $this->parseMrzDate($expiryDate);
                     \Log::info('✓ Tanggal kadaluarsa found (MRZ): ' . $data['tanggal_kadaluarsa']);
                 }
+                
+                // Gender from MRZ (M or F)
+                $sex = strtoupper($matches[6]);
+                if ($sex === 'M') {
+                    $data['gender'] = 'Male';
+                    $data['title'] = 'MR';
+                } elseif ($sex === 'F') {
+                    $data['gender'] = 'Female';
+                    $data['title'] = 'MRS';
+                }
+                \Log::info('✓ Gender found (MRZ): ' . $data['gender']);
             }
         }
         
@@ -197,15 +214,15 @@ trait PassportParserHelper
         
         // Date of Birth from VIZ
         if (empty($data['tanggal_lahir'])) {
-            // Pattern 1: With keyword
-            if (preg_match('/(?:DATE\s*OF\s*BIRTH|TANGGAL\s*LAHIR|TGL.*AHIR)[:\s]*(\d{1,2}\s+[A-Z]{3}\s+\d{4})/i', $allText, $matches)) {
+            // Pattern 1: Specific keyword — "TGL LAHIR" or "DATE OF BIRTH" (NOT "TGL HABIS")
+            if (preg_match('/(?:TGL\.?\s*LAHIR|DATE\s*OF\s*BIRTH|TANGGAL\s*LAHIR)[:\s\/]*(\d{1,2}\s+[A-Z]{3}\s+\d{4})/i', $allText, $matches)) {
                 $dateStr = trim($matches[1]);
                 $data['tanggal_lahir'] = $this->parsePassportDate($dateStr);
                 if (!empty($data['tanggal_lahir'])) {
                     \Log::info('✓ Tanggal lahir found (VIZ keyword): ' . $data['tanggal_lahir']);
                 }
             }
-            // Pattern 2: Find all dates and pick the oldest (likely birth date)
+            // Pattern 2: Find all dates and pick the oldest (likely birth date — year < 2010)
             if (empty($data['tanggal_lahir'])) {
                 if (preg_match_all('/\b(\d{1,2}\s+(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s+\d{4})\b/i', $allText, $matches)) {
                     $dates = [];
@@ -213,14 +230,14 @@ trait PassportParserHelper
                         $parsed = $this->parsePassportDate($dateStr);
                         if (!empty($parsed)) {
                             $year = (int)substr($parsed, 0, 4);
-                            // Birth date should be between 1920-2010
-                            if ($year >= 1920 && $year <= 2010) {
+                            // Birth date should be between 1920-2015
+                            if ($year >= 1920 && $year <= 2015) {
                                 $dates[$parsed] = $dateStr;
                             }
                         }
                     }
                     if (!empty($dates)) {
-                        ksort($dates); // Sort by date
+                        ksort($dates); // Sort by date — oldest first
                         $oldestDate = key($dates);
                         $data['tanggal_lahir'] = $oldestDate;
                         \Log::info('✓ Tanggal lahir found (VIZ oldest date): ' . $data['tanggal_lahir'] . ' from ' . $dates[$oldestDate]);
@@ -231,15 +248,15 @@ trait PassportParserHelper
         
         // Date of Expiry from VIZ
         if (empty($data['tanggal_kadaluarsa'])) {
-            // Pattern 1: With keyword
-            if (preg_match('/(?:DATE\s*OF\s*EXPIRY|EXPIRY|BERLAKU|TGL.*HABIS)[:\s]*(\d{1,2}\s+[A-Z]{3}\s+\d{4})/i', $allText, $matches)) {
+            // Pattern 1: Specific keyword — "TGL HABIS BERLAKU" or "DATE OF EXPIRY"
+            if (preg_match('/(?:TGL\.?\s*HABIS\s*BERLAKU|DATE\s*OF\s*EXPIRY|TANGGAL\s*KADALUARSA|BERLAKU\s*SAMPAI)[:\s\/]*(\d{1,2}\s+[A-Z]{3}\s+\d{4})/i', $allText, $matches)) {
                 $dateStr = trim($matches[1]);
                 $data['tanggal_kadaluarsa'] = $this->parsePassportDate($dateStr);
                 if (!empty($data['tanggal_kadaluarsa'])) {
                     \Log::info('✓ Tanggal kadaluarsa found (VIZ keyword): ' . $data['tanggal_kadaluarsa']);
                 }
             }
-            // Pattern 2: Find all dates and pick the latest (likely expiry)
+            // Pattern 2: Find all dates and pick the latest (year > 2025 likely expiry)
             if (empty($data['tanggal_kadaluarsa'])) {
                 if (preg_match_all('/\b(\d{1,2}\s+(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s+\d{4})\b/i', $allText, $matches)) {
                     $dates = [];
@@ -247,14 +264,14 @@ trait PassportParserHelper
                         $parsed = $this->parsePassportDate($dateStr);
                         if (!empty($parsed)) {
                             $year = (int)substr($parsed, 0, 4);
-                            // Expiry date should be between 2000-2050
-                            if ($year >= 2000 && $year <= 2050) {
+                            // Expiry date should be in the future or recent (2024-2050)
+                            if ($year >= 2024 && $year <= 2050) {
                                 $dates[$parsed] = $dateStr;
                             }
                         }
                     }
                     if (!empty($dates)) {
-                        krsort($dates); // Sort by date descending
+                        krsort($dates); // Sort by date descending — latest first
                         $latestDate = key($dates);
                         $data['tanggal_kadaluarsa'] = $latestDate;
                         \Log::info('✓ Tanggal kadaluarsa found (VIZ latest date): ' . $data['tanggal_kadaluarsa'] . ' from ' . $dates[$latestDate]);
@@ -280,6 +297,189 @@ trait PassportParserHelper
             }
         }
         
+        // ===== EXTRACT ADDITIONAL FIELDS =====
+        
+        // Gender from VIZ (if not found from MRZ)
+        if (empty($data['gender'])) {
+            // Indonesian passport format: "KELAMIN / SEX" followed by "L/M" or "P/F"
+            if (preg_match('/(?:KELAMIN|SEX)[:\s\/]*([LPMF])[\/\s]*([MF])?/i', $allText, $matches)) {
+                $sex = strtoupper(trim($matches[1]));
+                if (in_array($sex, ['L', 'M'])) {
+                    $data['gender'] = 'Male';
+                    if (empty($data['title'])) $data['title'] = 'MR';
+                } elseif (in_array($sex, ['P', 'F'])) {
+                    $data['gender'] = 'Female';
+                    if (empty($data['title'])) $data['title'] = 'MRS';
+                }
+                \Log::info('✓ Gender found (VIZ): ' . $data['gender']);
+            }
+            // Fallback: look for standalone MALE/FEMALE/LAKI/PEREMPUAN
+            if (empty($data['gender'])) {
+                if (preg_match('/\b(MALE|FEMALE|LAKI|PEREMPUAN|PRIA|WANITA)\b/i', $allText, $matches)) {
+                    $sex = strtoupper(trim($matches[1]));
+                    if (in_array($sex, ['MALE', 'LAKI', 'PRIA'])) {
+                        $data['gender'] = 'Male';
+                        if (empty($data['title'])) $data['title'] = 'MR';
+                    } else {
+                        $data['gender'] = 'Female';
+                        if (empty($data['title'])) $data['title'] = 'MRS';
+                    }
+                    \Log::info('✓ Gender found (VIZ fallback): ' . $data['gender']);
+                }
+            }
+        }
+        
+        // Issued Date from VIZ — "TGL PENGELUARAN / DATE OF ISSUE"
+        if (empty($data['tanggal_terbit'])) {
+            // Pattern 1: Specific Indonesian passport keywords
+            if (preg_match('/(?:TGL\.?\s*PENGELUARAN|DATE\s*OF\s*ISSUE|TANGGAL\s*PENGELUARAN|TANGGAL\s*TERBIT|ISSUED)[:\s\/]*(\d{1,2}\s+[A-Z]{3}\s+\d{4})/i', $allText, $matches)) {
+                $data['tanggal_terbit'] = $this->parsePassportDate(trim($matches[1]));
+                \Log::info('✓ Tanggal terbit found (VIZ keyword): ' . $data['tanggal_terbit']);
+            }
+            // Pattern 2: If we have 3 dates, the middle one is issued date
+            if (empty($data['tanggal_terbit'])) {
+                if (preg_match_all('/\b(\d{1,2}\s+(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s+\d{4})\b/i', $allText, $matches)) {
+                    $allDates = [];
+                    foreach ($matches[1] as $dateStr) {
+                        $parsed = $this->parsePassportDate($dateStr);
+                        if (!empty($parsed)) {
+                            $allDates[] = $parsed;
+                        }
+                    }
+                    // Remove duplicates and sort
+                    $allDates = array_unique($allDates);
+                    sort($allDates);
+                    // If we have 3 dates: birth (oldest), issued (middle), expiry (newest)
+                    if (count($allDates) >= 3) {
+                        // The middle date(s) that are not birth or expiry = issued date
+                        foreach ($allDates as $d) {
+                            if ($d !== $data['tanggal_lahir'] && $d !== $data['tanggal_kadaluarsa']) {
+                                $year = (int)substr($d, 0, 4);
+                                if ($year >= 2000 && $year <= 2026) {
+                                    $data['tanggal_terbit'] = $d;
+                                    \Log::info('✓ Tanggal terbit found (VIZ 3-date logic): ' . $data['tanggal_terbit']);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Office Issued from VIZ — "KANTOR YANG MENGELUARKAN / ISSUING OFFICE"
+        // Only parse if we have passport data (nomor found = text contains passport data page)
+        if (empty($data['kantor_terbit']) && !empty($data['nomor'])) {
+            // Pattern 1: Look for city name AFTER "KANTOR YANG MENGELUARKAN" or "ISSUING OFFICE" on next line
+            foreach ($lines as $i => $line) {
+                $trimLine = trim($line);
+                // Skip lines from "PERHATIAN" section (halaman belakang passport)
+                if (preg_match('/\b(Kepolisian|terdekat|setempat|Perwakilan|dilarang|memperhatikan)\b/i', $trimLine)) {
+                    continue;
+                }
+                // Match full or truncated keyword: "KANTOR YANG MENGELUARKAN", "KANTOR YANG MEN", "ISSUING OFFICE"
+                if (preg_match('/(?:KANTOR\s*YANG\s*MEN|ISSUING\s*OFFICE)/i', $trimLine)) {
+                    // Check if city is on same line after the keyword
+                    if (preg_match('/(?:KANTOR\s*YANG\s*MENGE?LUARKAN|ISSUING\s*OFFICE)[:\s\/]*([A-Z][A-Z\s\-]{2,30})$/i', $trimLine, $m)) {
+                        $city = trim($m[1]);
+                        $city = preg_replace('/\b(ISSUING|OFFICE|KANTOR|YANG|MENGELUARKAN|MENGE)\b/i', '', $city);
+                        $city = trim($city);
+                        if (strlen($city) >= 3 && !preg_match('/\b(Kepolisian|Negara|Republik|terdekat)\b/i', $city)) {
+                            $data['kantor_terbit'] = strtoupper($city);
+                            \Log::info('✓ Kantor terbit found (VIZ same line): ' . $data['kantor_terbit']);
+                            break;
+                        }
+                    }
+                    // Check next line for city name
+                    if (empty($data['kantor_terbit']) && isset($lines[$i+1])) {
+                        $nextLine = trim($lines[$i+1]);
+                        // City name: 3-30 chars, starts with letter, no common noise keywords
+                        if (preg_match('/^([A-Z][A-Za-z\s\-]{2,30})$/i', $nextLine, $m)) {
+                            $city = trim($m[1]);
+                            if (!preg_match('/\b(PASPOR|PASSPORT|INDONESIA|REPUBLIK|P<IDN|MRZ|Kepolisian|Negara|terdekat|setempat|Polisi|Perwakilan|dilarang|PERHATIAN)\b/i', $city) && strlen($city) >= 3) {
+                                $data['kantor_terbit'] = strtoupper($city);
+                                \Log::info('✓ Kantor terbit found (VIZ next line): ' . $data['kantor_terbit']);
+                                break;
+                            }
+                        }
+                        // Also handle case where next line has MRZ chars (e.g., "TASIKMALAYA<<<<")
+                        if (empty($data['kantor_terbit'])) {
+                            $cleanNext = preg_replace('/[<\d]+$/', '', $nextLine); // Strip trailing < and digits
+                            $cleanNext = trim($cleanNext);
+                            if (preg_match('/^([A-Z][A-Z\s\-]{2,30})$/i', $cleanNext, $m)) {
+                                $city = trim($m[1]);
+                                if (!preg_match('/\b(PASPOR|PASSPORT|INDONESIA|REPUBLIK|Kepolisian|Negara|terdekat|setempat|Polisi|Perwakilan|dilarang|PERHATIAN)\b/i', $city) && strlen($city) >= 3) {
+                                    $data['kantor_terbit'] = strtoupper($city);
+                                    \Log::info('✓ Kantor terbit found (VIZ next line cleaned): ' . $data['kantor_terbit']);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Pattern 2: Search in allText for "KANTOR YANG MEN" followed by city name
+            if (empty($data['kantor_terbit'])) {
+                if (preg_match('/KANTOR\s*YANG\s*MEN[A-Z]*\s*(?:\/\s*ISSUING\s*OFFICE\s*)?([A-Z][A-Z\s]{2,25}?)(?:\s*<|$|\s*P<|\s*\d)/i', $allText, $m)) {
+                    $city = trim($m[1]);
+                    $city = preg_replace('/[<\d]+$/', '', $city);
+                    $city = trim($city);
+                    if (strlen($city) >= 3 && !preg_match('/\b(Kepolisian|Negara|Republik|terdekat|setempat|Polisi|Perwakilan|dilarang|PERHATIAN|PASPOR)\b/i', $city)) {
+                        $data['kantor_terbit'] = strtoupper($city);
+                        \Log::info('✓ Kantor terbit found (allText pattern): ' . $data['kantor_terbit']);
+                    }
+                }
+            }
+        }
+        
+        // Birth City/Place from VIZ — "TEMPAT LAHIR / PLACE OF BIRTH"
+        if (empty($data['tempat_lahir'])) {
+            // Pattern 1: Indonesian passport — tempat lahir biasanya di akhir baris setelah sex
+            // Format: "27 MAY 1990 L/M GARUT" atau "27 MAY 1990 P/F JAKARTA"
+            if (preg_match('/\d{1,2}\s+[A-Z]{3}\s+\d{4}\s+[LPMF]\/[MF]\s+([A-Z][A-Z\s\-]{2,30})/i', $allText, $matches)) {
+                $place = trim($matches[1]);
+                // Remove trailing noise
+                $place = preg_replace('/\b(TGL|TANGGAL|DATE|PENGELUARAN|ISSUE|HABIS|BERLAKU|EXPIRY)\b.*/i', '', $place);
+                $place = trim($place);
+                if (strlen($place) >= 3 && !preg_match('/\b(INDONESIA|PASPOR|PASSPORT)\b/i', $place)) {
+                    $data['tempat_lahir'] = strtoupper($place);
+                    \Log::info('✓ Tempat lahir found (VIZ after sex): ' . $data['tempat_lahir']);
+                }
+            }
+            // Pattern 2: With keyword on separate line — "TEMPAT LAHIR" then city on next line
+            if (empty($data['tempat_lahir'])) {
+                foreach ($lines as $i => $line) {
+                    $trimLine = trim($line);
+                    if (preg_match('/(?:TEMPAT\s*LAHIR|PLACE\s*OF\s*BIRTH)/i', $trimLine)) {
+                        // Check if city is at end of same line
+                        if (preg_match('/(?:TEMPAT\s*LAHIR|PLACE\s*OF\s*BIRTH)[:\s\/]*([A-Z][A-Z\s\-]{2,25})$/i', $trimLine, $m)) {
+                            $city = trim($m[1]);
+                            $city = preg_replace('/\b(PLACE|OF|BIRTH|TEMPAT|LAHIR)\b/i', '', $city);
+                            $city = trim($city);
+                            if (strlen($city) >= 3 && !preg_match('/\b(KELAMIN|SEX|INDONESIA)\b/i', $city)) {
+                                $data['tempat_lahir'] = strtoupper($city);
+                                \Log::info('✓ Tempat lahir found (VIZ keyword same line): ' . $data['tempat_lahir']);
+                                break;
+                            }
+                        }
+                        // Check next line
+                        if (empty($data['tempat_lahir']) && isset($lines[$i+1])) {
+                            $nextLine = trim($lines[$i+1]);
+                            if (preg_match('/^([A-Z][A-Z\s\-]{2,25})$/i', $nextLine, $m)) {
+                                $city = trim($m[1]);
+                                if (!preg_match('/\b(INDONESIA|PASPOR|PASSPORT|KELAMIN|SEX|TGL|TANGGAL)\b/i', $city)) {
+                                    $data['tempat_lahir'] = strtoupper($city);
+                                    \Log::info('✓ Tempat lahir found (VIZ next line): ' . $data['tempat_lahir']);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
         \Log::info('=== FINAL RESULT ===');
         \Log::info(json_encode($data, JSON_PRETTY_PRINT));
         
@@ -299,10 +499,11 @@ trait PassportParserHelper
         $mm = substr($mrzDate, 2, 2);
         $dd = substr($mrzDate, 4, 2);
         
-        // Determine century (assume 1900-2099)
-        // If YY > current year's last 2 digits, it's 1900s, else 2000s
-        $currentYY = (int)date('y');
-        if ((int)$yy > $currentYY) {
+        // Determine century
+        // For passport: birth dates use 19xx if YY > 30, else 20xx
+        // Expiry dates are always 20xx (passports don't expire in 1900s)
+        // Use threshold of 50: YY >= 50 → 1900s, YY < 50 → 2000s
+        if ((int)$yy >= 50) {
             $yyyy = '19' . $yy;
         } else {
             $yyyy = '20' . $yy;

@@ -20,6 +20,7 @@ class Keberangkatan extends Model
         'return_date',
         'total_jamaah',
         'status',
+        'manifest_order',
         'id_rab',
         'id_outlet'
     ];
@@ -27,7 +28,8 @@ class Keberangkatan extends Model
     protected $casts = [
         'departure_date' => 'immutable_date',
         'return_date' => 'immutable_date',
-        'total_jamaah' => 'integer'
+        'total_jamaah' => 'integer',
+        'manifest_order' => 'array',
     ];
 
     /**

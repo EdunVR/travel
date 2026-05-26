@@ -532,8 +532,8 @@
                 </tr>
                 @endforeach
 
-                <!-- Equipment/Perlengkapan -->
-                @if(($booking->equipment_cost ?? 0) > 0)
+                <!-- Equipment/Perlengkapan (legacy field - only show if no BookingAddon records) -->
+                @if(($booking->equipment_cost ?? 0) > 0 && (!$booking->addons || $booking->addons->count() === 0))
                 <tr>
                     <td class="text-center">{{ $itemNo++ }}</td>
                     <td>

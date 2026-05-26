@@ -116,6 +116,7 @@ class PublicPackageController extends Controller
             'telepon'                 => 'required|string|max:20',
             'email'                   => 'nullable|email|max:255',
             'alamat'                  => 'nullable|string|max:500',
+            'tanggal_lahir'           => 'required|date',
             'price_package_name'      => 'nullable|string|max:255',
             'price_variant'           => 'nullable|string|max:100',
             'selected_price'          => 'nullable|numeric|min:0',
@@ -147,19 +148,26 @@ class PublicPackageController extends Controller
             $nextNumber = $lastMember ? (intval($lastMember->kode_member) + 1) : 1;
 
             $member = Member::create([
-                'nama'         => $validated['nama'],
-                'telepon'      => $validated['telepon'],
-                'alamat'       => $validated['alamat'] ?? null,
-                'id_outlet'    => $package->id_outlet,
-                'kode_member'  => str_pad($nextNumber, 6, '0', STR_PAD_LEFT),
-                'is_jamaah'    => true,
-                'jamaah_type'  => 'umrah',
-                'family_members' => !empty($familyMembers) ? json_encode($familyMembers) : null,
+                'nama'              => $validated['nama'],
+                'telepon'           => $validated['telepon'],
+                'alamat'            => $validated['alamat'] ?? null,
+                'id_outlet'         => $package->id_outlet,
+                'kode_member'       => str_pad($nextNumber, 6, '0', STR_PAD_LEFT),
+                'is_jamaah'         => true,
+                'jamaah_type'       => 'umrah',
+                'ktp_tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
+                'family_members'    => !empty($familyMembers) ? $familyMembers : null,
             ]);
         } else {
-            // Jangan update family_members jika member sudah ada
-            // Family members hanya diupdate jika memang ditambahkan di form pemesanan
-            // Ini mencegah family members lama terhitung di booking baru
+            // Update ktp_tanggal_lahir — selalu update jika ada nilai baru dari form
+            if (!empty($validated['tanggal_lahir'])) {
+                $member->update([
+                    'ktp_tanggal_lahir' => $validated['tanggal_lahir'],
+                    'family_members' => !empty($familyMembers) ? $familyMembers : $member->family_members,
+                ]);
+            } elseif (!empty($familyMembers)) {
+                $member->update(['family_members' => $familyMembers]);
+            }
         }
 
         // Buat Booking
@@ -355,6 +363,14 @@ class PublicPackageController extends Controller
         // Pastikan booking milik paket ini
         abort_if($booking->id_travel_package != $packageId, 404);
 
+        // Jika sudah LUNAS, redirect ke halaman selamat
+        if ($booking->payment_status === 'paid' && $booking->remaining_amount <= 0) {
+            return redirect()->route('public.booking.paid', [
+                'packageId' => $packageId,
+                'bookingId' => $bookingId
+            ]);
+        }
+
         // Cek apakah ada pembayaran yang sedang pending verifikasi
         $latestPayment = JamaahPayment::where('id_jamaah_booking', $bookingId)
             ->latest()
@@ -404,6 +420,18 @@ class PublicPackageController extends Controller
         if (!is_array($familyMembers)) $familyMembers = [];
 
         [$grandTotal, $priceBreakdown] = $this->calculateTotal($unitPrice, $familyMembers, $package);
+        
+        // Add equipment/perlengkapan from BookingAddon
+        $bookingAddons = \App\Models\BookingAddon::where('id_jamaah_booking', $booking->id)->get();
+        foreach ($bookingAddons as $addon) {
+            $subtotal = $addon->harga * $addon->qty;
+            $label = $addon->nama;
+            if ($addon->qty > 1) {
+                $label .= " x{$addon->qty}";
+            }
+            $priceBreakdown[] = ['label' => "🧳 {$label}", 'amount' => $subtotal, 'pax' => $addon->qty];
+            $grandTotal += $subtotal;
+        }
         
         // Apply voucher discount if exists
         $voucherDiscount = $booking->voucher_discount ?? 0;
@@ -664,13 +692,36 @@ class PublicPackageController extends Controller
         
         // If no payment or payment is verified, redirect to invoice
         if (!$payment || $payment->verification_status === 'verified') {
-            return redirect()->route('public.booking.invoice', [
+            return redirect()->route('public.paket.invoice', [
                 'packageId' => $packageId,
                 'bookingId' => $bookingId
             ]);
         }
         
         return view('public.payment-pending-verification', compact('payment', 'booking', 'package'));
+    }
+
+    /**
+     * Show "Selamat, sudah lunas" page
+     */
+    public function bookingPaid($packageId, $bookingId)
+    {
+        $booking = JamaahBooking::with(['travelPackage', 'jamaah'])->findOrFail($bookingId);
+        $package = $booking->travelPackage;
+        
+        abort_if($booking->id_travel_package != $packageId, 404);
+        
+        // If not actually paid, redirect back to invoice
+        if ($booking->payment_status !== 'paid' || $booking->remaining_amount > 0) {
+            return redirect()->route('public.paket.invoice', [
+                'packageId' => $packageId,
+                'bookingId' => $bookingId
+            ]);
+        }
+        
+        $manifestUrl = route('public.booking.manifest', ['bookingId' => $booking->id]);
+        
+        return view('public.booking-paid', compact('booking', 'package', 'manifestUrl'));
     }
 
     /**
@@ -840,6 +891,7 @@ class PublicPackageController extends Controller
                 'total_price' => 'required|numeric|min:0',
                 'voucher_code' => 'nullable|string',
                 'voucher_discount' => 'nullable|numeric|min:0',
+                'tanggal_lahir' => 'nullable|date',
             ]);
 
             // Parse JSON fields
@@ -859,6 +911,8 @@ class PublicPackageController extends Controller
                     'id_tipe' => 1,
                     'is_jamaah' => true,
                     'id_outlet' => $package->id_outlet ?? 1, // Set outlet from package
+                    'ktp_tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
+                    'family_members' => !empty($familyMembers) ? $familyMembers : null,
                 ]
             );
             
@@ -867,10 +921,42 @@ class PublicPackageController extends Controller
                 $member->update(['id_outlet' => $package->id_outlet]);
             }
 
+            // Always update tanggal_lahir and family_members from booking form
+            $memberUpdateData = [];
+            if (!empty($validated['tanggal_lahir'])) {
+                $memberUpdateData['ktp_tanggal_lahir'] = $validated['tanggal_lahir'];
+            }
+            if (!empty($familyMembers)) {
+                $memberUpdateData['family_members'] = $familyMembers;
+            }
+            if (!empty($memberUpdateData)) {
+                $member->update($memberUpdateData);
+            }
+
             // 2. Create booking with status "unpaid"
+            // Auto-create or find keberangkatan for this package
+            $keberangkatan = \App\Models\Keberangkatan::where('id_travel_package', $validated['package_id'])
+                ->where('id_outlet', $package->id_outlet ?? 1)
+                ->first();
+            
+            if (!$keberangkatan) {
+                $keberangkatan = \App\Models\Keberangkatan::create([
+                    'keberangkatan_code' => 'KBR-' . now()->format('Ymd') . '-' . strtoupper(substr(md5(uniqid()), 0, 4)),
+                    'keberangkatan_name' => $package->package_name ?? 'Keberangkatan',
+                    'id_travel_package' => $validated['package_id'],
+                    'departure_date' => $package->departure_date,
+                    'return_date' => $package->return_date,
+                    'total_jamaah' => 0,
+                    'status' => 'planning',
+                    'id_outlet' => $package->id_outlet ?? 1,
+                ]);
+                \Log::info('Auto-created keberangkatan for package', ['package_id' => $validated['package_id'], 'keberangkatan_id' => $keberangkatan->id]);
+            }
+
             $booking = JamaahBooking::create([
                 'booking_code' => JamaahBooking::generateBookingCode(),
                 'id_travel_package' => $validated['package_id'],
+                'id_keberangkatan' => $keberangkatan->id,
                 'id_member' => $member->id_member,
                 'id_outlet' => $package->id_outlet ?? 1,
                 'booking_date' => now()->toDateString(),
@@ -888,6 +974,9 @@ class PublicPackageController extends Controller
                 'payment_type' => $validated['payment_type'],
                 'dp_option' => $validated['dp_option'] ?? '25_percent',
             ]);
+            
+            // Update total_jamaah on keberangkatan
+            $keberangkatan->update(['total_jamaah' => $keberangkatan->jamaahBookings()->count()]);
 
             // 3. Create add-ons (perlengkapan)
             if (!empty($equipment)) {
@@ -1459,7 +1548,7 @@ class PublicPackageController extends Controller
     {
         $search = $request->get('search', '');
         
-        $products = \DB::table('produk')
+        $products = \App\Models\Produk::with('primaryImage')
             ->leftJoin('hpp_produk', 'produk.id_produk', '=', 'hpp_produk.id_produk')
             ->select(
                 'produk.id_produk', 
@@ -1476,6 +1565,15 @@ class PublicPackageController extends Controller
             ->orderBy('produk.nama_produk')
             ->limit(50)
             ->get();
+        
+        // Add image URL to each product
+        $products->transform(function ($product) {
+            $image = \App\Models\ProductImage::where('id_produk', $product->id_produk)
+                ->where('is_primary', true)
+                ->first();
+            $product->image_url = $image ? asset('storage/' . $image->path) : null;
+            return $product;
+        });
         
         return response()->json($products);
     }

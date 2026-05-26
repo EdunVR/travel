@@ -275,6 +275,8 @@
                         <thead class="bg-slate-50 border-b border-slate-100">
                             <tr>
                                 <th class="text-left px-4 py-2.5 font-semibold text-slate-600 text-xs">Paket</th>
+                                <th class="text-left px-4 py-2.5 font-semibold text-slate-600 text-xs">Customer</th>
+                                <th class="text-center px-4 py-2.5 font-semibold text-slate-600 text-xs">Pax</th>
                                 <th class="text-right px-4 py-2.5 font-semibold text-slate-600 text-xs">Order</th>
                                 <th class="text-right px-4 py-2.5 font-semibold text-slate-600 text-xs">Komisi</th>
                                 <th class="text-center px-4 py-2.5 font-semibold text-slate-600 text-xs">Status</th>
@@ -287,6 +289,13 @@
                                 <td class="px-4 py-2.5">
                                     <div class="font-medium text-slate-900 text-xs">{{ $ref->package->package_name ?? 'N/A' }}</div>
                                     <div class="text-slate-400 text-xs">{{ $ref->order_date ? $ref->order_date->format('d M Y') : '-' }}</div>
+                                </td>
+                                <td class="px-4 py-2.5">
+                                    <div class="font-medium text-slate-900 text-xs">{{ $ref->booking->member->nama ?? $ref->booking->member->full_name ?? 'N/A' }}</div>
+                                    <div class="text-slate-400 text-xs">{{ $ref->booking->member->telepon ?? '' }}</div>
+                                </td>
+                                <td class="px-4 py-2.5 text-center text-xs text-slate-600">
+                                    {{ $ref->total_pax ?? 1 }}
                                 </td>
                                 <td class="px-4 py-2.5 text-right text-xs text-slate-600">
                                     Rp {{ number_format($ref->order_amount, 0, ',', '.') }}
@@ -328,37 +337,40 @@
                                 </td>
                                 <td class="px-4 py-2.5 text-center">
                                     <div class="flex flex-col gap-1 items-center">
-                                        {{-- Button: Release Termin 1 (Pelunasan) --}}
-                                        @if(!($ref->termin_1_released ?? false) && !($ref->termin_2_released ?? false))
+                                        {{-- Button: Mark as Paid (Pelunasan) --}}
+                                        @if(!($ref->termin_1_released ?? false))
                                         <form action="{{ route('admin.inventaris.affiliate.referral.release-termin1', $ref) }}" method="POST">
                                             @csrf @method('PATCH')
-                                            <button type="submit" title="Cairkan Fee (Saat Pelunasan)"
+                                            <button type="submit" title="Tandai Lunas"
                                                     class="px-2 py-0.5 rounded bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 transition text-xs">
-                                                ✅ Cairkan Fee (Pelunasan)
+                                                ✅ Tandai Lunas
                                             </button>
                                         </form>
                                         @endif
                                         
-                                        {{-- Button: Release Termin 2 (Keberangkatan) --}}
+                                        {{-- Button: Release to Available (Keberangkatan) --}}
                                         @if(($ref->termin_1_released ?? false) && !($ref->termin_2_released ?? false))
                                         <form action="{{ route('admin.inventaris.affiliate.referral.release-termin2', $ref) }}" method="POST">
                                             @csrf @method('PATCH')
-                                            <button type="submit" title="Pindahkan ke Saldo Tersedia (Saat Keberangkatan)"
+                                            <button type="submit" title="Release ke Saldo Tersedia"
                                                     class="px-2 py-0.5 rounded bg-green-50 border border-green-200 text-green-600 hover:bg-green-100 transition text-xs">
-                                                🚀 Test Keberangkatan
+                                                🚀 Release ke Tersedia
+                                            </button>
+                                        </form>
+                                        @endif
+
+                                        {{-- Button: Force Release (Admin skip departure date) --}}
+                                        @if(!($ref->termin_2_released ?? false))
+                                        <form action="{{ route('admin.inventaris.affiliate.referral.force-release', $ref) }}" method="POST"
+                                              onsubmit="return confirm('Force release akan langsung memindahkan fee ke saldo tersedia mitra tanpa menunggu tanggal keberangkatan. Lanjutkan?')">
+                                            @csrf @method('PATCH')
+                                            <button type="submit" title="Force Release (Skip Keberangkatan)"
+                                                    class="px-2 py-0.5 rounded bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition text-xs">
+                                                ⚡ Force Release
                                             </button>
                                         </form>
                                         @endif
                                         
-                                        @if($ref->status === 'pending' && ($ref->termin_1_released ?? false))
-                                        <form action="{{ route('admin.inventaris.affiliate.referral.verify', $ref) }}" method="POST">
-                                            @csrf @method('PATCH')
-                                            <button type="submit" title="Verify"
-                                                    class="p-1 rounded bg-green-50 border border-green-200 text-green-600 hover:bg-green-100 transition">
-                                                <i class="fas fa-check text-xs"></i>
-                                            </button>
-                                        </form>
-                                        @endif
                                         @if($ref->status === 'pending')
                                         <button type="button" onclick="rejectReferral({{ $ref->id }})"
                                                 class="p-1 rounded bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition" title="Reject">
@@ -370,7 +382,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" class="text-center py-8 text-slate-400 text-sm">Belum ada referral</td>
+                                <td colspan="7" class="text-center py-8 text-slate-400 text-sm">Belum ada referral</td>
                             </tr>
                             @endforelse
                         </tbody>

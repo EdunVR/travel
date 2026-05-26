@@ -275,6 +275,12 @@ Route::get('/paket/{packageId}/booking/{bookingId}/pending',
     ->middleware(['web'])
     ->name('public.payment.pending');
 
+// Booking fully paid page
+Route::get('/paket/{packageId}/booking/{bookingId}/paid', 
+    [\App\Http\Controllers\PublicPackageController::class, 'bookingPaid'])
+    ->middleware(['web'])
+    ->name('public.booking.paid');
+
 // Check payment status API (Task 9)
 Route::get('/payment/{paymentId}/check-status', 
     [\App\Http\Controllers\PublicPackageController::class, 'checkPaymentStatus'])
@@ -303,6 +309,24 @@ Route::post('/manifest/ocr-ktp',
     [\App\Http\Controllers\PublicDocumentController::class, 'ocrKtp'])
     ->middleware(['web'])
     ->name('public.manifest.ocr-ktp');
+
+// Save manifest data (text fields only, no file upload) — AJAX endpoint
+Route::post('/booking/{bookingId}/manifest/save-data',
+    [\App\Http\Controllers\PublicDocumentController::class, 'saveManifestData'])
+    ->middleware(['web'])
+    ->name('public.booking.manifest.save-data');
+
+// Upload dokumen manifest per-file — AJAX endpoint
+Route::post('/booking/{bookingId}/manifest/upload-doc',
+    [\App\Http\Controllers\PublicDocumentController::class, 'uploadManifestDocument'])
+    ->middleware(['web'])
+    ->name('public.booking.manifest.upload-doc');
+
+// Hapus dokumen manifest per-file — AJAX endpoint
+Route::delete('/booking/{bookingId}/manifest/delete-doc',
+    [\App\Http\Controllers\PublicDocumentController::class, 'deleteManifestDocument'])
+    ->middleware(['web'])
+    ->name('public.booking.manifest.delete-doc');
 
 // Add family member to booking (Task 10)
 Route::post('/booking/{bookingId}/add-family-member', 
@@ -718,6 +742,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::delete('travel/keberangkatan/{id}/visas/{visaId}', [KeberangkatanController::class, 'destroyVisa'])->name('travel.keberangkatan.visas.destroy');
         Route::post('travel/keberangkatan/{id}/send-reminders', [KeberangkatanController::class, 'sendReminders'])->name('travel.keberangkatan.send-reminders');
         
+        // Manifest management (drag & drop + PDF + Excel)
+        Route::get('travel/keberangkatan/{id}/manage-manifest', [KeberangkatanController::class, 'manageManifest'])->name('travel.keberangkatan.manage-manifest');
+        Route::post('travel/keberangkatan/{id}/save-manifest-order', [KeberangkatanController::class, 'saveManifestOrder'])->name('travel.keberangkatan.save-manifest-order');
+        Route::get('travel/keberangkatan/{id}/manifest-pdf', [KeberangkatanController::class, 'manifestPdf'])->name('travel.keberangkatan.manifest-pdf');
+        Route::get('travel/keberangkatan/{id}/manifest-excel', [KeberangkatanController::class, 'manifestExcel'])->name('travel.keberangkatan.manifest-excel');
+        
         // Task Management
         Route::get('travel/tasks', [TaskController::class, 'index'])->name('travel.tasks.index');
         Route::get('travel/tasks/data', [TaskController::class, 'getData'])->name('travel.tasks.data');
@@ -882,6 +912,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             Route::patch('/referral/{referral}/verify', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'verifyReferral'])->name('referral.verify');
             Route::patch('/referral/{referral}/release-termin1', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'releaseTermin1'])->name('referral.release-termin1');
             Route::patch('/referral/{referral}/release-termin2', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'releaseTermin2'])->name('referral.release-termin2');
+            Route::patch('/referral/{referral}/force-release', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'forceRelease'])->name('referral.force-release');
             Route::delete('/{affiliator}', [\App\Http\Controllers\Admin\AffiliateAdminController::class, 'destroy'])->name('destroy');
         });
         
@@ -1057,6 +1088,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             ->middleware('permission:crm.pelanggan.update')->name('pelanggan.ocr.visa');
         Route::post('pelanggan/ocr/sertifikat-kesehatan', [CustomerManagementController::class, 'ocrSertifikatKesehatan'])
             ->middleware('permission:crm.pelanggan.update')->name('pelanggan.ocr.sertifikat-kesehatan');
+        // Upload & hapus dokumen member (manifest)
+        Route::post('pelanggan/{id}/upload-doc', [CustomerManagementController::class, 'uploadMemberDocument'])
+            ->middleware('permission:crm.pelanggan.update')->name('pelanggan.upload-doc');
+        Route::delete('pelanggan/{id}/delete-doc', [CustomerManagementController::class, 'deleteMemberDocument'])
+            ->middleware('permission:crm.pelanggan.update')->name('pelanggan.delete-doc');
         Route::post('pelanggan', [CustomerManagementController::class, 'store'])
             ->middleware('permission:crm.pelanggan.create')->name('pelanggan.store');
         Route::put('pelanggan/{id}', [CustomerManagementController::class, 'update'])

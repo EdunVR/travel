@@ -213,7 +213,7 @@ class PublicDocumentController extends Controller
     public function ocrPassport(Request $request)
     {
         $request->validate([
-            'passport_image' => 'required|image|mimes:jpeg,jpg,png|max:5120'
+            'passport_image' => 'required|mimes:jpeg,jpg,png,pdf|max:5120'
         ]);
 
         try {
@@ -221,54 +221,38 @@ class PublicDocumentController extends Controller
             $path = $file->store('temp/passport_ocr', 'public');
             $fullPath = storage_path('app/public/' . $path);
 
-            // Check if Tesseract is available
-            if (!$this->isTesseractAvailable()) {
-                \Storage::disk('public')->delete($path);
-                
-                return response()->json([
-                    'success' => false,
-                    'message' => 'OCR tidak tersedia. Silakan isi data secara manual.'
-                ], 500);
-            }
-
-            // Preprocess image
-            $processedPath = $this->preprocessImage($fullPath);
-
-            // Perform OCR with multiple PSM modes
+            // Use Google Vision (primary) or Tesseract (fallback)
+            $vision = new \App\Services\GoogleVisionService();
             $text = '';
-            $results = [];
-            
-            foreach ([3, 4, 6] as $psm) {
-                try {
-                    $ocrText = \OnePointHub\LaravelOcr\Facades\Ocr::scan($processedPath, 'eng', $psm);
-                    $results[] = [
-                        'text' => $ocrText,
-                        'length' => strlen($ocrText),
-                        'psm' => $psm
-                    ];
-                } catch (\Exception $e) {
-                    \Log::warning("PSM $psm failed: " . $e->getMessage());
+
+            if ($vision->isAvailable()) {
+                $text = $vision->extractText($fullPath) ?? '';
+            }
+
+            // Fallback to Tesseract for images only
+            if (empty($text) && $file->getMimeType() !== 'application/pdf' && $this->isTesseractAvailable()) {
+                $processedPath = $this->preprocessImage($fullPath);
+                $results = [];
+                foreach ([3, 4, 6] as $psm) {
+                    try {
+                        $ocrText = \OnePointHub\LaravelOcr\Facades\Ocr::scan($processedPath, 'eng', $psm);
+                        $results[] = ['text' => $ocrText, 'length' => strlen($ocrText)];
+                    } catch (\Exception $e) {}
                 }
+                if (!empty($results)) {
+                    usort($results, fn($a, $b) => $b['length'] - $a['length']);
+                    $text = $results[0]['text'];
+                }
+                if ($processedPath !== $fullPath) @unlink($processedPath);
             }
 
-            // Pick best result (longest text with MRZ pattern)
-            if (!empty($results)) {
-                usort($results, function($a, $b) {
-                    $scoreA = $a['length'] + (preg_match('/P<[A-Z]{3}/', $a['text']) ? 300 : 0);
-                    $scoreB = $b['length'] + (preg_match('/P<[A-Z]{3}/', $b['text']) ? 300 : 0);
-                    return $scoreB - $scoreA;
-                });
-                $text = $results[0]['text'];
-            }
-
-            // Parse passport data using trait method
-            $parsedData = $this->parsePassportTextNew($text);
-
-            // Clean up temp files
-            if ($processedPath !== $fullPath) {
-                @unlink($processedPath);
-            }
             \Storage::disk('public')->delete($path);
+
+            if (empty($text)) {
+                return response()->json(['success' => false, 'message' => 'OCR tidak dapat mengekstrak teks. Silakan isi data secara manual.'], 500);
+            }
+
+            $parsedData = $this->parsePassportTextNew($text);
 
             return response()->json([
                 'success' => true,
@@ -278,16 +262,17 @@ class PublicDocumentController extends Controller
                     'passport_tanggal_lahir' => $parsedData['tanggal_lahir'] ?? '',
                     'passport_tanggal_kadaluarsa' => $parsedData['tanggal_kadaluarsa'] ?? '',
                     'passport_kewarganegaraan' => $parsedData['kewarganegaraan'] ?? '',
+                    'passport_title' => $parsedData['title'] ?? '',
+                    'passport_gender' => $parsedData['gender'] ?? '',
+                    'passport_tanggal_terbit' => $parsedData['tanggal_terbit'] ?? '',
+                    'passport_kantor_terbit' => $parsedData['kantor_terbit'] ?? '',
+                    'passport_tempat_lahir' => $parsedData['tempat_lahir'] ?? '',
                 ]
             ]);
 
         } catch (\Exception $e) {
             Log::error('OCR Passport error: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memproses OCR: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Gagal memproses OCR: ' . $e->getMessage()], 500);
         }
     }
 
@@ -297,7 +282,7 @@ class PublicDocumentController extends Controller
     public function ocrKtp(Request $request)
     {
         $request->validate([
-            'ktp_image' => 'required|image|mimes:jpeg,jpg,png|max:5120'
+            'ktp_image' => 'required|mimes:jpeg,jpg,png,pdf|max:5120'
         ]);
 
         try {
@@ -305,52 +290,38 @@ class PublicDocumentController extends Controller
             $path = $file->store('temp/ktp_ocr', 'public');
             $fullPath = storage_path('app/public/' . $path);
 
-            // Check if Tesseract is available
-            if (!$this->isTesseractAvailable()) {
-                \Storage::disk('public')->delete($path);
-                
-                return response()->json([
-                    'success' => false,
-                    'message' => 'OCR tidak tersedia. Silakan isi data secara manual.'
-                ], 500);
-            }
-
-            // Preprocess image
-            $processedPath = $this->preprocessImage($fullPath);
-
-            // Perform OCR with multiple PSM modes
+            // Use Google Vision (primary) or Tesseract (fallback)
+            $vision = new \App\Services\GoogleVisionService();
             $text = '';
-            $results = [];
-            
-            foreach ([3, 4, 6] as $psm) {
-                try {
-                    $ocrText = \OnePointHub\LaravelOcr\Facades\Ocr::scan($processedPath, 'ind', $psm);
-                    $results[] = [
-                        'text' => $ocrText,
-                        'length' => strlen($ocrText),
-                        'psm' => $psm
-                    ];
-                } catch (\Exception $e) {
-                    \Log::warning("PSM $psm failed: " . $e->getMessage());
+
+            if ($vision->isAvailable()) {
+                $text = $vision->extractText($fullPath) ?? '';
+            }
+
+            // Fallback to Tesseract for images only
+            if (empty($text) && $file->getMimeType() !== 'application/pdf' && $this->isTesseractAvailable()) {
+                $processedPath = $this->preprocessImage($fullPath);
+                $results = [];
+                foreach ([3, 4, 6] as $psm) {
+                    try {
+                        $ocrText = \OnePointHub\LaravelOcr\Facades\Ocr::scan($processedPath, 'ind', $psm);
+                        $results[] = ['text' => $ocrText, 'length' => strlen($ocrText)];
+                    } catch (\Exception $e) {}
                 }
+                if (!empty($results)) {
+                    usort($results, fn($a, $b) => $b['length'] - $a['length']);
+                    $text = $results[0]['text'];
+                }
+                if ($processedPath !== $fullPath) @unlink($processedPath);
             }
 
-            // Pick best result (longest text)
-            if (!empty($results)) {
-                usort($results, function($a, $b) {
-                    return $b['length'] - $a['length'];
-                });
-                $text = $results[0]['text'];
-            }
-
-            // Parse KTP data using trait method
-            $parsedData = $this->parseKtpTextNew($text);
-
-            // Clean up temp files
-            if ($processedPath !== $fullPath) {
-                @unlink($processedPath);
-            }
             \Storage::disk('public')->delete($path);
+
+            if (empty($text)) {
+                return response()->json(['success' => false, 'message' => 'OCR tidak dapat mengekstrak teks. Silakan isi data secara manual.'], 500);
+            }
+
+            $parsedData = $this->parseKtpTextNew($text);
 
             return response()->json([
                 'success' => true,
@@ -365,11 +336,7 @@ class PublicDocumentController extends Controller
 
         } catch (\Exception $e) {
             Log::error('OCR KTP error: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memproses OCR: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Gagal memproses OCR: ' . $e->getMessage()], 500);
         }
     }
 
@@ -435,6 +402,273 @@ class PublicDocumentController extends Controller
     }
 
     /**
+     * Save manifest data (text fields) via AJAX — no file upload.
+     * Saves jamaah utama to Member table, anggota keluarga to booking.family_members_booking.
+     */
+    public function saveManifestData(Request $request, $bookingId)
+    {
+        $booking = JamaahBooking::with('jamaah')->findOrFail($bookingId);
+
+        $request->validate([
+            'jamaah_data'   => 'required|array',
+            'jamaah_data.*.index' => 'required|integer',
+        ]);
+
+        try {
+            \DB::beginTransaction();
+
+            $allData = $request->input('jamaah_data', []);
+
+            // Separate main jamaah (index 0) from family members
+            $mainData   = null;
+            $familyData = [];
+
+            foreach ($allData as $item) {
+                if ((int)$item['index'] === 0) {
+                    $mainData = $item;
+                } else {
+                    $familyData[] = $item;
+                }
+            }
+
+            // --- Update jamaah utama (Member table) ---
+            if ($mainData && $booking->jamaah) {
+                $member = $booking->jamaah;
+                $updateFields = [
+                    'passport_nomor'             => $mainData['passport_nomor'] ?? null,
+                    'passport_nama'              => $mainData['passport_nama'] ?? null,
+                    'passport_tanggal_lahir'     => $mainData['passport_tanggal_lahir'] ?? null,
+                    'passport_tanggal_kadaluarsa'=> $mainData['passport_tanggal_kadaluarsa'] ?? null,
+                    'passport_kewarganegaraan'   => $mainData['passport_kewarganegaraan'] ?? null,
+                    'passport_title'             => $mainData['passport_title'] ?? null,
+                    'passport_gender'            => $mainData['passport_gender'] ?? null,
+                    'passport_tanggal_terbit'    => $mainData['passport_tanggal_terbit'] ?? null,
+                    'passport_kantor_terbit'     => $mainData['passport_kantor_terbit'] ?? null,
+                    'passport_tempat_lahir'      => $mainData['passport_tempat_lahir'] ?? null,
+                    'ktp_nik'                    => $mainData['ktp_nik'] ?? null,
+                    'ktp_nama'                   => $mainData['ktp_nama'] ?? null,
+                    'ktp_tempat_lahir'           => $mainData['ktp_tempat_lahir'] ?? null,
+                    'ktp_tanggal_lahir'          => $mainData['ktp_tanggal_lahir'] ?? null,
+                    'ktp_alamat'                 => $mainData['ktp_alamat'] ?? null,
+                ];
+                // Only update non-empty fields
+                $updateFields = array_filter($updateFields, fn($v) => $v !== null && $v !== '');
+                if (!empty($updateFields)) {
+                    $member->update($updateFields);
+                }
+            }
+
+            // --- Update anggota keluarga (family_members_booking) ---
+            if (!empty($familyData)) {
+                $existingFamily = $booking->family_members_booking;
+                if (is_string($existingFamily)) {
+                    $existingFamily = json_decode($existingFamily, true) ?? [];
+                }
+                if (!is_array($existingFamily)) $existingFamily = [];
+
+                foreach ($familyData as $item) {
+                    $idx = (int)$item['index'] - 1; // family index starts at 1 in JS
+                    if (isset($existingFamily[$idx])) {
+                        // Merge manifest data into existing family member
+                        $existingFamily[$idx] = array_merge($existingFamily[$idx], [
+                            'passport_nomor'              => $item['passport_nomor'] ?? ($existingFamily[$idx]['passport_nomor'] ?? ''),
+                            'passport_nama'               => $item['passport_nama'] ?? ($existingFamily[$idx]['passport_nama'] ?? ''),
+                            'passport_tanggal_lahir'      => $item['passport_tanggal_lahir'] ?? ($existingFamily[$idx]['passport_tanggal_lahir'] ?? ''),
+                            'passport_tanggal_kadaluarsa' => $item['passport_tanggal_kadaluarsa'] ?? ($existingFamily[$idx]['passport_tanggal_kadaluarsa'] ?? ''),
+                            'passport_kewarganegaraan'    => $item['passport_kewarganegaraan'] ?? ($existingFamily[$idx]['passport_kewarganegaraan'] ?? ''),
+                            'passport_title'              => $item['passport_title'] ?? ($existingFamily[$idx]['passport_title'] ?? ''),
+                            'passport_gender'             => $item['passport_gender'] ?? ($existingFamily[$idx]['passport_gender'] ?? ''),
+                            'passport_tanggal_terbit'     => $item['passport_tanggal_terbit'] ?? ($existingFamily[$idx]['passport_tanggal_terbit'] ?? ''),
+                            'passport_kantor_terbit'      => $item['passport_kantor_terbit'] ?? ($existingFamily[$idx]['passport_kantor_terbit'] ?? ''),
+                            'passport_tempat_lahir'       => $item['passport_tempat_lahir'] ?? ($existingFamily[$idx]['passport_tempat_lahir'] ?? ''),
+                            'ktp_nik'                     => $item['ktp_nik'] ?? ($existingFamily[$idx]['ktp_nik'] ?? ''),
+                            'ktp_nama'                    => $item['ktp_nama'] ?? ($existingFamily[$idx]['ktp_nama'] ?? ''),
+                            'ktp_tempat_lahir'            => $item['ktp_tempat_lahir'] ?? ($existingFamily[$idx]['ktp_tempat_lahir'] ?? ''),
+                            'ktp_tanggal_lahir'           => $item['ktp_tanggal_lahir'] ?? ($existingFamily[$idx]['ktp_tanggal_lahir'] ?? ''),
+                            'ktp_alamat'                  => $item['ktp_alamat'] ?? ($existingFamily[$idx]['ktp_alamat'] ?? ''),
+                        ]);
+                    }
+                }
+
+                $booking->update(['family_members_booking' => json_encode($existingFamily)]);
+
+                // Also update member's family_members field
+                if ($booking->jamaah) {
+                    $booking->jamaah->update(['family_members' => $existingFamily]);
+                }
+            }
+
+            \DB::commit();
+
+            Log::info('Manifest data saved', ['booking_id' => $bookingId, 'jamaah_count' => count($allData)]);
+
+            return response()->json(['success' => true, 'message' => 'Data manifest berhasil disimpan']);
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            Log::error('Failed to save manifest data: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal menyimpan: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Upload satu dokumen manifest via AJAX (langsung simpan ke storage & DB).
+     * POST /booking/{bookingId}/manifest/upload-doc
+     * Body: doc_type (string), file (file), member_index (int, 0=jamaah utama)
+     */
+    public function uploadManifestDocument(Request $request, $bookingId)
+    {
+        $booking = JamaahBooking::with('jamaah')->findOrFail($bookingId);
+
+        $request->validate([
+            'doc_type'     => 'required|string|in:passport_foto,ktp_foto,akta_lahir_foto,kartu_keluarga_foto,buku_nikah_foto,vaksin_foto,bpjs_foto,pas_foto',
+            'file'         => 'required|mimes:jpg,jpeg,png,pdf|max:5120',
+            'member_index' => 'nullable|integer|min:0',
+        ]);
+
+        $docType     = $request->input('doc_type');
+        $memberIndex = (int) $request->input('member_index', 0);
+
+        // Map doc_type → storage folder
+        $folderMap = [
+            'passport_foto'        => 'pelanggan/passport',
+            'ktp_foto'             => 'pelanggan/ktp',
+            'akta_lahir_foto'      => 'pelanggan/akta_lahir',
+            'kartu_keluarga_foto'  => 'pelanggan/kartu_keluarga',
+            'buku_nikah_foto'      => 'pelanggan/buku_nikah',
+            'vaksin_foto'          => 'pelanggan/vaksin',
+            'bpjs_foto'            => 'pelanggan/bpjs',
+            'pas_foto'             => 'pelanggan/pas_foto',
+        ];
+        $folder = $folderMap[$docType] ?? 'pelanggan/dokumen';
+
+        try {
+            \DB::beginTransaction();
+
+            if ($memberIndex === 0) {
+                // Jamaah utama → simpan ke Member
+                $member = $booking->jamaah;
+                if (!$member) {
+                    return response()->json(['success' => false, 'message' => 'Member tidak ditemukan'], 404);
+                }
+
+                // Hapus file lama jika ada
+                if ($member->$docType && \Storage::disk('public')->exists($member->$docType)) {
+                    \Storage::disk('public')->delete($member->$docType);
+                }
+
+                $path = $request->file('file')->store($folder, 'public');
+                $member->update([$docType => $path]);
+
+                \DB::commit();
+                return response()->json([
+                    'success'  => true,
+                    'message'  => 'Dokumen berhasil diupload',
+                    'file_url' => asset('storage/' . $path),
+                    'file_path'=> $path,
+                    'is_pdf'   => strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'pdf',
+                ]);
+
+            } else {
+                // Anggota keluarga → simpan ke family_members_booking
+                $familyMembers = $booking->family_members_booking;
+                if (is_string($familyMembers)) {
+                    $familyMembers = json_decode($familyMembers, true) ?? [];
+                }
+                if (!is_array($familyMembers)) $familyMembers = [];
+
+                $familyIdx = $memberIndex - 1;
+                if (!isset($familyMembers[$familyIdx])) {
+                    return response()->json(['success' => false, 'message' => 'Anggota keluarga tidak ditemukan'], 404);
+                }
+
+                // Hapus file lama jika ada
+                $oldPath = $familyMembers[$familyIdx][$docType] ?? null;
+                if ($oldPath && \Storage::disk('public')->exists($oldPath)) {
+                    \Storage::disk('public')->delete($oldPath);
+                }
+
+                $path = $request->file('file')->store($folder, 'public');
+                $familyMembers[$familyIdx][$docType] = $path;
+                $booking->update(['family_members_booking' => json_encode($familyMembers)]);
+
+                \DB::commit();
+                return response()->json([
+                    'success'  => true,
+                    'message'  => 'Dokumen berhasil diupload',
+                    'file_url' => asset('storage/' . $path),
+                    'file_path'=> $path,
+                    'is_pdf'   => strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'pdf',
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            Log::error('uploadManifestDocument error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal upload: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Hapus satu dokumen manifest via AJAX.
+     * DELETE /booking/{bookingId}/manifest/delete-doc
+     * Body: doc_type (string), member_index (int)
+     */
+    public function deleteManifestDocument(Request $request, $bookingId)
+    {
+        $booking = JamaahBooking::with('jamaah')->findOrFail($bookingId);
+
+        $request->validate([
+            'doc_type'     => 'required|string|in:passport_foto,ktp_foto,akta_lahir_foto,kartu_keluarga_foto,buku_nikah_foto,vaksin_foto,bpjs_foto,pas_foto',
+            'member_index' => 'nullable|integer|min:0',
+        ]);
+
+        $docType     = $request->input('doc_type');
+        $memberIndex = (int) $request->input('member_index', 0);
+
+        try {
+            \DB::beginTransaction();
+
+            if ($memberIndex === 0) {
+                $member = $booking->jamaah;
+                if (!$member) {
+                    return response()->json(['success' => false, 'message' => 'Member tidak ditemukan'], 404);
+                }
+                if ($member->$docType && \Storage::disk('public')->exists($member->$docType)) {
+                    \Storage::disk('public')->delete($member->$docType);
+                }
+                $member->update([$docType => null]);
+            } else {
+                $familyMembers = $booking->family_members_booking;
+                if (is_string($familyMembers)) {
+                    $familyMembers = json_decode($familyMembers, true) ?? [];
+                }
+                if (!is_array($familyMembers)) $familyMembers = [];
+
+                $familyIdx = $memberIndex - 1;
+                if (!isset($familyMembers[$familyIdx])) {
+                    return response()->json(['success' => false, 'message' => 'Anggota keluarga tidak ditemukan'], 404);
+                }
+
+                $oldPath = $familyMembers[$familyIdx][$docType] ?? null;
+                if ($oldPath && \Storage::disk('public')->exists($oldPath)) {
+                    \Storage::disk('public')->delete($oldPath);
+                }
+                $familyMembers[$familyIdx][$docType] = null;
+                $booking->update(['family_members_booking' => json_encode($familyMembers)]);
+            }
+
+            \DB::commit();
+            return response()->json(['success' => true, 'message' => 'Dokumen berhasil dihapus']);
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            Log::error('deleteManifestDocument error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal hapus: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Submit manifest data from customer
      * Saves to Member table (same as admin manifest tab)
      */
@@ -444,13 +678,13 @@ class PublicDocumentController extends Controller
 
         // Validate: only passport (required) + KTP (optional)
         $validated = $request->validate([
-            'passport_foto' => 'required|image|mimes:jpeg,jpg,png|max:5120',
+            'passport_foto' => 'required|mimes:jpeg,jpg,png,pdf|max:5120',
             'passport_nomor' => 'required|string|max:50',
             'passport_nama' => 'nullable|string|max:255',
             'passport_tanggal_lahir' => 'nullable|date',
             'passport_tanggal_kadaluarsa' => 'required|date',
             'passport_kewarganegaraan' => 'nullable|string|max:100',
-            'ktp_foto' => 'nullable|image|mimes:jpeg,jpg,png|max:5120',
+            'ktp_foto' => 'nullable|mimes:jpeg,jpg,png,pdf|max:5120',
             'ktp_nik' => 'nullable|string|regex:/^\d{16}$/',
             'ktp_nama' => 'nullable|string|max:255',
             'ktp_tempat_lahir' => 'nullable|string|max:255',

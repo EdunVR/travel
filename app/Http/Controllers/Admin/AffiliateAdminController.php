@@ -122,14 +122,14 @@ class AffiliateAdminController extends Controller
         $tab = $request->get('tab', 'dashboard');
         
         if ($tab == 'referrals') {
-            $query = $affiliator->referrals()->with('package')->latest();
+            $query = $affiliator->referrals()->with(['package', 'booking.member'])->latest();
             if ($request->status) {
                 $query->where('status', $request->status);
             }
             $recentReferrals = $query->get();
         } else {
             $recentReferrals = $affiliator->referrals()
-                ->with('package')
+                ->with(['package', 'booking.member'])
                 ->latest()
                 ->take(20)
                 ->get();
@@ -427,22 +427,24 @@ class AffiliateAdminController extends Controller
     }
 
     /**
-     * Release termin 1 (saat pelunasan)
+     * Release termin 1 (mark booking as paid)
+     * Keeps commission in pending_balance, marks referral as verified
      */
     public function releaseTermin1(AffiliateReferral $referral)
     {
         if ($referral->termin_1_released) {
-            return back()->withErrors(['error' => 'Termin 1 sudah pernah dicairkan.']);
+            return back()->withErrors(['error' => 'Booking sudah ditandai lunas.']);
         }
 
-        $referral->affiliator->releaseTermin1($referral->id);
+        $referral->affiliator->markBookingPaid($referral->id);
 
-        return back()->with('success', 'Termin 1 (50%) berhasil dicairkan ke saldo pending mitra.');
+        return back()->with('success', 'Booking ditandai lunas. Fee tetap di pending balance sampai tanggal keberangkatan.');
     }
 
     /**
-     * Release termin 2 (saat keberangkatan)
+     * Release to Available Balance (saat keberangkatan)
      * Moves commission from pending_balance to available_balance
+     * Requires: booking paid + departure date reached
      */
     public function releaseTermin2(AffiliateReferral $referral)
     {
@@ -453,29 +455,32 @@ class AffiliateAdminController extends Controller
             return back()->withErrors(['error' => 'Fee sudah dicairkan ke saldo tersedia.']);
         }
 
-        // Move from pending to available
-        $affiliator = $referral->affiliator;
-        $affiliator->decrement('pending_balance', $referral->commission_amount);
-        $affiliator->increment('available_balance', $referral->commission_amount);
+        $result = $referral->affiliator->releaseToAvailable($referral->id);
         
-        $referral->update([
-            'termin_2_released' => true,
-            'termin_2_paid_at' => now(),
-            'status' => 'paid',
-            'paid_at' => now(),
-        ]);
-        
-        // Release fee distributions to upline
-        \App\Models\AffiliateFeeDistribution::where('referral_id', $referral->id)
-            ->where('status', 'pending')
-            ->get()
-            ->each(function ($dist) {
-                $dist->update(['status' => 'released', 'released_at' => now()]);
-                $dist->toAffiliator->decrement('pending_balance', $dist->amount);
-                $dist->toAffiliator->increment('available_balance', $dist->amount);
-            });
+        if (!$result) {
+            return back()->withErrors(['error' => 'Gagal release fee. Pastikan tanggal keberangkatan sudah tercapai.']);
+        }
 
         return back()->with('success', 'Fee berhasil dipindahkan ke saldo tersedia! Mitra sudah bisa tarik dana.');
+    }
+
+    /**
+     * Force Release - Admin skip departure date condition
+     * Moves commission from pending_balance to available_balance immediately
+     */
+    public function forceRelease(AffiliateReferral $referral)
+    {
+        if ($referral->termin_2_released) {
+            return back()->withErrors(['error' => 'Fee sudah dicairkan ke saldo tersedia.']);
+        }
+
+        $result = $referral->affiliator->releaseToAvailable($referral->id, true);
+        
+        if (!$result) {
+            return back()->withErrors(['error' => 'Gagal force release fee.']);
+        }
+
+        return back()->with('success', 'Force release berhasil! Fee dipindahkan ke saldo tersedia mitra.');
     }
 
     /**

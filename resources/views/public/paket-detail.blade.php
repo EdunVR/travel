@@ -9,6 +9,20 @@
 <script>tailwind.config={theme:{extend:{colors:{'green-brand':'#2E7D32','green-mid':'#4CAF50','green-pale':'#E8F5E9'}}}}</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+/* Flatpickr custom styling */
+.flatpickr-input{cursor:pointer!important}
+.flatpickr-calendar{font-family:'Nunito',sans-serif!important;border-radius:12px!important;box-shadow:0 8px 32px rgba(0,0,0,.15)!important;border:1px solid #e5e7eb!important}
+.flatpickr-day.selected,.flatpickr-day.selected:hover{background:#2E7D32!important;border-color:#2E7D32!important}
+.flatpickr-day:hover{background:#E8F5E9!important}
+.flatpickr-months .flatpickr-month{background:#2E7D32!important;color:#fff!important;border-radius:12px 12px 0 0!important}
+.flatpickr-current-month .flatpickr-monthDropdown-months{background:#2E7D32!important;color:#fff!important}
+.flatpickr-current-month input.cur-year{color:#fff!important}
+.flatpickr-weekday{color:#2E7D32!important;font-weight:700!important}
+.flatpickr-prev-month,.flatpickr-next-month{fill:#fff!important}
+.flatpickr-prev-month:hover svg,.flatpickr-next-month:hover svg{fill:#E8F5E9!important}
+</style>
 <style>
 *{font-family:'Nunito',sans-serif}
 .font-playfair{font-family:'Playfair Display',serif}
@@ -381,6 +395,17 @@ Hubungi Kami
 <input type="email" name="email" placeholder="email@contoh.com"
        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-brand focus:ring-1 focus:ring-green-brand">
 </div>
+<div>
+<label class="block text-xs font-bold text-gray-700 mb-1">Tanggal Lahir <span class="text-red-500">*</span></label>
+<div class="relative">
+  <input type="text" id="f_tanggal_lahir_display" required
+         placeholder="DD-MM-YYYY" readonly
+         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-brand focus:ring-1 focus:ring-green-brand bg-white cursor-pointer">
+  <input type="hidden" name="tanggal_lahir" id="f_tanggal_lahir" value="">
+  <i class="fas fa-calendar-alt absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-sm"></i>
+</div>
+<p class="text-xs text-gray-400 mt-1">Format: DD-MM-YYYY — Diperlukan untuk penentuan dokumen perjalanan</p>
+</div>
 
 {{-- Pilih Keberangkatan --}}
 @if($keberangkatanList->count()>0)
@@ -552,14 +577,16 @@ Rp {{ number_format($package->handling_lounge_fee_amount, 0, ',', '.') }}
 </div>
 </div>
 
-{{-- Equipment Modal --}}
+{{-- Equipment Modal with Cart Sidebar --}}
 <div id="equipmentModal" class="fixed inset-0 z-[100] hidden bg-black bg-opacity-50 flex items-center justify-center p-4" onclick="closeEquipmentModal(event)">
-<div class="relative bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
+<div class="relative bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
 <div class="bg-green-gradient text-white px-6 py-4 flex items-center justify-between">
-<h3 class="text-lg font-bold">Pilih Perlengkapan</h3>
+<h3 class="text-lg font-bold"><i class="fas fa-shopping-bag mr-2"></i>Pilih Perlengkapan</h3>
 <button onclick="closeEquipmentModal()" class="text-white hover:text-gray-200 text-2xl font-bold">&times;</button>
 </div>
-<div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 140px);">
+<div class="flex" style="max-height: calc(90vh - 130px);">
+<!-- Left: Product List -->
+<div class="flex-1 p-6 overflow-y-auto border-r border-gray-100">
 <!-- Search -->
 <input type="text" id="equipmentSearch" 
        class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-brand mb-4" 
@@ -571,22 +598,9 @@ Rp {{ number_format($package->handling_lounge_fee_amount, 0, ',', '.') }}
 <p class="text-gray-500 text-sm mt-2">Memuat produk...</p>
 </div>
 
-<!-- Table Produk -->
-<div id="equipmentTable" class="hidden">
-<table class="w-full">
-<thead class="bg-gray-50">
-<tr>
-<th class="px-4 py-3 text-left text-xs font-bold text-gray-700">Produk</th>
-<th class="px-4 py-3 text-right text-xs font-bold text-gray-700">Harga</th>
-<th class="px-4 py-3 text-center text-xs font-bold text-gray-700">Stok</th>
-<th class="px-4 py-3 text-center text-xs font-bold text-gray-700">Qty</th>
-<th class="px-4 py-3 text-center text-xs font-bold text-gray-700">Aksi</th>
-</tr>
-</thead>
-<tbody id="equipmentTableBody" class="divide-y divide-gray-100">
+<!-- Product Grid -->
+<div id="equipmentGrid" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3">
 <!-- Loaded via AJAX -->
-</tbody>
-</table>
 </div>
 
 <!-- Empty State -->
@@ -595,15 +609,34 @@ Rp {{ number_format($package->handling_lounge_fee_amount, 0, ',', '.') }}
 <p class="text-gray-500 text-sm">Tidak ada produk ditemukan</p>
 </div>
 </div>
-<div class="bg-gray-50 px-6 py-4 flex items-center justify-between border-t">
-<div class="text-sm text-gray-600">
-<span id="selectedEquipmentCount">0</span> item dipilih
+
+<!-- Right: Cart Sidebar -->
+<div class="w-80 flex-shrink-0 bg-gray-50 flex flex-col">
+<div class="p-4 border-b border-gray-200">
+<h4 class="font-bold text-gray-900 text-sm flex items-center gap-2">
+<i class="fas fa-shopping-cart text-green-600"></i>
+Keranjang Perlengkapan
+<span id="cartBadge" class="bg-green-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
+</h4>
+</div>
+<div class="flex-1 overflow-y-auto p-4" id="cartItems">
+<div id="cartEmpty" class="text-center py-8 text-gray-400">
+<i class="fas fa-shopping-cart text-3xl mb-2"></i>
+<p class="text-xs">Belum ada perlengkapan dipilih</p>
+</div>
+<div id="cartList" class="space-y-2 hidden"></div>
+</div>
+<div class="p-4 border-t border-gray-200 bg-white">
+<div class="flex justify-between items-center mb-3">
+<span class="text-sm font-semibold text-gray-700">Total</span>
+<span id="cartTotal" class="text-lg font-black text-green-700">Rp 0</span>
 </div>
 <button type="button" onclick="saveEquipment()" 
-        class="bg-green-gradient text-white font-bold px-6 py-2.5 rounded-xl text-sm hover:opacity-90 transition-all">
-<i class="fas fa-check mr-2"></i>
-Simpan
+        class="w-full bg-green-gradient text-white font-bold px-6 py-3 rounded-xl text-sm hover:opacity-90 transition-all">
+<i class="fas fa-check mr-2"></i>Simpan Perlengkapan
 </button>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -660,6 +693,27 @@ var handlingFeeAmount = {{ $package->include_handling_lounge_fee && $package->ha
 var currentPrice = (parseFloat(document.getElementById('f_price').value)||0) + handlingFeeAmount;
 var familyRowCount = 0;
 
+// ===== Format tanggal lahir (legacy, tidak dipakai lagi) =====
+function formatTanggalLahir(input) {
+  var val = input.value.replace(/\D/g, '');
+  if (val.length >= 3 && val.length <= 4) {
+    val = val.substring(0,2) + '/' + val.substring(2);
+  } else if (val.length >= 5) {
+    val = val.substring(0,2) + '/' + val.substring(2,4) + '/' + val.substring(4,8);
+  }
+  input.value = val;
+}
+
+// Konversi DD/MM/YYYY ke YYYY-MM-DD untuk database
+function convertDMYtoYMD(dmy) {
+  if (!dmy) return '';
+  var parts = dmy.split('/');
+  if (parts.length === 3 && parts[2].length === 4) {
+    return parts[2] + '-' + parts[1] + '-' + parts[0];
+  }
+  return dmy; // return as-is if already in other format
+}
+
 // ===== Price Package Selection =====
 function selectPkg(el){
   document.querySelectorAll('.price-pkg-btn').forEach(b=>b.classList.remove('selected'));
@@ -709,6 +763,7 @@ function addFamilyRow(){
       '<div>' +
         '<label class="text-xs text-gray-500 mb-0.5 block">Nama *</label>' +
         '<input type="text" name="family_members['+idx+'][nama]" required placeholder="Nama lengkap"' +
+               ' oninput="updatePricePreview()"' +
                ' class="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:border-green-brand">' +
       '</div>' +
       '<div>' +
@@ -725,13 +780,39 @@ function addFamilyRow(){
       '</div>' +
       '<div class="col-span-2">' +
         '<label class="text-xs text-gray-500 mb-0.5 block">Tanggal Lahir <span class="text-gray-400">(untuk kalkulasi harga usia)</span></label>' +
-        '<input type="date" name="family_members['+idx+'][tanggal_lahir]"' +
-               ' onchange="updatePricePreview()"' +
-               ' class="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:border-green-brand">' +
+        '<div class="relative">' +
+          '<input type="text" id="family_dob_display_'+idx+'" placeholder="DD-MM-YYYY" readonly' +
+                 ' class="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:border-green-brand bg-white cursor-pointer pr-7">' +
+          '<input type="hidden" name="family_members['+idx+'][tanggal_lahir]" id="family_dob_'+idx+'" value="">' +
+          '<i class="fas fa-calendar-alt absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" style="font-size:10px"></i>' +
+        '</div>' +
       '</div>' +
     '</div>' +
     '<div class="age-info-'+idx+' mt-1 text-xs text-green-700 font-semibold hidden"></div>';
   document.getElementById('family-rows').appendChild(row);
+  
+  // Init Flatpickr for this family member's DOB
+  flatpickr('#family_dob_display_'+idx, {
+    dateFormat: 'd-m-Y',
+    altInput: false,
+    allowInput: false,
+    maxDate: 'today',
+    locale: { firstDayOfWeek: 1 },
+    onChange: function(selectedDates, dateStr) {
+      // Store as YYYY-MM-DD in hidden input
+      if (selectedDates.length > 0) {
+        var d = selectedDates[0];
+        var yyyy = d.getFullYear();
+        var mm = String(d.getMonth()+1).padStart(2,'0');
+        var dd = String(d.getDate()).padStart(2,'0');
+        document.getElementById('family_dob_'+idx).value = yyyy+'-'+mm+'-'+dd;
+      } else {
+        document.getElementById('family_dob_'+idx).value = '';
+      }
+      updatePricePreview();
+    }
+  });
+  
   updatePricePreview();
 }
 
@@ -776,10 +857,11 @@ function updatePricePreview(){
     var dobEl  = row.querySelector('input[name*="[tanggal_lahir]"]');
     var nama   = namaEl ? namaEl.value.trim() : '';
     var dob    = dobEl  ? dobEl.value : '';
-    if(!nama) return;
+    // Tampilkan meskipun nama belum diisi
+    var displayNama = nama || 'Anggota Keluarga';
     var age = calcAge(dob);
     var cat = getAgeCategory(age);
-    var label = (nama||'Anggota') + ' — ' + cat.label;
+    var label = displayNama + ' — ' + cat.label;
     if(cat.badge) label += ' ('+cat.badge+')';
     rows.push({label: label, amount: cat.price, color: cat.color});
     total += cat.price;
@@ -874,7 +956,7 @@ function closeEquipmentModal(event) {
 // Load products from API
 function loadProducts() {
   document.getElementById('equipmentLoading').classList.remove('hidden');
-  document.getElementById('equipmentTable').classList.add('hidden');
+  document.getElementById('equipmentGrid').classList.add('hidden');
   document.getElementById('equipmentEmpty').classList.add('hidden');
 
   const baseUrl = '{{ url('/') }}';
@@ -885,7 +967,7 @@ function loadProducts() {
       renderProducts(data);
       document.getElementById('equipmentLoading').classList.add('hidden');
       if (data.length > 0) {
-        document.getElementById('equipmentTable').classList.remove('hidden');
+        document.getElementById('equipmentGrid').classList.remove('hidden');
       } else {
         document.getElementById('equipmentEmpty').classList.remove('hidden');
       }
@@ -897,32 +979,38 @@ function loadProducts() {
     });
 }
 
-// Render products table
+// Render products grid with images
 function renderProducts(products) {
-  var tbody = document.getElementById('equipmentTableBody');
-  tbody.innerHTML = '';
+  var grid = document.getElementById('equipmentGrid');
+  grid.innerHTML = '';
 
   products.forEach(function(product) {
     var existing = selectedEquipment.find(e => e.id == product.id_produk);
-    var qty = existing ? existing.qty : 0;
+    var qty = existing ? existing.qty : 1;
+    var imgSrc = product.image_url || '{{ asset("img/no-image.png") }}';
 
-    var row = document.createElement('tr');
-    row.className = 'hover:bg-gray-50';
-    row.innerHTML = 
-      '<td class="px-4 py-3 text-sm text-gray-900">' + product.nama_produk + '</td>' +
-      '<td class="px-4 py-3 text-sm text-gray-900 text-right">Rp ' + parseFloat(product.harga_jual).toLocaleString('id-ID') + '</td>' +
-      '<td class="px-4 py-3 text-sm text-gray-600 text-center">' + product.stok + '</td>' +
-      '<td class="px-4 py-3 text-center">' +
-        '<input type="number" id="qty-' + product.id_produk + '" value="' + qty + '" min="0" max="' + product.stok + '" ' +
-        'class="w-20 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center focus:outline-none focus:border-green-brand">' +
-      '</td>' +
-      '<td class="px-4 py-3 text-center">' +
-        '<button type="button" onclick="addEquipment(' + product.id_produk + ', \'' + product.nama_produk.replace(/'/g, "\\'") + '\', ' + product.harga_jual + ')" ' +
-        'class="bg-green-pale text-green-brand font-semibold px-3 py-1 rounded-lg text-xs hover:bg-green-100 transition-all">' +
+    var card = document.createElement('div');
+    card.className = 'bg-white border border-gray-200 rounded-xl p-3 hover:border-green-400 hover:shadow-md transition-all';
+    card.innerHTML = 
+      '<div class="flex gap-3">' +
+        '<div class="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">' +
+          '<img src="' + imgSrc + '" alt="' + product.nama_produk + '" class="w-full h-full object-cover" onerror="this.src=\'{{ asset("img/no-image.png") }}\'">' +
+        '</div>' +
+        '<div class="flex-1 min-w-0">' +
+          '<div class="font-semibold text-gray-900 text-sm truncate">' + product.nama_produk + '</div>' +
+          '<div class="text-green-700 font-bold text-sm mt-0.5">Rp ' + parseFloat(product.harga_jual).toLocaleString('id-ID') + '</div>' +
+          '<div class="text-xs text-gray-400 mt-0.5">Stok: ' + product.stok + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="flex items-center gap-2 mt-2">' +
+        '<input type="number" id="qty-' + product.id_produk + '" value="' + qty + '" min="1" max="' + product.stok + '" ' +
+        'class="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:border-green-brand">' +
+        '<button type="button" onclick="addEquipment(' + product.id_produk + ', \'' + product.nama_produk.replace(/'/g, "\\'") + '\', ' + product.harga_jual + ', \'' + (product.image_url || '').replace(/'/g, "\\'") + '\')" ' +
+        'class="flex-1 bg-green-600 text-white font-semibold px-3 py-1.5 rounded-lg text-xs hover:bg-green-700 transition-all">' +
         '<i class="fas fa-plus mr-1"></i>Tambah' +
         '</button>' +
-      '</td>';
-    tbody.appendChild(row);
+      '</div>';
+    grid.appendChild(card);
   });
 }
 
@@ -936,7 +1024,7 @@ function searchEquipment() {
 }
 
 // Add equipment to selection
-function addEquipment(id, name, price) {
+function addEquipment(id, name, price, imageUrl) {
   var qtyInput = document.getElementById('qty-' + id);
   var qty = parseInt(qtyInput.value) || 0;
 
@@ -955,18 +1043,62 @@ function addEquipment(id, name, price) {
       name: name,
       price: price,
       qty: qty,
-      subtotal: qty * price
+      subtotal: qty * price,
+      image: imageUrl || ''
     });
   }
 
-  updateSelectedEquipmentCount();
-  alert('Ditambahkan: ' + name + ' x' + qty);
+  updateCart();
 }
 
-// Update selected equipment count
-function updateSelectedEquipmentCount() {
-  var count = selectedEquipment.reduce((sum, e) => sum + e.qty, 0);
-  document.getElementById('selectedEquipmentCount').textContent = count;
+// Update cart sidebar
+function updateCart() {
+  var cartList = document.getElementById('cartList');
+  var cartEmpty = document.getElementById('cartEmpty');
+  var cartBadge = document.getElementById('cartBadge');
+  var cartTotal = document.getElementById('cartTotal');
+  
+  // Filter out zero qty
+  selectedEquipment = selectedEquipment.filter(e => e.qty > 0);
+  
+  var totalItems = selectedEquipment.reduce((sum, e) => sum + e.qty, 0);
+  var totalPrice = selectedEquipment.reduce((sum, e) => sum + e.subtotal, 0);
+  
+  cartBadge.textContent = totalItems;
+  cartTotal.textContent = 'Rp ' + totalPrice.toLocaleString('id-ID');
+  
+  if (selectedEquipment.length === 0) {
+    cartEmpty.classList.remove('hidden');
+    cartList.classList.add('hidden');
+    return;
+  }
+  
+  cartEmpty.classList.add('hidden');
+  cartList.classList.remove('hidden');
+  cartList.innerHTML = '';
+  
+  selectedEquipment.forEach(function(item) {
+    var div = document.createElement('div');
+    div.className = 'bg-white border border-gray-200 rounded-lg p-2 flex items-center gap-2';
+    div.innerHTML = 
+      '<div class="w-10 h-10 flex-shrink-0 rounded bg-gray-100 overflow-hidden">' +
+        (item.image ? '<img src="' + item.image + '" class="w-full h-full object-cover">' : '<div class="w-full h-full flex items-center justify-center text-gray-300"><i class="fas fa-box text-xs"></i></div>') +
+      '</div>' +
+      '<div class="flex-1 min-w-0">' +
+        '<div class="text-xs font-semibold text-gray-900 truncate">' + item.name + '</div>' +
+        '<div class="text-xs text-gray-500">' + item.qty + ' x Rp ' + item.price.toLocaleString('id-ID') + '</div>' +
+      '</div>' +
+      '<button type="button" onclick="removeFromCart(' + item.id + ')" class="text-red-400 hover:text-red-600 p-1">' +
+        '<i class="fas fa-times text-xs"></i>' +
+      '</button>';
+    cartList.appendChild(div);
+  });
+}
+
+// Remove item from cart
+function removeFromCart(id) {
+  selectedEquipment = selectedEquipment.filter(e => e.id != id);
+  updateCart();
 }
 
 // Save equipment and close modal
@@ -979,7 +1111,8 @@ function saveEquipment() {
   updatePricePreviewWithEquipment();
   
   // Close modal
-  closeEquipmentModal();
+  document.getElementById('equipmentModal').classList.add('hidden');
+  document.body.style.overflow = 'auto';
 }
 
 // Render selected equipment list
@@ -1035,10 +1168,11 @@ function updatePricePreviewWithEquipment() {
     var dobEl  = row.querySelector('input[name*="[tanggal_lahir]"]');
     var nama   = namaEl ? namaEl.value.trim() : '';
     var dob    = dobEl  ? dobEl.value : '';
-    if(!nama) return;
+    // Tampilkan meskipun nama belum diisi
+    var displayNama = nama || 'Anggota Keluarga';
     var age = calcAge(dob);
     var cat = getAgeCategory(age);
-    var label = (nama||'Anggota') + ' — ' + cat.label;
+    var label = displayNama + ' — ' + cat.label;
     if(cat.badge) label += ' ('+cat.badge+')';
     rows.push({label: label, amount: cat.price, color: cat.color});
     total += cat.price;
@@ -1090,6 +1224,18 @@ function prepareFormSubmit(event) {
     return false;
   }
 
+  // Validate tanggal_lahir — hidden input already contains YYYY-MM-DD from Flatpickr
+  var tanggalLahirDB = document.getElementById('f_tanggal_lahir').value;
+  if (!tanggalLahirDB) {
+    alert('Mohon isi Tanggal Lahir');
+    return false;
+  }
+  // Validate format
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggalLahirDB)) {
+    alert('Format Tanggal Lahir tidak valid. Silakan pilih tanggal dari kalender.');
+    return false;
+  }
+
   // Calculate total
   var total = 0;
   total += currentPrice; // Main jamaah
@@ -1099,6 +1245,7 @@ function prepareFormSubmit(event) {
   document.querySelectorAll('.family-row').forEach(function(row){
     var namaEl = row.querySelector('input[name*="[nama]"]');
     var dobEl = row.querySelector('input[name*="[tanggal_lahir]"]');
+    var hubunganEl = row.querySelector('select[name*="[hubungan]"]');
     var dob = dobEl ? dobEl.value : '';
     var age = calcAge(dob);
     var cat = getAgeCategory(age);
@@ -1108,6 +1255,7 @@ function prepareFormSubmit(event) {
       familyMembers.push({
         nama: namaEl.value,
         tanggal_lahir: dob,
+        hubungan: hubunganEl ? hubunganEl.value : '',
         kategori: cat.label
       });
     }
@@ -1183,6 +1331,27 @@ function prepareFormSubmit(event) {
   return false; // Prevent form submission
 }
 
+</script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+// ===== Init Flatpickr untuk tanggal lahir jamaah utama =====
+flatpickr('#f_tanggal_lahir_display', {
+  dateFormat: 'd-m-Y',
+  allowInput: false,
+  maxDate: 'today',
+  locale: { firstDayOfWeek: 1 },
+  onChange: function(selectedDates, dateStr) {
+    if (selectedDates.length > 0) {
+      var d = selectedDates[0];
+      var yyyy = d.getFullYear();
+      var mm = String(d.getMonth()+1).padStart(2,'0');
+      var dd = String(d.getDate()).padStart(2,'0');
+      document.getElementById('f_tanggal_lahir').value = yyyy+'-'+mm+'-'+dd;
+    } else {
+      document.getElementById('f_tanggal_lahir').value = '';
+    }
+  }
+});
 </script>
 </body>
 </html>

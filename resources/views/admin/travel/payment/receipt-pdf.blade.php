@@ -288,20 +288,41 @@
             <div class="section-title">RINGKASAN PEMBAYARAN</div>
             @php
                 $receiptGrandTotal = $payment->jamaahBooking->getGrandTotal();
-                $receiptRemaining = $payment->jamaahBooking->getRemainingBalance();
+                $receiptVoucherDiscount = $payment->jamaahBooking->voucher_discount ?? 0;
+                $receiptAdminDiscount = $payment->jamaahBooking->admin_discount ?? 0;
+                $receiptFinalTotal = $payment->jamaahBooking->getFinalTotal();
+                $receiptRemaining = max(0, $receiptFinalTotal - (float)$payment->jamaahBooking->paid_amount);
             @endphp
             <table>
                 <tr>
                     <td style="width: 50%;"><strong>Total Harga Paket</strong></td>
                     <td style="width: 50%;">: Rp {{ number_format($receiptGrandTotal, 0, ',', '.') }}</td>
                 </tr>
+                @if($receiptVoucherDiscount > 0)
+                <tr>
+                    <td><strong>Diskon Voucher ({{ $payment->jamaahBooking->voucher_code }})</strong></td>
+                    <td style="color: #28a745;">: - Rp {{ number_format($receiptVoucherDiscount, 0, ',', '.') }}</td>
+                </tr>
+                @endif
+                @if($receiptAdminDiscount > 0)
+                <tr>
+                    <td><strong>Diskon Admin</strong></td>
+                    <td style="color: #28a745;">: - Rp {{ number_format($receiptAdminDiscount, 0, ',', '.') }}</td>
+                </tr>
+                @endif
+                @if($receiptVoucherDiscount > 0 || $receiptAdminDiscount > 0)
+                <tr style="border-top: 1px solid #ddd;">
+                    <td><strong>Total Setelah Diskon</strong></td>
+                    <td><strong>: Rp {{ number_format($receiptFinalTotal, 0, ',', '.') }}</strong></td>
+                </tr>
+                @endif
                 <tr style="background: #d4edda;">
                     <td><strong>Total Sudah Dibayar</strong></td>
                     <td style="color: #28a745;"><strong>: Rp {{ number_format($payment->jamaahBooking->paid_amount, 0, ',', '.') }}</strong></td>
                 </tr>
-                <tr style="background: #fff3cd;">
+                <tr style="background: {{ $receiptRemaining <= 0 ? '#d4edda' : '#fff3cd' }};">
                     <td><strong>Sisa Pembayaran</strong></td>
-                    <td style="color: #dc3545;"><strong>: Rp {{ number_format($receiptRemaining, 0, ',', '.') }}</strong></td>
+                    <td style="color: {{ $receiptRemaining <= 0 ? '#28a745' : '#dc3545' }};"><strong>: {{ $receiptRemaining <= 0 ? 'LUNAS' : 'Rp ' . number_format($receiptRemaining, 0, ',', '.') }}</strong></td>
                 </tr>
             </table>
         </div>

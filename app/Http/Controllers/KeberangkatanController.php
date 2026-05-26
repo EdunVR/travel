@@ -1642,4 +1642,223 @@ class KeberangkatanController extends Controller
             'surplus_defisit'    => ($hppTotal + $hotelRealisasi + $addonRealisasi) - $rabRealisasi,
         ]);
     }
+
+    /**
+     * Show manage manifest page (drag & drop ordering)
+     */
+    public function manageManifest($id)
+    {
+        $keberangkatan = Keberangkatan::with(['jamaahBookings.jamaah', 'travelPackage'])
+            ->findOrFail($id);
+
+        // Pre-build manifest rows server-side for initial render
+        $manifestRows = $this->buildManifestRows($keberangkatan);
+
+        return view('admin.travel.keberangkatan.manage-manifest', compact('keberangkatan', 'manifestRows'));
+    }
+
+    /**
+     * Save manifest order (AJAX)
+     */
+    public function saveManifestOrder(Request $request, $id)
+    {
+        $keberangkatan = Keberangkatan::findOrFail($id);
+
+        $request->validate([
+            'manifest_order' => 'required|array',
+        ]);
+
+        $keberangkatan->update([
+            'manifest_order' => $request->input('manifest_order'),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Urutan manifest berhasil disimpan']);
+    }
+
+    /**
+     * Generate manifest PDF (landscape table format)
+     */
+    public function manifestPdf($id)
+    {
+        $keberangkatan = Keberangkatan::with(['jamaahBookings.jamaah', 'travelPackage', 'outlet'])
+            ->findOrFail($id);
+
+        $manifestRows = $this->buildManifestRows($keberangkatan);
+
+        $departureDate = $keberangkatan->departure_date
+            ? strtoupper(\Carbon\Carbon::parse($keberangkatan->departure_date)->translatedFormat('d F Y'))
+            : '';
+
+        // Get company settings for logo & kop
+        $companySettings = null;
+        try {
+            $outletId = $keberangkatan->id_outlet;
+            $companySettings = \App\Models\CompanySetting::where('outlet_id', $outletId)->first();
+            if (!$companySettings) {
+                $companySettings = \App\Models\CompanySetting::first();
+            }
+        } catch (\Exception $e) {}
+
+        // Get logo as base64 for PDF embedding
+        $logoBase64 = null;
+        if ($companySettings && $companySettings->company_logo) {
+            $logoPath = storage_path('app/public/' . $companySettings->company_logo);
+            if (file_exists($logoPath)) {
+                $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+            }
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.travel.keberangkatan.manifest-table-pdf', [
+            'keberangkatan'  => $keberangkatan,
+            'manifestRows'   => $manifestRows,
+            'departureDate'  => $departureDate,
+            'companySettings'=> $companySettings,
+            'logoBase64'     => $logoBase64,
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->stream('Manifest-' . ($keberangkatan->keberangkatan_code ?? $id) . '.pdf');
+    }
+
+    /**
+     * Export manifest to Excel
+     */
+    public function manifestExcel($id)
+    {
+        $keberangkatan = Keberangkatan::with(['jamaahBookings.jamaah', 'travelPackage'])
+            ->findOrFail($id);
+
+        $manifestRows = $this->buildManifestRows($keberangkatan);
+
+        $departureDate = $keberangkatan->departure_date
+            ? strtoupper(\Carbon\Carbon::parse($keberangkatan->departure_date)->translatedFormat('d F Y'))
+            : '';
+
+        $packageName = $keberangkatan->travelPackage->package_name ?? '';
+
+        $filename = 'Manifest-' . ($keberangkatan->keberangkatan_code ?? $id) . '.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\ManifestExport($manifestRows, $departureDate, $packageName),
+            $filename
+        );
+    }
+
+    /**
+     * Build manifest rows from keberangkatan data, respecting saved order
+     */
+    private function buildManifestRows(Keberangkatan $keberangkatan): array
+    {
+        $rows = [];
+        $bookings = $keberangkatan->jamaahBookings;
+
+        foreach ($bookings as $booking) {
+            $jamaah = $booking->jamaah;
+            if (!$jamaah) continue;
+
+            $bookingId = $booking->id;
+
+            // Main jamaah
+            $rows[] = [
+                'id'            => 'main_' . $bookingId,
+                'type'          => 'main',
+                'booking_id'    => $bookingId,
+                'family_idx'    => -1,
+                'title'         => $jamaah->passport_title ?: ($jamaah->gender === 'Female' ? 'MRS' : 'MR'),
+                'full_name'     => strtoupper($jamaah->passport_nama ?: $jamaah->nama ?: ''),
+                'gender'        => $jamaah->passport_gender ?: $jamaah->gender ?: 'Male',
+                'passport_no'   => $jamaah->passport_nomor ?: '',
+                'issued_date'   => $jamaah->passport_tanggal_terbit ?: '',
+                'expire_date'   => $jamaah->passport_tanggal_kadaluarsa ?: '',
+                'nationality'   => $jamaah->passport_kewarganegaraan ?: 'IDN',
+                'date_of_birth' => $jamaah->passport_tanggal_lahir ?: $jamaah->ktp_tanggal_lahir ?: '',
+                'office_issued' => $jamaah->passport_kantor_terbit ?: '',
+                'birth_city'    => $jamaah->passport_tempat_lahir ?: $jamaah->ktp_tempat_lahir ?: '',
+                'relation'      => '',
+                'group_label'   => '',
+            ];
+
+            // Family members
+            $familyMembers = $booking->family_members_booking;
+            if (is_string($familyMembers)) {
+                $familyMembers = json_decode($familyMembers, true) ?? [];
+            }
+            if (!is_array($familyMembers)) $familyMembers = [];
+
+            foreach ($familyMembers as $fIdx => $fm) {
+                $mainName = strtoupper($jamaah->passport_nama ?: $jamaah->nama ?: '');
+                $relation = $fm['hubungan'] ?? $fm['relation'] ?? '';
+                if (strtolower($relation) === 'anak' || strtolower($relation) === 'child') {
+                    $relation = 'ANAK DARI ' . $mainName;
+                } else {
+                    $relation = strtoupper($relation);
+                }
+
+                $rows[] = [
+                    'id'            => 'family_' . $bookingId . '_' . $fIdx,
+                    'type'          => 'family',
+                    'booking_id'    => $bookingId,
+                    'family_idx'    => $fIdx,
+                    'title'         => $fm['passport_title'] ?? ($this->inferTitle($fm)),
+                    'full_name'     => strtoupper($fm['passport_nama'] ?? $fm['nama'] ?? ''),
+                    'gender'        => $fm['passport_gender'] ?? $fm['gender'] ?? 'Male',
+                    'passport_no'   => $fm['passport_nomor'] ?? $fm['no_passport'] ?? '',
+                    'issued_date'   => $fm['passport_tanggal_terbit'] ?? '',
+                    'expire_date'   => $fm['passport_tanggal_kadaluarsa'] ?? '',
+                    'nationality'   => $fm['passport_kewarganegaraan'] ?? 'IDN',
+                    'date_of_birth' => $fm['passport_tanggal_lahir'] ?? $fm['tanggal_lahir'] ?? '',
+                    'office_issued' => $fm['passport_kantor_terbit'] ?? '',
+                    'birth_city'    => $fm['passport_tempat_lahir'] ?? '',
+                    'relation'      => $relation,
+                    'group_label'   => '',
+                ];
+            }
+        }
+
+        // Apply saved order
+        $savedOrder = $keberangkatan->manifest_order;
+        if (!empty($savedOrder) && is_array($savedOrder)) {
+            $orderMap = [];
+            foreach ($savedOrder as $idx => $item) {
+                $orderMap[$item['id']] = [
+                    'order'       => $idx,
+                    'group_label' => $item['group_label'] ?? '',
+                ];
+            }
+
+            foreach ($rows as &$row) {
+                if (isset($orderMap[$row['id']])) {
+                    $row['group_label'] = $orderMap[$row['id']]['group_label'];
+                }
+            }
+            unset($row);
+
+            usort($rows, function ($a, $b) use ($orderMap) {
+                $orderA = isset($orderMap[$a['id']]) ? $orderMap[$a['id']]['order'] : 9999;
+                $orderB = isset($orderMap[$b['id']]) ? $orderMap[$b['id']]['order'] : 9999;
+                return $orderA - $orderB;
+            });
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Infer title from family member data
+     */
+    private function inferTitle(array $fm): string
+    {
+        $gender = strtolower($fm['gender'] ?? $fm['jenis_kelamin'] ?? '');
+        $dob = $fm['tanggal_lahir'] ?? $fm['date_of_birth'] ?? null;
+
+        if ($dob) {
+            try {
+                $age = \Carbon\Carbon::parse($dob)->age;
+                if ($age < 12) return 'MSTR';
+            } catch (\Exception $e) {}
+        }
+
+        if (in_array($gender, ['male', 'l', 'laki-laki'])) return 'MR';
+        if (in_array($gender, ['female', 'p', 'perempuan'])) return 'MRS';
+        return 'MR';
+    }
 }

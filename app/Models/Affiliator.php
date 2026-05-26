@@ -235,8 +235,12 @@ class Affiliator extends Model
             'status'            => 'pending', // Pending until payment complete
         ]);
 
-        // Pending balance tidak ditambahkan di sini
-        // Tunggu event pelunasan untuk menambahkan ke pending_balance
+        // Langsung tambahkan ke pending_balance saat referral dibuat
+        if ($finalCommission > 0) {
+            $this->increment('pending_balance', $finalCommission);
+            $this->increment('total_earnings', $finalCommission);
+            $this->increment('total_sales');
+        }
 
         // Buat distribusi fee ke upline
         $this->createFeeDistributions($referral, $finalCommission);
@@ -283,9 +287,75 @@ class Affiliator extends Model
     }
 
     /**
-     * Release termin 1 (saat pelunasan booking)
+     * Release to Available Balance
+     * Simplified flow: pending_balance → available_balance
+     * Conditions: booking full paid + departure date reached (or force release by admin)
      */
-    public function releaseTermin1(int $referralId): bool
+    public function releaseToAvailable(int $referralId, bool $force = false): bool
+    {
+        $referral = $this->referrals()->find($referralId);
+        if (!$referral) return false;
+        
+        // Already released
+        if ($referral->termin_2_released) return false;
+
+        // Check conditions (unless force release by admin)
+        if (!$force) {
+            // Condition 1: Booking must be full paid
+            if (!$referral->termin_1_released) {
+                return false;
+            }
+            
+            // Condition 2: Departure date must be reached
+            $booking = $referral->booking;
+            if ($booking && $booking->keberangkatan) {
+                $departureDate = $booking->keberangkatan->departure_date ?? null;
+                if ($departureDate && now()->lt($departureDate)) {
+                    return false; // Departure date not yet reached
+                }
+            }
+        }
+
+        // Mark termin_1 as released if not yet (for force release cases)
+        if (!$referral->termin_1_released) {
+            $referral->update([
+                'termin_1_released' => true,
+                'termin_1_paid_at'  => now(),
+                'status'            => 'verified',
+                'verified_at'       => now(),
+            ]);
+        }
+
+        // Move from pending_balance to available_balance
+        $commission = $referral->commission_amount;
+        $this->decrement('pending_balance', $commission);
+        $this->increment('available_balance', $commission);
+
+        $referral->update([
+            'termin_2_released' => true,
+            'termin_2_paid_at'  => now(),
+            'status'            => 'paid',
+            'paid_at'           => now(),
+        ]);
+
+        // Release fee distributions to upline (move to available)
+        AffiliateFeeDistribution::where('referral_id', $referral->id)
+            ->where('status', 'pending')
+            ->get()
+            ->each(function ($dist) {
+                $dist->update(['status' => 'released', 'released_at' => now()]);
+                $dist->toAffiliator->decrement('pending_balance', $dist->amount);
+                $dist->toAffiliator->increment('available_balance', $dist->amount);
+            });
+
+        return true;
+    }
+
+    /**
+     * Mark booking as paid (termin 1) - called when jamaah payment is full
+     * This just marks the referral as verified, balance stays in pending
+     */
+    public function markBookingPaid(int $referralId): bool
     {
         $referral = $this->referrals()->find($referralId);
         if (!$referral || $referral->termin_1_released) return false;
@@ -297,49 +367,23 @@ class Affiliator extends Model
             'verified_at'       => now(),
         ]);
 
-        // Tambah ke pending_balance affiliator utama
-        $this->increment('pending_balance', $referral->termin_1_amount);
-
-        // Release distribusi termin 1 ke upline
-        AffiliateFeeDistribution::where('referral_id', $referral->id)
-            ->where('termin', 'termin_1')
-            ->where('status', 'pending')
-            ->get()
-            ->each(function ($dist) {
-                $dist->update(['status' => 'released', 'released_at' => now()]);
-                $dist->toAffiliator->increment('pending_balance', $dist->amount);
-            });
-
         return true;
     }
 
     /**
-     * Release termin 2 (saat tanggal keberangkatan)
+     * @deprecated Use releaseToAvailable() instead
+     */
+    public function releaseTermin1(int $referralId): bool
+    {
+        return $this->markBookingPaid($referralId);
+    }
+
+    /**
+     * @deprecated Use releaseToAvailable() instead
      */
     public function releaseTermin2(int $referralId): bool
     {
-        $referral = $this->referrals()->find($referralId);
-        if (!$referral || $referral->termin_2_released) return false;
-
-        $referral->update([
-            'termin_2_released' => true,
-            'termin_2_paid_at'  => now(),
-        ]);
-
-        // Tambah ke pending_balance affiliator utama
-        $this->increment('pending_balance', $referral->termin_2_amount);
-
-        // Release distribusi termin 2 ke upline
-        AffiliateFeeDistribution::where('referral_id', $referral->id)
-            ->where('termin', 'termin_2')
-            ->where('status', 'pending')
-            ->get()
-            ->each(function ($dist) {
-                $dist->update(['status' => 'released', 'released_at' => now()]);
-                $dist->toAffiliator->increment('pending_balance', $dist->amount);
-            });
-
-        return true;
+        return $this->releaseToAvailable($referralId);
     }
 
     public function verifyReferral($referralId)

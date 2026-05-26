@@ -969,38 +969,110 @@ class PaymentController extends Controller
         $package = $booking->travelPackage;
         $jamaah = $booking->jamaah;
         
-        // Generate manifest URL
+        // Calculate remaining balance (accounting for discounts)
+        $remainingBalance = $booking->remaining_amount ?? ($booking->total_price - $booking->paid_amount);
+        
+        // Check if this is the first payment or subsequent
+        $totalPayments = \App\Models\JamaahPayment::where('id_jamaah_booking', $booking->id)
+            ->where('verification_status', 'verified')
+            ->count();
+        $isFirstPayment = ($totalPayments <= 1);
+        $isFullyPaid = ($remainingBalance <= 0 || $booking->payment_status === 'paid');
+        
+        // Generate URLs
         $manifestUrl = route('public.booking.manifest', ['bookingId' => $booking->id]);
+        $invoiceUrl = route('public.paket.invoice', [
+            'packageId' => $booking->id_travel_package,
+            'bookingId' => $booking->id
+        ]);
         
-        $msg = "Assalamu'alaikum, pembayaran Anda telah diverifikasi! ✅\n\n";
-        $msg .= "📦 Paket: {$package->package_name}\n";
-        $msg .= "🔖 Booking: {$booking->booking_code}\n";
-        $msg .= "💰 Jumlah: Rp " . number_format($payment->amount, 0, ',', '.') . "\n\n";
+        // Generate receipt/kwitansi URL
+        $receiptToken = hash('sha256', $payment->id . $payment->id_jamaah_booking . config('app.key'));
+        $receiptUrl = route('public.receipt', ['paymentId' => $payment->id, 'token' => $receiptToken]);
         
-        // Add remaining balance info
-        $remainingBalance = $booking->getRemainingBalance();
-        if ($remainingBalance > 0) {
-            $msg .= "💳 Sisa Tagihan: Rp " . number_format($remainingBalance, 0, ',', '.') . "\n\n";
-        } else {
-            $msg .= "✅ *LUNAS* - Pembayaran Anda telah lengkap!\n\n";
+        // Build discount info for remaining balance display
+        $discountInfo = '';
+        $voucherDiscount = $booking->voucher_discount ?? 0;
+        $adminDiscount = $booking->admin_discount ?? 0;
+        if ($voucherDiscount > 0) {
+            $discountInfo .= "🏷️ Diskon Voucher: - Rp " . number_format($voucherDiscount, 0, ',', '.') . "\n";
+        }
+        if ($adminDiscount > 0) {
+            $discountInfo .= "🏷️ Diskon Admin: - Rp " . number_format($adminDiscount, 0, ',', '.') . "\n";
         }
         
-        $msg .= "📋 *LANGKAH SELANJUTNYA:*\n";
-        $msg .= "Silakan lengkapi dokumen perjalanan Anda dengan mengisi form manifest dan upload passport.\n\n";
-        $msg .= "🔗 *Link Form Manifest:*\n";
-        $msg .= $manifestUrl . "\n\n";
-        $msg .= "📸 *Fitur OCR Passport:*\n";
-        $msg .= "Upload foto passport Anda, sistem kami akan otomatis membaca data dan mengisi form untuk Anda!\n\n";
-        $msg .= "Terima kasih telah mempercayai HM Tour! 🙏";
+        if ($isFullyPaid) {
+            // === PESAN LUNAS ===
+            $msg = "Assalamu'alaikum {$jamaah->nama} 🎉\n\n";
+            $msg .= "✅ *PEMBAYARAN LUNAS!*\n\n";
+            $msg .= "Alhamdulillah, seluruh pembayaran untuk paket perjalanan Anda telah lengkap.\n\n";
+            $msg .= "📦 Paket: {$package->package_name}\n";
+            $msg .= "🔖 Booking: {$booking->booking_code}\n";
+            $msg .= "💰 Total Dibayar: Rp " . number_format($booking->paid_amount, 0, ',', '.') . "\n";
+            if ($discountInfo) {
+                $msg .= "\n" . $discountInfo;
+            }
+            $msg .= "\n📋 *LANGKAH SELANJUTNYA:*\n";
+            $msg .= "Silakan lengkapi dokumen perjalanan Anda:\n";
+            $msg .= "1. Isi form manifest\n";
+            $msg .= "2. Upload foto passport\n";
+            $msg .= "3. Siapkan dokumen lainnya\n\n";
+            $msg .= "🧾 *Kwitansi Pembayaran:*\n";
+            $msg .= $receiptUrl . "\n\n";
+            $msg .= "🔗 *Link Form Manifest:*\n";
+            $msg .= $manifestUrl . "\n\n";
+            $msg .= "Tim kami akan segera menghubungi Anda untuk persiapan keberangkatan.\n\n";
+            $msg .= "Terima kasih telah mempercayai HM Tour! 🙏";
+            
+        } elseif ($isFirstPayment) {
+            // === PESAN PEMBAYARAN PERTAMA (DP) ===
+            $msg = "Assalamu'alaikum {$jamaah->nama}, pembayaran DP Anda telah diverifikasi! ✅\n\n";
+            $msg .= "📦 Paket: {$package->package_name}\n";
+            $msg .= "🔖 Booking: {$booking->booking_code}\n";
+            $msg .= "💰 DP Dibayar: Rp " . number_format($payment->amount, 0, ',', '.') . "\n";
+            $msg .= "💳 Sisa Tagihan: Rp " . number_format($remainingBalance, 0, ',', '.') . "\n";
+            if ($discountInfo) {
+                $msg .= "\n" . $discountInfo;
+            }
+            $msg .= "\n📋 *LANGKAH SELANJUTNYA:*\n";
+            $msg .= "Silakan lengkapi dokumen perjalanan Anda dengan mengisi form manifest dan upload passport.\n\n";
+            $msg .= "🧾 *Kwitansi Pembayaran:*\n";
+            $msg .= $receiptUrl . "\n\n";
+            $msg .= "🔗 *Link Form Manifest:*\n";
+            $msg .= $manifestUrl . "\n\n";
+            $msg .= "📸 *Fitur OCR Passport:*\n";
+            $msg .= "Upload foto passport Anda, sistem kami akan otomatis membaca data dan mengisi form untuk Anda!\n\n";
+            $msg .= "Terima kasih telah mempercayai HM Tour! 🙏";
+            
+        } else {
+            // === PESAN PEMBAYARAN KE-2 DST (BELUM LUNAS) ===
+            $msg = "Assalamu'alaikum {$jamaah->nama}, pembayaran Anda telah diverifikasi! ✅\n\n";
+            $msg .= "📦 Paket: {$package->package_name}\n";
+            $msg .= "🔖 Booking: {$booking->booking_code}\n";
+            $msg .= "💰 Jumlah Dibayar: Rp " . number_format($payment->amount, 0, ',', '.') . "\n";
+            $msg .= "💳 Sisa Tagihan: Rp " . number_format($remainingBalance, 0, ',', '.') . "\n";
+            if ($discountInfo) {
+                $msg .= "\n" . $discountInfo;
+            }
+            $msg .= "\n📋 *PEMBAYARAN BERIKUTNYA:*\n";
+            $msg .= "Silakan lakukan pembayaran berikutnya melalui link di bawah ini:\n\n";
+            $msg .= "🧾 *Kwitansi Pembayaran:*\n";
+            $msg .= $receiptUrl . "\n\n";
+            $msg .= "🔗 *Link Invoice:*\n";
+            $msg .= $invoiceUrl . "\n\n";
+            $msg .= "Terima kasih telah mempercayai HM Tour! 🙏";
+        }
         
         try {
             $whatsappService = new \App\Services\WhatsAppService();
             $whatsappService->sendMessage($jamaah->telepon, $msg);
             
-            \Log::info('WhatsApp verification notification sent with manifest URL', [
+            \Log::info('WhatsApp verification notification sent', [
                 'booking_id' => $booking->id,
                 'booking_code' => $booking->booking_code,
-                'manifest_url' => $manifestUrl
+                'is_first_payment' => $isFirstPayment,
+                'is_fully_paid' => $isFullyPaid,
+                'remaining_balance' => $remainingBalance,
             ]);
         } catch (\Exception $e) {
             \Log::error('Failed to send WhatsApp: ' . $e->getMessage());
