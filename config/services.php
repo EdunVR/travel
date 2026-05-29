@@ -6,20 +6,7 @@ return [
     |--------------------------------------------------------------------------
     | Third Party Services
     |--------------------------------------------------------------------------
-    |
-    | This file is for storing the credentials for third party services such
-    | as Mailgun, Postmark, AWS and more. This file provides the de facto
-    | location for this type of information, allowing packages to have
-    | a conventional file to locate the various service credentials.
-    |
     */
-
-    'mailgun' => [
-        'domain' => env('MAILGUN_DOMAIN'),
-        'secret' => env('MAILGUN_SECRET'),
-        'endpoint' => env('MAILGUN_ENDPOINT', 'api.mailgun.net'),
-        'scheme' => 'https',
-    ],
 
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
@@ -31,19 +18,43 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    'openwa' => [
-        'url' => env('OPENWA_URL', 'http://localhost:3000'),
-        'api_key' => env('OPENWA_API_KEY'),
-        'timeout' => env('OPENWA_TIMEOUT', 30),
+    'resend' => [
+        'key' => env('RESEND_KEY'),
     ],
 
+    'slack' => [
+        'notifications' => [
+            'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
+            'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | InterActive QRIS Payment Gateway
+    |--------------------------------------------------------------------------
+    |
+    | Konfigurasi untuk integrasi QRIS InterActive
+    | Dokumentasi: https://qris.interactive.co.id/api-doc/
+    |
+    */
+    'qris' => [
+        'api_key'       => env('QRIS_API_KEY', ''),
+        'merchant_id'   => env('QRIS_MERCHANT_ID', ''),
+        'nmid'          => env('QRIS_NMID', ''),
+        'merchant_name' => env('QRIS_MERCHANT_NAME', 'HM TOUR AND TRAVEL'),
+        'base_url'      => env('QRIS_BASE_URL', 'https://qris.interactive.co.id/restapi/qris/show_qris.php'),
+        'check_url'     => env('QRIS_CHECK_URL', 'https://qris.interactive.co.id/restapi/qris/checkpaid_qris.php'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fonnte WhatsApp API
+    |--------------------------------------------------------------------------
+    */
     'fonnte' => [
-        'token' => env('FONNTE_TOKEN'),
-        'url' => env('FONNTE_URL', 'https://api.fonnte.com/send'),
-    ],
-
-    'google_vision' => [
-        'api_key' => env('GOOGLE_VISION_API_KEY'),
+        'token' => env('FONNTE_TOKEN', ''),
+        'url'   => env('FONNTE_URL', 'https://api.fonnte.com/send'),
     ],
 
 ];

@@ -460,7 +460,39 @@ Rp <?php echo e(number_format($paymentAmount, 0, ',', '.')); ?>
 <input type="hidden" name="dp_option" value="<?php echo e($booking->dp_option); ?>">
 </div>
 
-<!-- Rekening Bank -->
+<!-- Catatan -->
+<div>
+<label class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">Catatan (Opsional)</label>
+<textarea name="notes" rows="3" class="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Tambahkan catatan jika diperlukan..."></textarea>
+</div>
+
+<!-- Metode Pembayaran -->
+<div>
+<h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Metode Pembayaran</h3>
+<div class="grid grid-cols-2 gap-3">
+<button type="button" onclick="selectPaymentMethod('transfer')" id="methodTransfer"
+    class="payment-method-btn active border-2 border-green-500 bg-green-50 rounded-xl p-4 text-center transition-all">
+    <svg class="w-8 h-8 mx-auto mb-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+    </svg>
+    <div class="font-bold text-sm text-gray-900">Transfer Bank</div>
+    <div class="text-xs text-gray-500 mt-1">Upload bukti transfer</div>
+</button>
+<button type="button" onclick="selectPaymentMethod('qris')" id="methodQris"
+    class="payment-method-btn border-2 border-gray-200 bg-white rounded-xl p-4 text-center transition-all hover:border-purple-300">
+    <svg class="w-8 h-8 mx-auto mb-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+    </svg>
+    <div class="font-bold text-sm text-gray-900">QRIS</div>
+    <div class="text-xs text-gray-500 mt-1">Scan & bayar langsung</div>
+</button>
+</div>
+<input type="hidden" name="payment_method" id="paymentMethodInput" value="transfer">
+</div>
+
+<!-- Transfer Bank Section -->
+<div id="transferSection">
+<!-- Rekening Bank (existing) -->
 <?php if($bankAccounts->isNotEmpty()): ?>
 <div>
 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Transfer ke Rekening</h3>
@@ -471,7 +503,7 @@ Rp <?php echo e(number_format($paymentAmount, 0, ',', '.')); ?>
 <div class="flex-1">
 <div class="font-bold text-blue-900"><?php echo e($bank->bank_name); ?></div>
 <div class="text-blue-700 font-mono text-lg font-bold mt-1" id="acc_<?php echo e($bank->id); ?>"><?php echo e($bank->account_number); ?></div>
-<div class="text-blue-600 text-sm">a/n <?php echo e($bank->account_holder_name); ?></div>
+<div class="text-blue-600 text-sm">a/n <?php echo e($bank->account_holder_name ?? $bank->account_holder ?? ''); ?></div>
 </div>
 <button type="button" onclick="copyToClipboard('<?php echo e($bank->account_number); ?>', <?php echo e($bank->id); ?>)" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all">
 <span id="copyBtn_<?php echo e($bank->id); ?>">📋 Copy</span>
@@ -487,7 +519,7 @@ Rp <?php echo e(number_format($paymentAmount, 0, ',', '.')); ?>
 <div>
 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Upload Bukti Transfer <span class="text-red-500">*</span></h3>
 <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-green-500 transition-all">
-<input type="file" name="bukti_transfer" id="bukti_transfer" accept="image/*,application/pdf" required class="hidden" onchange="previewFile(this)">
+<input type="file" name="bukti_transfer" id="bukti_transfer" accept="image/*,application/pdf" class="hidden" onchange="previewFile(this)">
 <label for="bukti_transfer" class="cursor-pointer">
 <div id="filePreview" class="text-gray-500">
 <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -500,28 +532,113 @@ Rp <?php echo e(number_format($paymentAmount, 0, ',', '.')); ?>
 </div>
 </div>
 
-<!-- Catatan -->
-<div>
-<label class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">Catatan (Opsional)</label>
-<textarea name="notes" rows="3" class="w-full border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Tambahkan catatan jika diperlukan..."></textarea>
-</div>
-
-<!-- Tombol Bayar -->
-<button type="submit" class="w-full bg-green-gradient text-white font-black py-4 rounded-xl text-lg hover:shadow-lg transition-all flex items-center justify-center gap-2">
+<!-- Tombol Bayar Transfer -->
+<button type="submit" id="btnBayarTransfer" class="w-full bg-green-gradient text-white font-black py-4 rounded-xl text-lg hover:shadow-lg transition-all flex items-center justify-center gap-2">
 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
 </svg>
-BAYAR SEKARANG
+KONFIRMASI TRANSFER
 </button>
+</div>
 
 </form>
+
+<!-- QRIS Payment Section (outside form) -->
+<div id="qrisSection" style="display: none;">
+<div class="space-y-4">
+<!-- QRIS Info -->
+<div class="bg-purple-50 border-2 border-purple-200 rounded-xl p-4">
+<div class="flex items-center gap-3 mb-3">
+<div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+<svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+</svg>
+</div>
+<div>
+<div class="font-bold text-purple-900">Bayar dengan QRIS</div>
+<div class="text-xs text-purple-600">Scan QR code dengan GoPay, OVO, DANA, ShopeePay, atau aplikasi bank Anda</div>
+</div>
+</div>
+<div class="text-sm text-purple-700">
+<strong>Merchant:</strong> <?php echo e(config('services.qris.merchant_name', 'HM TOUR AND TRAVEL')); ?><br>
+<strong>NMID:</strong> <?php echo e(config('services.qris.nmid')); ?>
+
+</div>
+</div>
+
+<!-- QR Code Display Area -->
+<div id="qrisDisplay" style="display: none;">
+<div class="bg-white border-2 border-gray-200 rounded-xl p-6 text-center">
+<div class="mb-3">
+<span class="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">
+Jumlah: Rp <span id="qrisAmountDisplay">0</span>
+</span>
+</div>
+<div id="qrisQrCode" class="flex justify-center mb-4">
+<!-- QR Code will be rendered here -->
+</div>
+<div class="text-sm text-gray-600 mb-2">
+<span class="font-semibold">Scan QR di atas</span> dengan aplikasi e-wallet atau mobile banking Anda
+</div>
+<div id="qrisTimer" class="text-xs text-orange-600 font-semibold">
+⏱️ Berlaku: <span id="qrisCountdown">30:00</span>
+</div>
+<div id="qrisStatusCheck" class="mt-4">
+<div class="flex items-center justify-center gap-2 text-sm text-blue-600">
+<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+</svg>
+Menunggu pembayaran...
+</div>
+</div>
+</div>
+</div>
+
+<!-- QRIS Success -->
+<div id="qrisSuccess" style="display: none;">
+<div class="bg-green-50 border-2 border-green-500 rounded-xl p-6 text-center">
+<svg class="w-16 h-16 mx-auto mb-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+</svg>
+<div class="font-bold text-green-800 text-lg mb-1">Pembayaran Berhasil! 🎉</div>
+<div class="text-sm text-green-700" id="qrisSuccessInfo"></div>
+<div class="mt-4">
+<button onclick="location.reload()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-all">
+Lihat Status Terbaru
+</button>
+</div>
+</div>
+</div>
+
+<!-- QRIS Expired -->
+<div id="qrisExpired" style="display: none;">
+<div class="bg-orange-50 border-2 border-orange-300 rounded-xl p-6 text-center">
+<svg class="w-12 h-12 mx-auto mb-3 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+</svg>
+<div class="font-bold text-orange-800 mb-1">QRIS Kadaluarsa</div>
+<div class="text-sm text-orange-700 mb-3">QR Code sudah tidak berlaku. Silakan buat ulang.</div>
+</div>
+</div>
+
+<!-- Generate QRIS Button -->
+<button type="button" id="btnGenerateQris" onclick="generateQris()" 
+    class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black py-4 rounded-xl text-lg hover:shadow-lg transition-all flex items-center justify-center gap-2">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+</svg>
+TAMPILKAN QR CODE QRIS
+</button>
+</div>
+</div>
 
 <!-- Info -->
 <div class="bg-blue-50 rounded-xl p-4 text-sm text-blue-800">
 <div class="font-bold mb-1">Setelah Pembayaran:</div>
 <ol class="list-decimal list-inside space-y-1 text-blue-700">
-<li>Anda akan diarahkan ke WhatsApp dengan link invoice & kwitansi</li>
-<li>Tim kami akan verifikasi pembayaran dalam 1x24 jam</li>
+<li>Transfer: Tim kami akan verifikasi dalam 1x24 jam</li>
+<li>QRIS: Pembayaran otomatis terverifikasi secara real-time</li>
 <li>Dokumen perjalanan akan diproses setelah verifikasi</li>
 </ol>
 </div>
@@ -691,6 +808,216 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+});
+
+// ==========================================
+// QRIS PAYMENT INTEGRATION
+// ==========================================
+let currentPaymentMethod = 'transfer';
+let qrisCheckInterval = null;
+let qrisCountdownInterval = null;
+let currentQrisTrxNumber = null;
+
+function selectPaymentMethod(method) {
+    currentPaymentMethod = method;
+    document.getElementById('paymentMethodInput').value = method;
+    
+    // Toggle active state
+    document.getElementById('methodTransfer').classList.toggle('active', method === 'transfer');
+    document.getElementById('methodTransfer').classList.toggle('border-green-500', method === 'transfer');
+    document.getElementById('methodTransfer').classList.toggle('bg-green-50', method === 'transfer');
+    document.getElementById('methodTransfer').classList.toggle('border-gray-200', method !== 'transfer');
+    
+    document.getElementById('methodQris').classList.toggle('active', method === 'qris');
+    document.getElementById('methodQris').classList.toggle('border-purple-500', method === 'qris');
+    document.getElementById('methodQris').classList.toggle('bg-purple-50', method === 'qris');
+    document.getElementById('methodQris').classList.toggle('border-gray-200', method !== 'qris');
+    
+    // Toggle sections
+    document.getElementById('transferSection').style.display = method === 'transfer' ? 'block' : 'none';
+    document.getElementById('qrisSection').style.display = method === 'qris' ? 'block' : 'none';
+    
+    // Update form validation
+    const buktiInput = document.getElementById('bukti_transfer');
+    if (buktiInput) {
+        buktiInput.required = (method === 'transfer');
+    }
+}
+
+function generateQris() {
+    const btn = document.getElementById('btnGenerateQris');
+    let amount = <?php echo e($paymentAmount ?? 0); ?>;
+    
+    if (amount < 1000) {
+        alert('Jumlah pembayaran minimal Rp 1.000');
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Membuat QRIS...';
+    
+    fetch('<?php echo e(route("public.qris.generate", ["packageId" => $package->id, "bookingId" => $booking->id])); ?>', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ amount: amount })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showQrisCode(data.data);
+        } else {
+            alert(data.message || 'Gagal membuat QRIS. Silakan coba lagi.');
+            btn.disabled = false;
+            btn.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg> TAMPILKAN QR CODE QRIS';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan. Silakan coba lagi.');
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg> TAMPILKAN QR CODE QRIS';
+    });
+}
+
+function showQrisCode(data) {
+    currentQrisTrxNumber = data.trx_number;
+    
+    // Show QR display, hide button
+    document.getElementById('qrisDisplay').style.display = 'block';
+    document.getElementById('btnGenerateQris').style.display = 'none';
+    document.getElementById('qrisExpired').style.display = 'none';
+    document.getElementById('qrisSuccess').style.display = 'none';
+    
+    // Display amount
+    document.getElementById('qrisAmountDisplay').textContent = formatNumber(data.amount);
+    
+    // Generate QR Code from qris_content string
+    const qrContainer = document.getElementById('qrisQrCode');
+    if (data.qris_content) {
+        generateQRCode(data.qris_content);
+    } else {
+        qrContainer.innerHTML = '<div class="text-red-500">QR Code tidak tersedia</div>';
+    }
+    
+    // Start countdown timer (30 minutes)
+    startQrisCountdown(data.expired_at || new Date(Date.now() + 30 * 60 * 1000).toISOString());
+    
+    // Start polling for payment status
+    startQrisStatusCheck(data.trx_number);
+}
+
+function generateQRCode(content) {
+    // Use qrcode.js library for reliable QR generation
+    const container = document.getElementById('qrisQrCode');
+    if (!container) return;
+    
+    if (typeof QRCode === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+        script.onload = function() {
+            renderQR(content);
+        };
+        script.onerror = function() {
+            // Fallback: show raw text
+            container.innerHTML = '<div class="bg-gray-100 p-4 rounded-lg text-xs break-all font-mono">' + content + '</div>';
+        };
+        document.head.appendChild(script);
+    } else {
+        renderQR(content);
+    }
+}
+
+function renderQR(content) {
+    const container = document.getElementById('qrisQrCode');
+    if (!container) return;
+    container.innerHTML = '<div id="qrisQrDiv"></div>';
+    new QRCode(document.getElementById('qrisQrDiv'), {
+        text: content,
+        width: 280,
+        height: 280,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+    });
+}
+
+function startQrisCountdown(expiredAt) {
+    if (qrisCountdownInterval) clearInterval(qrisCountdownInterval);
+    
+    const expiry = new Date(expiredAt);
+    
+    qrisCountdownInterval = setInterval(function() {
+        const now = new Date();
+        const diff = expiry - now;
+        
+        if (diff <= 0) {
+            clearInterval(qrisCountdownInterval);
+            clearInterval(qrisCheckInterval);
+            document.getElementById('qrisDisplay').style.display = 'none';
+            document.getElementById('qrisExpired').style.display = 'block';
+            document.getElementById('btnGenerateQris').style.display = 'flex';
+            document.getElementById('btnGenerateQris').disabled = false;
+            document.getElementById('btnGenerateQris').innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> BUAT ULANG QRIS';
+            return;
+        }
+        
+        const minutes = Math.floor(diff / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        document.getElementById('qrisCountdown').textContent = 
+            String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+    }, 1000);
+}
+
+function startQrisStatusCheck(trxNumber) {
+    if (qrisCheckInterval) clearInterval(qrisCheckInterval);
+    
+    // Check every 5 seconds
+    qrisCheckInterval = setInterval(function() {
+        fetch('<?php echo e(url("/qris")); ?>/' + trxNumber + '/check-status', {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.paid) {
+                // Payment successful!
+                clearInterval(qrisCheckInterval);
+                clearInterval(qrisCountdownInterval);
+                showQrisSuccess(data.data);
+            } else if (data.status === 'expired') {
+                clearInterval(qrisCheckInterval);
+                clearInterval(qrisCountdownInterval);
+                document.getElementById('qrisDisplay').style.display = 'none';
+                document.getElementById('qrisExpired').style.display = 'block';
+                document.getElementById('btnGenerateQris').style.display = 'flex';
+                document.getElementById('btnGenerateQris').disabled = false;
+            }
+        })
+        .catch(error => console.error('Status check error:', error));
+    }, 5000);
+}
+
+function showQrisSuccess(data) {
+    document.getElementById('qrisDisplay').style.display = 'none';
+    document.getElementById('qrisSuccess').style.display = 'block';
+    
+    let info = 'Pembayaran Anda telah berhasil diverifikasi secara otomatis.';
+    if (data && data.payment_method_by) {
+        info += '<br>Via: ' + data.payment_method_by;
+    }
+    if (data && data.payment_customer_name) {
+        info += '<br>Nama: ' + data.payment_customer_name;
+    }
+    document.getElementById('qrisSuccessInfo').innerHTML = info;
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (qrisCheckInterval) clearInterval(qrisCheckInterval);
+    if (qrisCountdownInterval) clearInterval(qrisCountdownInterval);
 });
 </script>
 

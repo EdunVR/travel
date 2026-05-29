@@ -55,7 +55,7 @@ class PaymentController extends Controller
         $request->validate([
             'payment_date' => 'required|date',
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|in:cash,transfer,credit_card,debit_card,other',
+            'payment_method' => 'required|in:cash,transfer,credit_card,debit_card,qris,other',
             'reference_number' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
             'bukti_transfer' => 'nullable|image|mimes:jpeg,jpg,png|max:10240', // max 10MB

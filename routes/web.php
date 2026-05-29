@@ -347,6 +347,17 @@ Route::post('/booking/payment/{token}', [\App\Http\Controllers\PublicPackageCont
     ->middleware(['web'])
     ->name('public.booking.payment.process');
 
+// QRIS Payment Routes (InterActive QRIS)
+Route::post('/paket/{packageId}/invoice/{bookingId}/qris/generate', 
+    [\App\Http\Controllers\QrisPaymentController::class, 'generateQris'])
+    ->middleware(['web'])
+    ->name('public.qris.generate');
+
+Route::get('/qris/{trxNumber}/check-status', 
+    [\App\Http\Controllers\QrisPaymentController::class, 'checkStatus'])
+    ->middleware(['web'])
+    ->name('public.qris.check-status');
+
 // Voucher routes
 Route::post('/voucher/validate', [\App\Http\Controllers\VoucherController::class, 'validateVoucher'])
     ->middleware(['web'])
@@ -820,6 +831,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::delete('travel/booking/{booking}/invoice', [PaymentController::class, 'deleteInvoice'])->name('payment.delete-invoice');
         Route::get('travel/booking/{booking}/invoice/pdf', [PaymentController::class, 'generateJamaahInvoice'])->name('payment.jamaah-invoice-pdf');
         
+        // QRIS Payment (Admin)
+        Route::post('travel/booking/{booking}/qris/generate', [\App\Http\Controllers\QrisPaymentController::class, 'adminGenerateQris'])->name('payment.qris.generate');
+        Route::get('travel/booking/{booking}/qris/history', [\App\Http\Controllers\QrisPaymentController::class, 'adminQrisHistory'])->name('payment.qris.history');
+
         // Payment Verification (Task 9)
         Route::get('travel/payment/verify', [PaymentController::class, 'verifyIndex'])->name('travel.payment.verify');
         Route::post('travel/payment/{paymentId}/verify', [PaymentController::class, 'verifyPayment'])->name('travel.payment.verify.action');

@@ -58,6 +58,7 @@ class JamaahPayment extends Model
             'transfer' => 'Transfer Bank',
             'credit_card' => 'Kartu Kredit',
             'debit_card' => 'Kartu Debit',
+            'qris' => 'QRIS',
             'other' => 'Lainnya'
         ];
 

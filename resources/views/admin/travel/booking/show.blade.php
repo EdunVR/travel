@@ -473,7 +473,7 @@
         <div class="card mb-3">
           <div class="card-header d-flex justify-content-between align-items-center bg-light">
             <h5 class="mb-0"><i class="fas fa-money-bill-wave mr-2"></i>Riwayat Pembayaran</h5>
-            <div x-data="{ loadingInvoice: false, loadingPayment: false }">
+            <div x-data="{ loadingInvoice: false, loadingPayment: false, loadingQris: false }">
               @if($booking->status !== 'cancelled')
                 @if(!$booking->id_invoice)
                 <button type="button" 
@@ -486,6 +486,14 @@
                 </button>
                 @endif
                 @if($booking->payment_status !== 'paid')
+                <button type="button" 
+                        class="btn btn-sm btn-info mr-2"
+                        onclick="showAdminQrisModal()"
+                        @click="loadingQris = true"
+                        :disabled="loadingQris">
+                  <i class="fas" :class="loadingQris ? 'fa-spinner fa-spin' : 'fa-qrcode'"></i> 
+                  <span x-text="loadingQris ? 'Memuat...' : 'Bayar QRIS'"></span>
+                </button>
                 <a href="{{ route('admin.inventaris.payment.create', $booking->id) }}" 
                    class="btn btn-sm btn-success"
                    @click="loadingPayment = true"
@@ -2339,4 +2347,193 @@
       </div>
     </div>
   </div>
+
+  <!-- QRIS Payment Modal -->
+  <div class="modal fade" id="qrisPaymentModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header bg-info text-white">
+          <h5 class="modal-title"><i class="fas fa-qrcode mr-2"></i>Pembayaran QRIS</h5>
+          <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+        </div>
+        <div class="modal-body text-center" id="adminQrisBody">
+          <!-- Amount Input -->
+          <div id="adminQrisAmountForm">
+            <div class="mb-3">
+              <label class="font-weight-bold">Jumlah Pembayaran (Rp)</label>
+              <input type="number" class="form-control form-control-lg text-center" 
+                     id="adminQrisAmount" 
+                     value="{{ $booking->remaining_amount ?? ($booking->total_price - ($booking->paid_amount ?? 0)) }}"
+                     min="1000" step="1000">
+              <small class="text-muted">Sisa tagihan: Rp {{ number_format($booking->remaining_amount ?? ($booking->total_price - ($booking->paid_amount ?? 0)), 0, ',', '.') }}</small>
+            </div>
+            <button type="button" class="btn btn-info btn-lg btn-block" onclick="adminGenerateQris()">
+              <i class="fas fa-qrcode mr-2"></i>Generate QRIS
+            </button>
+          </div>
+          
+          <!-- QR Display -->
+          <div id="adminQrisDisplay" style="display: none;">
+            <div class="mb-3">
+              <span class="badge badge-success badge-pill px-3 py-2">
+                Rp <span id="adminQrisAmountLabel">0</span>
+              </span>
+            </div>
+            <div id="adminQrisQrCode" class="mb-3"></div>
+            <div class="text-muted small mb-2">
+              Scan dengan GoPay, OVO, DANA, ShopeePay, atau mobile banking
+            </div>
+            <div class="text-warning font-weight-bold small" id="adminQrisTimer">
+              ⏱️ <span id="adminQrisCountdown">30:00</span>
+            </div>
+            <div class="mt-3" id="adminQrisWaiting">
+              <div class="spinner-border spinner-border-sm text-info mr-2" role="status"></div>
+              <span class="text-info">Menunggu pembayaran...</span>
+            </div>
+          </div>
+          
+          <!-- Success -->
+          <div id="adminQrisSuccess" style="display: none;">
+            <div class="text-center py-3">
+              <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+              <h4 class="text-success">Pembayaran Berhasil!</h4>
+              <p class="text-muted" id="adminQrisSuccessInfo"></p>
+              <button type="button" class="btn btn-success" onclick="location.reload()">
+                <i class="fas fa-sync mr-1"></i>Refresh Halaman
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // Admin QRIS Functions
+  let adminQrisCheckInterval = null;
+  let adminQrisCountdownInterval = null;
+
+  function showAdminQrisModal() {
+      $('#qrisPaymentModal').modal('show');
+      // Reset state
+      document.getElementById('adminQrisAmountForm').style.display = 'block';
+      document.getElementById('adminQrisDisplay').style.display = 'none';
+      document.getElementById('adminQrisSuccess').style.display = 'none';
+  }
+
+  function adminGenerateQris() {
+      const amount = document.getElementById('adminQrisAmount').value;
+      if (!amount || amount < 1000) {
+          alert('Jumlah minimal Rp 1.000');
+          return;
+      }
+
+      const btn = event.target;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Membuat QRIS...';
+
+      fetch('{{ route("admin.inventaris.payment.qris.generate", $booking->id) }}', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': '{{ csrf_token() }}',
+              'Accept': 'application/json'
+          },
+          body: JSON.stringify({ amount: parseInt(amount) })
+      })
+      .then(r => r.json())
+      .then(data => {
+          if (data.success) {
+              showAdminQrisCode(data.data);
+          } else {
+              alert(data.message || 'Gagal membuat QRIS');
+              btn.disabled = false;
+              btn.innerHTML = '<i class="fas fa-qrcode mr-2"></i>Generate QRIS';
+          }
+      })
+      .catch(err => {
+          console.error(err);
+          alert('Terjadi kesalahan');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-qrcode mr-2"></i>Generate QRIS';
+      });
+  }
+
+  function showAdminQrisCode(data) {
+      document.getElementById('adminQrisAmountForm').style.display = 'none';
+      document.getElementById('adminQrisDisplay').style.display = 'block';
+      document.getElementById('adminQrisAmountLabel').textContent = 
+          new Intl.NumberFormat('id-ID').format(data.amount);
+
+      // Render QR
+      const container = document.getElementById('adminQrisQrCode');
+      if (data.qris_content) {
+          container.innerHTML = '<div id="adminQrisQrDiv"></div>';
+          if (typeof QRCode !== 'undefined' && QRCode.CorrectLevel) {
+              new QRCode(document.getElementById('adminQrisQrDiv'), {
+                  text: data.qris_content, width: 250, height: 250,
+                  colorDark: '#000000', colorLight: '#ffffff',
+                  correctLevel: QRCode.CorrectLevel.M
+              });
+          } else {
+              const script = document.createElement('script');
+              script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+              script.onload = function() {
+                  new QRCode(document.getElementById('adminQrisQrDiv'), {
+                      text: data.qris_content, width: 250, height: 250,
+                      colorDark: '#000000', colorLight: '#ffffff',
+                      correctLevel: QRCode.CorrectLevel.M
+                  });
+              };
+              document.head.appendChild(script);
+          }
+      }
+
+      // Countdown
+      const expiry = new Date(data.expired_at || Date.now() + 30*60*1000);
+      if (adminQrisCountdownInterval) clearInterval(adminQrisCountdownInterval);
+      adminQrisCountdownInterval = setInterval(function() {
+          const diff = expiry - new Date();
+          if (diff <= 0) {
+              clearInterval(adminQrisCountdownInterval);
+              clearInterval(adminQrisCheckInterval);
+              alert('QRIS kadaluarsa. Silakan generate ulang.');
+              document.getElementById('adminQrisAmountForm').style.display = 'block';
+              document.getElementById('adminQrisDisplay').style.display = 'none';
+              const btn = document.querySelector('#adminQrisAmountForm button');
+              if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-qrcode mr-2"></i>Generate QRIS'; }
+              return;
+          }
+          const m = Math.floor(diff/60000), s = Math.floor((diff%60000)/1000);
+          document.getElementById('adminQrisCountdown').textContent = 
+              String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+      }, 1000);
+
+      // Poll status
+      if (adminQrisCheckInterval) clearInterval(adminQrisCheckInterval);
+      adminQrisCheckInterval = setInterval(function() {
+          fetch('{{ url("/qris") }}/' + data.trx_number + '/check-status', { headers: {'Accept':'application/json'} })
+          .then(r => r.json())
+          .then(res => {
+              if (res.paid) {
+                  clearInterval(adminQrisCheckInterval);
+                  clearInterval(adminQrisCountdownInterval);
+                  document.getElementById('adminQrisDisplay').style.display = 'none';
+                  document.getElementById('adminQrisSuccess').style.display = 'block';
+                  let info = '';
+                  if (res.data && res.data.payment_method_by) info += 'Via: ' + res.data.payment_method_by + '<br>';
+                  if (res.data && res.data.payment_customer_name) info += 'Nama: ' + res.data.payment_customer_name;
+                  document.getElementById('adminQrisSuccessInfo').innerHTML = info || 'Pembayaran terverifikasi otomatis';
+              }
+          })
+          .catch(e => console.error(e));
+      }, 5000);
+  }
+
+  // Cleanup
+  $('#qrisPaymentModal').on('hidden.bs.modal', function() {
+      if (adminQrisCheckInterval) clearInterval(adminQrisCheckInterval);
+      if (adminQrisCountdownInterval) clearInterval(adminQrisCountdownInterval);
+  });
+  </script>
 </x-layouts.admin>

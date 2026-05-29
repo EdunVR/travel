@@ -696,6 +696,9 @@
                     <strong>{{ $bank->bank_name }}</strong> - {{ $bank->account_number }} a/n {{ $bank->account_holder }}
                 </span>
             @endforeach
+            <span style="display: block; margin-top: 6px; padding-top: 4px; border-top: 1px dashed #ccc;">
+                <strong>💳 QRIS:</strong> Scan QR Code di halaman invoice online untuk pembayaran via GoPay, OVO, DANA, ShopeePay, atau mobile banking.
+            </span>
         </div>
         @endif
 
