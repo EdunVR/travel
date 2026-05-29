@@ -736,6 +736,15 @@ class AffiliateAdminController extends Controller
             foreach ($aff->downlineSellers as $seller) {
                 $children[] = $this->buildTreeNode($seller);
             }
+        } elseif ($slug === 'hm-seller') {
+            // HM Seller can have HM Member downlines
+            $members = Affiliator::where('upline_partner_id', $aff->id)
+                ->whereHas('partnershipProgram', fn($q) => $q->where('slug', 'hm-member'))
+                ->with('partnershipProgram')
+                ->get();
+            foreach ($members as $member) {
+                $children[] = $this->buildTreeNode($member);
+            }
         }
 
         return $children;

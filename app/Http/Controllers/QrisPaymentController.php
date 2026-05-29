@@ -417,4 +417,167 @@ class QrisPaymentController extends Controller
             'data' => $transactions,
         ]);
     }
+
+    // ==========================================
+    // AFFILIATE/MITRA REGISTRATION PAYMENT
+    // ==========================================
+
+    /**
+     * Generate QRIS for affiliate registration payment
+     */
+    public function affiliateGenerateQris(Request $request, $token)
+    {
+        // Validate token from session
+        if (!session('affiliate_registration_token') || session('affiliate_registration_token') !== $token) {
+            return response()->json(['success' => false, 'message' => 'Token tidak valid'], 403);
+        }
+
+        $registrationData = session('affiliate_registration_data');
+        if (!$registrationData) {
+            return response()->json(['success' => false, 'message' => 'Data pendaftaran tidak ditemukan'], 404);
+        }
+
+        $program = \App\Models\PartnershipProgram::find($registrationData['partnership_program_id']);
+        if (!$program || $program->registration_fee <= 0) {
+            return response()->json(['success' => false, 'message' => 'Program tidak memerlukan pembayaran'], 422);
+        }
+
+        $amount = (int) $program->registration_fee;
+        $trxNumber = $this->qrisService->generateTrxNumber(0, 'HMAF');
+
+        // Check existing pending QRIS
+        $existingQris = QrisTransaction::where('trx_number', 'like', 'HMAF-%')
+            ->where('status', 'pending')
+            ->where('amount', $amount)
+            ->where('created_at', '>=', now()->subMinutes(30))
+            ->whereJsonContains('api_response_create->affiliate_token', $token)
+            ->first();
+
+        if ($existingQris && $existingQris->qris_content) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'qris_content' => $existingQris->qris_content,
+                    'qris_invoice_id' => $existingQris->qris_invoice_id,
+                    'trx_number' => $existingQris->trx_number,
+                    'amount' => $existingQris->amount,
+                    'expired_at' => $existingQris->expired_at?->toIso8601String(),
+                ],
+            ]);
+        }
+
+        // Call QRIS API
+        $result = $this->qrisService->createInvoice($trxNumber, $amount);
+
+        if (!$result['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'] ?? 'Gagal membuat QRIS',
+            ], 500);
+        }
+
+        // Save QRIS transaction (no booking ID, store token in metadata)
+        $qrisTransaction = QrisTransaction::create([
+            'id_jamaah_booking' => null,
+            'trx_number' => $trxNumber,
+            'qris_invoice_id' => $result['qris_invoiceid'] ?? null,
+            'amount' => $amount,
+            'qris_content' => $result['qris_content'] ?? null,
+            'qris_nmid' => $result['nmid'] ?? config('services.qris.nmid'),
+            'qris_request_date' => $result['qris_request_date'] ?? now()->toDateTimeString(),
+            'status' => 'pending',
+            'expired_at' => now()->addMinutes(30),
+            'api_response_create' => array_merge($result['data'] ?? [], ['affiliate_token' => $token]),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'qris_content' => $qrisTransaction->qris_content,
+                'qris_invoice_id' => $qrisTransaction->qris_invoice_id,
+                'trx_number' => $qrisTransaction->trx_number,
+                'amount' => $qrisTransaction->amount,
+                'expired_at' => $qrisTransaction->expired_at?->toIso8601String(),
+            ],
+        ]);
+    }
+
+    /**
+     * Check QRIS status for affiliate payment + auto-process registration
+     */
+    public function affiliateCheckStatus(Request $request, $trxNumber)
+    {
+        $qrisTransaction = QrisTransaction::where('trx_number', $trxNumber)->firstOrFail();
+
+        if ($qrisTransaction->isPaid()) {
+            return response()->json([
+                'success' => true,
+                'paid' => true,
+                'status' => 'paid',
+                'message' => 'Pembayaran berhasil!',
+            ]);
+        }
+
+        if ($qrisTransaction->isExpired()) {
+            $qrisTransaction->markAsExpired();
+            return response()->json(['success' => true, 'paid' => false, 'status' => 'expired']);
+        }
+
+        // Check with API
+        $trxDate = $qrisTransaction->created_at->format('Y-m-d');
+        $result = $this->qrisService->checkInvoice(
+            $qrisTransaction->qris_invoice_id,
+            $qrisTransaction->trx_number,
+            $trxDate
+        );
+
+        if ($result['success'] && $result['paid']) {
+            // Mark as paid
+            $qrisTransaction->markAsPaid($result['data'] ?? $result);
+
+            // Auto-process affiliate registration
+            $this->processAffiliateRegistration($qrisTransaction);
+
+            return response()->json([
+                'success' => true,
+                'paid' => true,
+                'status' => 'paid',
+                'message' => 'Pembayaran berhasil! Pendaftaran Anda sedang diproses.',
+            ]);
+        }
+
+        return response()->json(['success' => true, 'paid' => false, 'status' => 'pending']);
+    }
+
+    /**
+     * Process affiliate registration after QRIS payment confirmed
+     */
+    protected function processAffiliateRegistration(QrisTransaction $qrisTransaction): void
+    {
+        try {
+            $token = $qrisTransaction->api_response_create['affiliate_token'] ?? null;
+            if (!$token) return;
+
+            // Get registration data from session won't work here since it's a different request
+            // Instead, we store a flag that payment is done, and the next page load will process it
+            // We use cache as bridge
+            \Illuminate\Support\Facades\Cache::put(
+                'affiliate_qris_paid_' . $token,
+                [
+                    'trx_number' => $qrisTransaction->trx_number,
+                    'amount' => $qrisTransaction->amount,
+                    'paid_at' => now()->toIso8601String(),
+                    'payment_method_by' => $qrisTransaction->payment_method_by,
+                ],
+                now()->addHours(2)
+            );
+
+            Log::info('Affiliate QRIS payment confirmed, cached for processing', [
+                'token' => $token,
+                'trx_number' => $qrisTransaction->trx_number,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to cache affiliate QRIS payment', ['error' => $e->getMessage()]);
+        }
+    }
 }

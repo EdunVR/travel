@@ -8,45 +8,45 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Favicon -->
-    @php
+    <?php
         try {
             $settings = \App\Models\CompanySetting::first();
             $faviconUrl = $settings && $settings->logo ? asset('storage/' . $settings->logo) : url('WEB_HMTour/wp-content/uploads/2023/04/Logo-HM_UMRAH-3.png');
         } catch (\Exception $e) {
             $faviconUrl = url('WEB_HMTour/wp-content/uploads/2023/04/Logo-HM_UMRAH-3.png');
         }
-    @endphp
-    <link rel="icon" type="image/png" href="{{ $faviconUrl }}">
+    ?>
+    <link rel="icon" type="image/png" href="<?php echo e($faviconUrl); ?>">
 </head>
 <body class="bg-gradient-to-br from-green-50 to-emerald-100 min-h-screen">
     
     <div class="container mx-auto px-4 py-8">
         <!-- Header -->
         <div class="text-center mb-8">
-            @php
+            <?php
                 $logoPath = public_path('images/hm-tour-logo.png');
                 $logoExists = file_exists($logoPath);
-            @endphp
-            @if($logoExists)
-                <img src="{{ asset('images/hm-tour-logo.png') }}" alt="HM Tour" class="h-16 mx-auto mb-4">
-            @else
+            ?>
+            <?php if($logoExists): ?>
+                <img src="<?php echo e(asset('images/hm-tour-logo.png')); ?>" alt="HM Tour" class="h-16 mx-auto mb-4">
+            <?php else: ?>
                 <div class="h-16 w-16 mx-auto mb-4 bg-green-600 rounded-full flex items-center justify-center">
                     <span class="text-white text-2xl font-bold">HM</span>
                 </div>
-            @endif
+            <?php endif; ?>
             <h1 class="text-3xl font-bold text-gray-800">Pembayaran Pendaftaran</h1>
-            <p class="text-gray-600 mt-2">{{ $program->name }}</p>
+            <p class="text-gray-600 mt-2"><?php echo e($program->name); ?></p>
         </div>
 
-        @if($errors->any())
+        <?php if($errors->any()): ?>
         <div class="max-w-2xl mx-auto mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
             <ul class="list-disc list-inside">
-                @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-                @endforeach
+                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <li><?php echo e($error); ?></li>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </ul>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- Payment Container -->
         <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8">
@@ -55,11 +55,11 @@
             <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-6 text-white mb-6">
                 <div class="flex justify-between items-start">
                     <div>
-                        <h2 class="text-2xl font-bold mb-2">{{ $program->name }}</h2>
-                        <p class="text-green-100 text-sm">{{ $program->description }}</p>
+                        <h2 class="text-2xl font-bold mb-2"><?php echo e($program->name); ?></h2>
+                        <p class="text-green-100 text-sm"><?php echo e($program->description); ?></p>
                     </div>
                     <div class="text-right">
-                        <div class="text-3xl font-bold">{{ $program->formatted_fee }}</div>
+                        <div class="text-3xl font-bold"><?php echo e($program->formatted_fee); ?></div>
                         <div class="text-xs text-green-100">Biaya Pendaftaran</div>
                     </div>
                 </div>
@@ -71,24 +71,24 @@
                 <div class="grid grid-cols-2 gap-3 text-sm">
                     <div>
                         <span class="text-gray-500">Nama:</span>
-                        <span class="font-medium text-gray-900 ml-2">{{ $registrationData['full_name'] }}</span>
+                        <span class="font-medium text-gray-900 ml-2"><?php echo e($registrationData['full_name']); ?></span>
                     </div>
                     <div>
                         <span class="text-gray-500">Username:</span>
-                        <span class="font-medium text-gray-900 ml-2">{{ $registrationData['username'] }}</span>
+                        <span class="font-medium text-gray-900 ml-2"><?php echo e($registrationData['username']); ?></span>
                     </div>
                     <div>
                         <span class="text-gray-500">HP:</span>
-                        <span class="font-medium text-gray-900 ml-2">{{ $registrationData['phone_number'] }}</span>
+                        <span class="font-medium text-gray-900 ml-2"><?php echo e($registrationData['phone_number']); ?></span>
                     </div>
                     <div>
                         <span class="text-gray-500">Email:</span>
-                        <span class="font-medium text-gray-900 ml-2">{{ $registrationData['email'] }}</span>
+                        <span class="font-medium text-gray-900 ml-2"><?php echo e($registrationData['email']); ?></span>
                     </div>
                 </div>
             </div>
 
-            @if($program->registration_fee > 0)
+            <?php if($program->registration_fee > 0): ?>
             <!-- Payment Instructions -->
             <div class="border-t border-gray-200 pt-6 mb-6">
                 <h3 class="font-semibold text-gray-800 mb-4">
@@ -123,14 +123,14 @@
                                     <p><strong>Bank:</strong> BCA</p>
                                     <p><strong>No. Rekening:</strong> 1234567890</p>
                                     <p><strong>Atas Nama:</strong> HM Tour</p>
-                                    <p><strong>Jumlah:</strong> <span class="text-lg font-bold">{{ $program->formatted_fee }}</span></p>
+                                    <p><strong>Jumlah:</strong> <span class="text-lg font-bold"><?php echo e($program->formatted_fee); ?></span></p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <form action="{{ route('affiliate.payment.process', $token) }}" method="POST" enctype="multipart/form-data" id="paymentForm">
-                        @csrf
+                    <form action="<?php echo e(route('affiliate.payment.process', $token)); ?>" method="POST" enctype="multipart/form-data" id="paymentForm">
+                        <?php echo csrf_field(); ?>
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Upload Bukti Pembayaran <span class="text-red-500">*</span>
@@ -160,7 +160,8 @@
                             </div>
                         </div>
                         <div class="text-sm text-purple-700">
-                            <strong>Jumlah:</strong> {{ $program->formatted_fee }}
+                            <strong>Jumlah:</strong> <?php echo e($program->formatted_fee); ?>
+
                         </div>
                     </div>
 
@@ -199,7 +200,7 @@
                     </button>
                 </div>
             </div>
-            @else
+            <?php else: ?>
             <!-- Free Program -->
             <div class="text-center py-6">
                 <div class="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
@@ -208,21 +209,21 @@
                 <h3 class="text-xl font-bold text-gray-800 mb-2">Program Gratis!</h3>
                 <p class="text-gray-600 mb-6">Tidak ada biaya pendaftaran untuk program ini</p>
                 
-                <form action="{{ route('affiliate.payment.process', $token) }}" method="POST">
-                    @csrf
+                <form action="<?php echo e(route('affiliate.payment.process', $token)); ?>" method="POST">
+                    <?php echo csrf_field(); ?>
                     <button type="submit"
                             class="px-8 py-4 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition text-lg">
                         <i class="fas fa-check-circle mr-2"></i> Selesaikan Pendaftaran
                     </button>
                 </form>
             </div>
-            @endif
+            <?php endif; ?>
 
         </div>
 
         <!-- Back Link -->
         <div class="text-center mt-6">
-            <a href="{{ route('affiliate.register') }}" class="text-gray-600 hover:text-gray-800">
+            <a href="<?php echo e(route('affiliate.register')); ?>" class="text-gray-600 hover:text-gray-800">
                 <i class="fas fa-arrow-left mr-2"></i> Kembali ke Pendaftaran
             </a>
         </div>
@@ -287,11 +288,11 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Membuat QRIS...';
 
-            fetch('{{ route("affiliate.payment.qris.generate", $token) }}', {
+            fetch('<?php echo e(route("affiliate.payment.qris.generate", $token)); ?>', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
                     'Accept': 'application/json'
                 },
                 body: JSON.stringify({})
@@ -357,7 +358,7 @@
 
             // Poll status
             affQrisCheckInterval = setInterval(function() {
-                fetch('{{ url("/affiliate/qris") }}/' + data.trx_number + '/check-status', {
+                fetch('<?php echo e(url("/affiliate/qris")); ?>/' + data.trx_number + '/check-status', {
                     headers: {'Accept': 'application/json'}
                 })
                 .then(r => r.json())
@@ -376,3 +377,4 @@
 
 </body>
 </html>
+<?php /**PATH C:\xampp\htdocs\hm\resources\views/affiliate/payment.blade.php ENDPATH**/ ?>

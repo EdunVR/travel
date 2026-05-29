@@ -219,6 +219,10 @@ Route::post('/affiliate/register', [AffiliateController::class, 'storeRegistrati
 Route::get('/affiliate/payment/{token}', [AffiliateController::class, 'showPaymentPage'])->name('affiliate.payment');
 Route::post('/affiliate/payment/{token}', [AffiliateController::class, 'processPayment'])->name('affiliate.payment.process');
 
+// QRIS Payment untuk Affiliator
+Route::post('/affiliate/payment/{token}/qris/generate', [\App\Http\Controllers\QrisPaymentController::class, 'affiliateGenerateQris'])->name('affiliate.payment.qris.generate');
+Route::get('/affiliate/qris/{trxNumber}/check-status', [\App\Http\Controllers\QrisPaymentController::class, 'affiliateCheckStatus'])->name('affiliate.qris.check-status');
+
 // Login Affiliator
 Route::get('/affiliate/login', [AffiliateController::class, 'login'])->name('affiliate.login');
 Route::post('/affiliate/login', [AffiliateController::class, 'processLogin'])->name('affiliate.login.process');

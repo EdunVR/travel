@@ -207,14 +207,22 @@ class Affiliator extends Model
 
     public function addReferral($bookingId, $packageId, $orderAmount, $orderReference = null, $voucherDiscount = 0, $totalPax = 1)
     {
+        // ═══════════════════════════════════════════════════════════════════
+        // SISTEM KOMISI BARU: Budget tetap Rp2.000.000 per penjualan
+        // Struktur: HM Member → HM Seller → HM Master
+        // ═══════════════════════════════════════════════════════════════════
+        
         $commissionData = $this->getSaleCommission($packageId, $orderAmount);
+        $programSlug = $this->partnershipProgram?->slug ?? '';
         
-        // MULTIPLY by total pax
-        $baseCommission = $commissionData['amount'] * $totalPax;
+        // Hitung distribusi komisi berdasarkan budget tetap
+        $distribution = $this->calculateCommissionDistribution($programSlug, $totalPax);
         
-        // IMPORTANT: Voucher discount REDUCES affiliate commission
-        // Commission is calculated after voucher discount is applied
-        $finalCommission = $baseCommission - $voucherDiscount; // SUBTRACT voucher discount
+        // Komisi untuk mitra yang closing (sudah dikalikan totalPax di dalam method)
+        $closerCommission = $distribution['closer_amount'];
+        
+        // IMPORTANT: Voucher discount REDUCES affiliate commission dari mitra yang closing
+        $finalCommission = $closerCommission - $voucherDiscount;
         
         // Ensure commission is not negative
         if ($finalCommission < 0) {
@@ -227,62 +235,177 @@ class Affiliator extends Model
             'order_reference'   => $orderReference,
             'order_amount'      => $orderAmount,
             'commission_amount' => $finalCommission,
-            'commission_type'   => $commissionData['type'],
-            'commission_rate'   => $commissionData['rate'],
-            'total_pax'         => $totalPax, // Save total pax
-            'voucher_discount'  => $voucherDiscount, // Save for reference only
+            'commission_type'   => 'flat',
+            'commission_rate'   => $closerCommission,
+            'total_pax'         => $totalPax,
+            'voucher_discount'  => $voucherDiscount,
             'order_date'        => now(),
-            'status'            => 'pending', // Pending until payment complete
+            'status'            => 'pending',
         ]);
 
-        // Langsung tambahkan ke pending_balance saat referral dibuat
+        // Tambahkan ke pending_balance mitra yang closing
         if ($finalCommission > 0) {
             $this->increment('pending_balance', $finalCommission);
             $this->increment('total_earnings', $finalCommission);
             $this->increment('total_sales');
         }
 
-        // Buat distribusi fee ke upline
-        $this->createFeeDistributions($referral, $finalCommission);
+        // Buat distribusi fee ke upline berdasarkan budget tetap
+        $this->createFeeDistributions($referral, $distribution);
 
         return $referral;
     }
 
     /**
-     * Buat distribusi fee ke upline berdasarkan jenjang
+     * Hitung distribusi komisi berdasarkan budget tetap Rp2.000.000
+     * 
+     * Aturan:
+     * - HM Member closing: Member Rp500K, Seller Rp500K, Master Rp1.000K
+     * - HM Seller closing: Seller Rp1.000K, Master Rp1.000K
+     * - HM Master closing: Master Rp2.000K
+     * 
+     * Jika tidak punya upline: hanya terima sesuai hak, bagian upline TIDAK dialihkan
+     * Jika jenjang tengah kosong: bagian jenjang kosong dialihkan ke upline di atasnya
      */
-    public function createFeeDistributions(AffiliateReferral $referral, float $baseCommission): void
+    public function calculateCommissionDistribution(string $closerSlug, int $totalPax = 1): array
     {
-        $programSlug = $this->partnershipProgram?->slug ?? '';
-        $matrix = AffiliateHierarchySetting::getMatrix();
-        $uplines = [
-            'hm-partner' => $this->upline_partner_id ? $this->uplinePartner : null,
-            'hm-leader'  => $this->upline_leader_id  ? $this->uplineLeader  : null,
-            'hm-master'  => $this->upline_master_id  ? $this->uplineMaster  : null,
+        $budget = 2000000; // Total budget komisi per penjualan
+        
+        // Tentukan pembagian default berdasarkan siapa yang closing
+        switch ($closerSlug) {
+            case 'hm-member':
+                // HM Member closing: Member 500K, Seller 500K, Master 1.000K
+                $closerShare = 500000;
+                $sellerShare = 500000;
+                $masterShare = 1000000;
+                break;
+                
+            case 'hm-seller':
+                // HM Seller closing: Seller 1.000K, Master 1.000K
+                $closerShare = 1000000;
+                $sellerShare = 0; // Seller IS the closer
+                $masterShare = 1000000;
+                break;
+                
+            case 'hm-master':
+                // HM Master closing: Master 2.000K
+                $closerShare = 2000000;
+                $sellerShare = 0;
+                $masterShare = 0; // Master IS the closer
+                break;
+                
+            default:
+                // Fallback: semua ke closer
+                $closerShare = $budget;
+                $sellerShare = 0;
+                $masterShare = 0;
+                break;
+        }
+        
+        // Cek keberadaan upline dan terapkan aturan jenjang kosong
+        $uplineSeller = null;
+        $uplineMaster = null;
+        $distributions = [];
+        
+        if ($closerSlug === 'hm-member') {
+            // HM Member: upline langsung = HM Seller (via upline_partner_id)
+            // HM Seller di atasnya, lalu HM Master di paling atas
+            $uplineSeller = $this->upline_partner_id ? $this->uplinePartner : null;
+            
+            if ($uplineSeller) {
+                // Cek apakah seller punya upline master
+                $uplineMaster = $uplineSeller->upline_master_id ? $uplineSeller->uplineMaster : null;
+            } else {
+                // Jika tidak ada seller, cek langsung ke master
+                $uplineMaster = $this->upline_master_id ? $this->uplineMaster : null;
+            }
+            
+            // Terapkan aturan:
+            // - Jika seller TIDAK ada dan master ADA → bagian seller dialihkan ke master
+            // - Jika seller TIDAK ada dan master TIDAK ada → bagian seller & master hilang (tidak dialihkan)
+            // - Jika seller ADA dan master TIDAK ada → seller dapat bagiannya, master punya hilang
+            
+            if (!$uplineSeller && $uplineMaster) {
+                // Jenjang tengah (seller) kosong → bagian seller dialihkan ke master
+                $masterShare = $masterShare + $sellerShare; // 1.000K + 500K = 1.500K
+                $sellerShare = 0;
+            } elseif (!$uplineSeller && !$uplineMaster) {
+                // Tidak ada upline sama sekali → bagian upline tidak dialihkan
+                $sellerShare = 0;
+                $masterShare = 0;
+            } elseif ($uplineSeller && !$uplineMaster) {
+                // Ada seller tapi tidak ada master → master punya hilang
+                $masterShare = 0;
+            }
+            
+            // Buat distribusi
+            if ($uplineSeller && $sellerShare > 0) {
+                $distributions[] = [
+                    'to_affiliator' => $uplineSeller,
+                    'level_type'    => 'hm-seller',
+                    'amount'        => $sellerShare * $totalPax,
+                ];
+            }
+            if ($uplineMaster && $masterShare > 0) {
+                $distributions[] = [
+                    'to_affiliator' => $uplineMaster,
+                    'level_type'    => 'hm-master',
+                    'amount'        => $masterShare * $totalPax,
+                ];
+            }
+            
+        } elseif ($closerSlug === 'hm-seller') {
+            // HM Seller closing: upline = HM Master
+            $uplineMaster = $this->upline_master_id ? $this->uplineMaster : null;
+            
+            if (!$uplineMaster) {
+                // Tidak ada master → bagian master tidak dialihkan
+                $masterShare = 0;
+            }
+            
+            if ($uplineMaster && $masterShare > 0) {
+                $distributions[] = [
+                    'to_affiliator' => $uplineMaster,
+                    'level_type'    => 'hm-master',
+                    'amount'        => $masterShare * $totalPax,
+                ];
+            }
+        }
+        // HM Master closing: tidak ada distribusi ke upline (semua milik master)
+        
+        return [
+            'closer_amount'  => $closerShare * $totalPax,
+            'budget_per_pax' => $budget,
+            'total_budget'   => $budget * $totalPax,
+            'distributions'  => $distributions,
         ];
+    }
 
-        foreach ($uplines as $toLevel => $uplineAff) {
-            if (!$uplineAff) continue;
-            $setting = $matrix[$programSlug][$toLevel] ?? null;
-            if (!$setting) continue;
+    /**
+     * Buat distribusi fee ke upline berdasarkan budget tetap
+     */
+    public function createFeeDistributions(AffiliateReferral $referral, array $distribution): void
+    {
+        foreach ($distribution['distributions'] as $dist) {
+            $uplineAff = $dist['to_affiliator'];
+            $amount    = $dist['amount'];
+            
+            if ($amount <= 0 || !$uplineAff) continue;
 
-            $feeType  = $setting['fee_type']  ?? 'percentage';
-            $feeValue = $setting['fee_value'] ?? ($setting['percentage'] ?? 0);
-            if ($feeValue <= 0) continue;
-
-            $totalFee = AffiliateHierarchySetting::calculateFee($baseCommission, $feeType, $feeValue);
-            if ($totalFee <= 0) continue;
-
-            // Create single distribution (no more termin split)
+            // Create distribution record
             AffiliateFeeDistribution::create([
                 'referral_id'        => $referral->id,
                 'from_affiliator_id' => $this->id,
                 'to_affiliator_id'   => $uplineAff->id,
-                'level_type'         => $toLevel,
-                'amount'             => $totalFee,
-                'percentage'         => $feeType === 'percentage' ? $feeValue : 0,
+                'level_type'         => $dist['level_type'],
+                'amount'             => $amount,
+                'percentage'         => 0, // Tidak pakai persentase lagi, pakai nominal tetap
                 'status'             => 'pending',
             ]);
+            
+            // Tambahkan ke pending_balance upline
+            $uplineAff->increment('pending_balance', $amount);
+            $uplineAff->increment('total_earnings', $amount);
         }
     }
 

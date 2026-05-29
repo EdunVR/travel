@@ -46,6 +46,7 @@ class AffiliateHierarchySetting extends Model
     public static function levelLabel(string $slug): string
     {
         return match($slug) {
+            'hm-member'  => 'HM Member',
             'hm-seller'  => 'HM Seller',
             'hm-partner' => 'HM Partner',
             'hm-leader'  => 'HM Leader',

@@ -1286,6 +1286,9 @@
         if ($mySlug === 'hm-master')  $dlNodes = $aff->downlineLeaders()->with('partnershipProgram')->get();
         elseif ($mySlug === 'hm-leader')  $dlNodes = $aff->downlinePartners()->with('partnershipProgram')->get();
         elseif ($mySlug === 'hm-partner') $dlNodes = $aff->downlineSellers()->with('partnershipProgram')->get();
+        elseif ($mySlug === 'hm-seller') $dlNodes = \App\Models\Affiliator::where('upline_partner_id', $aff->id)
+            ->whereHas('partnershipProgram', fn($q) => $q->where('slug', 'hm-member'))
+            ->with('partnershipProgram')->get();
 
         $feeMap2 = \App\Models\AffiliateFeeDistribution::where('to_affiliator_id', $aff->id)
             ->whereIn('status', ['released','paid'])

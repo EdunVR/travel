@@ -37,6 +37,7 @@
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-indigo-500 inline-block"></span> HM Leader</span>
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span> HM Partner</span>
         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> HM Seller</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-gray-400 inline-block"></span> HM Member</span>
         <span class="flex items-center gap-1.5 ml-4"><span class="w-6 h-0.5 bg-green-500 inline-block"></span> Garis hijau = ada fee</span>
         <span class="flex items-center gap-1.5"><span class="w-6 border-t-2 border-dashed border-gray-300 inline-block"></span> Belum ada fee</span>
     </div>
@@ -67,9 +68,15 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-2 font-medium text-gray-800">{{ $fd->fromAffiliator?->full_name }}</td>
                         <td class="px-4 py-2 text-center">
+                            @if($fd->termin)
                             <span class="text-xs px-2 py-0.5 rounded-full {{ $fd->termin === 'termin_1' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700' }}">
                                 {{ $fd->termin === 'termin_1' ? 'Termin 1' : 'Termin 2' }}
                             </span>
+                            @else
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                                Fee Jenjang
+                            </span>
+                            @endif
                         </td>
                         <td class="px-4 py-2 text-right font-semibold text-green-700">Rp {{ number_format($fd->amount, 0, ',', '.') }}</td>
                         <td class="px-4 py-2 text-center">

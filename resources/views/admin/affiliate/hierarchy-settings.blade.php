@@ -21,8 +21,70 @@
 
     <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
         <i class="fas fa-info-circle mr-2"></i>
-        Fee bisa berupa <strong>persentase (%)</strong> dari komisi dasar, atau <strong>nominal tetap (Rp)</strong>.
-        Fee dibagi 2 termin: 50% saat pelunasan, 50% saat keberangkatan.
+        <strong>Sistem Budget Tetap Rp2.000.000 per penjualan.</strong><br>
+        Pembagian otomatis berdasarkan siapa yang melakukan closing. Fee cair setelah pelunasan + keberangkatan.
+    </div>
+
+    {{-- Tabel Simulasi Default --}}
+    <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
+        <div class="p-4 border-b border-slate-200 bg-green-50">
+            <h3 class="font-semibold text-green-800 flex items-center gap-2">
+                <i class="fas fa-table text-green-600"></i> Simulasi Pembagian Komisi Umrah (Budget Rp2.000.000)
+            </h3>
+            <p class="text-xs text-green-600 mt-1">Pembagian default otomatis berdasarkan jenjang HM Member → HM Seller → HM Master</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                        <th class="text-left px-4 py-3 font-semibold text-slate-600">Closing oleh</th>
+                        <th class="text-center px-4 py-3 font-semibold text-slate-600">HM Member</th>
+                        <th class="text-center px-4 py-3 font-semibold text-slate-600">HM Seller</th>
+                        <th class="text-center px-4 py-3 font-semibold text-slate-600">HM Master</th>
+                        <th class="text-center px-4 py-3 font-semibold text-slate-600">Total</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-4 py-3 font-medium text-slate-800">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">HM Member</span>
+                        </td>
+                        <td class="px-4 py-3 text-center font-semibold text-green-700">Rp500.000</td>
+                        <td class="px-4 py-3 text-center font-semibold text-blue-700">Rp500.000</td>
+                        <td class="px-4 py-3 text-center font-semibold text-purple-700">Rp1.000.000</td>
+                        <td class="px-4 py-3 text-center font-bold text-slate-800">Rp2.000.000</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-4 py-3 font-medium text-slate-800">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">HM Seller</span>
+                        </td>
+                        <td class="px-4 py-3 text-center text-slate-400">-</td>
+                        <td class="px-4 py-3 text-center font-semibold text-blue-700">Rp1.000.000</td>
+                        <td class="px-4 py-3 text-center font-semibold text-purple-700">Rp1.000.000</td>
+                        <td class="px-4 py-3 text-center font-bold text-slate-800">Rp2.000.000</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-4 py-3 font-medium text-slate-800">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">HM Master</span>
+                        </td>
+                        <td class="px-4 py-3 text-center text-slate-400">-</td>
+                        <td class="px-4 py-3 text-center text-slate-400">-</td>
+                        <td class="px-4 py-3 text-center font-semibold text-purple-700">Rp2.000.000</td>
+                        <td class="px-4 py-3 text-center font-bold text-slate-800">Rp2.000.000</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="p-4 border-t border-slate-100 bg-amber-50">
+            <div class="text-xs text-amber-800 space-y-1">
+                <p><i class="fas fa-exclamation-triangle mr-1"></i> <strong>Aturan jenjang kosong:</strong></p>
+                <ul class="ml-4 space-y-0.5">
+                    <li>• Jika mitra <strong>tidak punya upline</strong> → hanya terima sesuai haknya, bagian upline tidak dialihkan ke siapa pun.</li>
+                    <li>• Jika <strong>jenjang tengah kosong</strong> (misal: Member tidak punya Seller tapi punya Master) → bagian jenjang kosong dialihkan ke upline di atasnya.</li>
+                    <li>• Jika mitra memiliki <strong>voucher diskon</strong> → fee mitra yang closing dipotong sesuai nilai voucher diskon.</li>
+                </ul>
+            </div>
+        </div>
     </div>
 
     <form action="{{ route('admin.inventaris.affiliate.hierarchy.settings.save') }}" method="POST">
@@ -114,22 +176,40 @@
     {{-- Simulasi --}}
     <div class="bg-white rounded-xl border border-slate-200 shadow-card p-6">
         <h3 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-            <i class="fas fa-calculator text-green-500"></i> Simulasi Distribusi Fee
+            <i class="fas fa-calculator text-green-500"></i> Simulasi Distribusi Fee (Budget Rp2.000.000)
         </h3>
         <div class="grid md:grid-cols-2 gap-4">
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Komisi Dasar (Rp)</label>
-                <input type="number" id="sim-base" value="1000000" min="0"
+                <label class="block text-sm font-medium text-slate-700 mb-1">Closing oleh</label>
+                <select id="sim-level" onchange="runSimulation()"
+                        class="w-full h-9 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300">
+                    <option value="hm-member">HM Member</option>
+                    <option value="hm-seller">HM Seller</option>
+                    <option value="hm-master">HM Master</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Jumlah Pax</label>
+                <input type="number" id="sim-pax" value="1" min="1" max="10"
                        oninput="runSimulation()"
                        class="w-full h-9 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300">
             </div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-4 mt-3">
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Level Mitra</label>
-                <select id="sim-level" onchange="runSimulation()"
+                <label class="block text-sm font-medium text-slate-700 mb-1">Ada Upline Seller?</label>
+                <select id="sim-has-seller" onchange="runSimulation()"
                         class="w-full h-9 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300">
-                    <option value="hm-seller">HM Seller</option>
-                    <option value="hm-partner">HM Partner</option>
-                    <option value="hm-leader">HM Leader</option>
+                    <option value="1">Ya</option>
+                    <option value="0">Tidak</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Ada Upline Master?</label>
+                <select id="sim-has-master" onchange="runSimulation()"
+                        class="w-full h-9 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300">
+                    <option value="1">Ya</option>
+                    <option value="0">Tidak</option>
                 </select>
             </div>
         </div>
@@ -150,45 +230,85 @@ function toggleFeeInput(sel, idx) {
     unit.textContent = isFlat ? 'Rp' : '%';
 }
 
-// Simulasi
-const settingsMatrix = @json($settings->groupBy('from_level')->map(fn($g) => $g->keyBy('to_level')->map(fn($s) => [
-    'fee_type'  => $s->fee_type ?? 'percentage',
-    'fee_value' => (float)($s->fee_value ?? $s->percentage),
-    'active'    => $s->is_active,
-])));
-
+// Simulasi Budget Tetap Rp2.000.000
 function runSimulation() {
-    const base  = parseFloat(document.getElementById('sim-base').value) || 0;
     const level = document.getElementById('sim-level').value;
+    const pax = parseInt(document.getElementById('sim-pax').value) || 1;
+    const hasSeller = document.getElementById('sim-has-seller').value === '1';
+    const hasMaster = document.getElementById('sim-has-master').value === '1';
     const result = document.getElementById('sim-result');
-    const levelSettings = settingsMatrix[level] || {};
+    const budget = 2000000;
 
-    let html = `<div class="p-3 bg-green-50 rounded-lg text-sm">
-        <strong>Mitra (${level.replace('hm-', 'HM ')}):</strong> Rp ${base.toLocaleString('id-ID')} (100%)
+    let closerShare = 0, sellerShare = 0, masterShare = 0;
+    let closerLabel = '';
+
+    if (level === 'hm-member') {
+        closerShare = 500000;
+        sellerShare = 500000;
+        masterShare = 1000000;
+        closerLabel = 'HM Member';
+
+        // Aturan jenjang kosong
+        if (!hasSeller && hasMaster) {
+            masterShare += sellerShare; // 1.000K + 500K = 1.500K
+            sellerShare = 0;
+        } else if (!hasSeller && !hasMaster) {
+            sellerShare = 0;
+            masterShare = 0;
+        } else if (hasSeller && !hasMaster) {
+            masterShare = 0;
+        }
+    } else if (level === 'hm-seller') {
+        closerShare = 1000000;
+        sellerShare = 0;
+        masterShare = 1000000;
+        closerLabel = 'HM Seller';
+
+        if (!hasMaster) {
+            masterShare = 0;
+        }
+    } else if (level === 'hm-master') {
+        closerShare = 2000000;
+        sellerShare = 0;
+        masterShare = 0;
+        closerLabel = 'HM Master';
+    }
+
+    const fmt = n => 'Rp ' + (n * pax).toLocaleString('id-ID');
+    const total = (closerShare + sellerShare + masterShare) * pax;
+
+    let html = `<div class="p-3 bg-green-50 rounded-lg text-sm flex justify-between items-center">
+        <span><i class="fas fa-user text-green-500 mr-1"></i> <strong>${closerLabel}</strong> (yang closing)</span>
+        <span class="font-bold text-green-700">${fmt(closerShare)}</span>
     </div>`;
 
-    let remaining = base;
-    for (const [toLevel, data] of Object.entries(levelSettings)) {
-        if (!data.active) continue;
-        const fee = data.fee_type === 'flat'
-            ? data.fee_value
-            : base * data.fee_value / 100;
-        remaining -= fee;
-        const t1 = fee * 0.5;
-        const t2 = fee * 0.5;
-        const label = data.fee_type === 'flat'
-            ? `Rp ${data.fee_value.toLocaleString('id-ID')} (nominal)`
-            : `${data.fee_value}%`;
+    if (level === 'hm-member' && hasSeller && sellerShare > 0) {
         html += `<div class="p-3 bg-blue-50 rounded-lg text-sm flex justify-between items-center">
-            <span><i class="fas fa-arrow-up text-blue-400 mr-1"></i> ${toLevel.replace('hm-', 'HM ')} (${label})</span>
-            <span class="font-semibold text-blue-700">Rp ${fee.toLocaleString('id-ID')}
-                <span class="text-xs text-blue-400">(T1: ${t1.toLocaleString('id-ID')} | T2: ${t2.toLocaleString('id-ID')})</span>
-            </span>
+            <span><i class="fas fa-arrow-up text-blue-400 mr-1"></i> HM Seller (upline)</span>
+            <span class="font-semibold text-blue-700">${fmt(sellerShare)}</span>
         </div>`;
     }
-    html += `<div class="p-3 bg-slate-50 rounded-lg text-sm flex justify-between items-center border-t-2 border-slate-300">
-        <span class="font-semibold">Sisa untuk Mitra</span>
-        <span class="font-bold text-slate-800">Rp ${remaining.toLocaleString('id-ID')}</span>
+
+    if (masterShare > 0 && ((level === 'hm-member' && hasMaster) || (level === 'hm-seller' && hasMaster))) {
+        html += `<div class="p-3 bg-purple-50 rounded-lg text-sm flex justify-between items-center">
+            <span><i class="fas fa-arrow-up text-purple-400 mr-1"></i> HM Master (upline)</span>
+            <span class="font-semibold text-purple-700">${fmt(masterShare)}</span>
+        </div>`;
+    }
+
+    // Bagian yang hilang (tidak dialihkan)
+    const distributed = closerShare + sellerShare + masterShare;
+    const lost = budget - distributed;
+    if (lost > 0) {
+        html += `<div class="p-3 bg-red-50 rounded-lg text-sm flex justify-between items-center">
+            <span><i class="fas fa-times-circle text-red-400 mr-1"></i> Tidak dialihkan (upline tidak ada)</span>
+            <span class="font-semibold text-red-500">${fmt(lost)}</span>
+        </div>`;
+    }
+
+    html += `<div class="p-3 bg-slate-100 rounded-lg text-sm flex justify-between items-center border-t-2 border-slate-300 mt-2">
+        <span class="font-semibold">Total Terdistribusi (${pax} pax)</span>
+        <span class="font-bold text-slate-800">Rp ${total.toLocaleString('id-ID')}</span>
     </div>`;
 
     result.innerHTML = html;

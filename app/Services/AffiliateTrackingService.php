@@ -233,12 +233,11 @@ class AffiliateTrackingService
             'notes'  => $reason,
         ]);
 
-        // Kurangi pending balance affiliator utama
-        $releasedAmount = 0;
-        if ($referral->termin_1_released) $releasedAmount += $referral->termin_1_amount;
-        if ($referral->termin_2_released) $releasedAmount += $referral->termin_2_amount;
-        if ($releasedAmount > 0) {
-            $referral->affiliator->decrement('pending_balance', $releasedAmount);
+        // Kurangi pending balance affiliator utama (gunakan commission_amount)
+        $commission = $referral->commission_amount ?? 0;
+        if ($commission > 0) {
+            $referral->affiliator->decrement('pending_balance', $commission);
+            $referral->affiliator->decrement('total_earnings', $commission);
         }
 
         // Batalkan distribusi fee ke upline yang masih pending/released
@@ -247,9 +246,13 @@ class AffiliateTrackingService
             ->get()
             ->each(function ($dist) {
                 if ($dist->status === 'released') {
+                    // Kembalikan dari available_balance upline (sudah di-release)
+                    $dist->toAffiliator->decrement('available_balance', $dist->amount);
+                } else {
                     // Kembalikan dari pending_balance upline
                     $dist->toAffiliator->decrement('pending_balance', $dist->amount);
                 }
+                $dist->toAffiliator->decrement('total_earnings', $dist->amount);
                 $dist->update(['status' => 'rejected']);
             });
 

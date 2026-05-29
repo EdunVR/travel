@@ -14,6 +14,7 @@
                 <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-indigo-500 inline-block"></span>Leader</span>
                 <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span>Partner</span>
                 <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>Seller</span>
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-gray-400 inline-block"></span>Member</span>
                 <span class="flex items-center gap-1.5 ml-2"><span class="w-5 h-0.5 bg-green-500 inline-block"></span>Ada fee</span>
                 <span class="flex items-center gap-1.5"><span class="w-5 border-t-2 border-dashed border-slate-300 inline-block"></span>Belum ada fee</span>
             </div>
@@ -350,6 +351,7 @@ async function loadFeePanel() {
 
     const levelLabel = s => s.replace('hm-', 'HM ').replace('-', ' ');
     const levelColor = {
+        'hm-member':  'bg-gray-100 text-gray-700',
         'hm-seller':  'bg-blue-100 text-blue-700',
         'hm-partner': 'bg-green-100 text-green-700',
         'hm-leader':  'bg-indigo-100 text-indigo-700',

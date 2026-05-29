@@ -164,6 +164,13 @@ class AffiliateController extends Controller
         }
 
         $program = PartnershipProgram::find($registrationData['partnership_program_id']);
+
+        // Check if QRIS payment was already completed (from cache)
+        $qrisPaid = \Illuminate\Support\Facades\Cache::get('affiliate_qris_paid_' . $token);
+        if ($qrisPaid) {
+            // Auto-process registration since QRIS already paid
+            return $this->processQrisRegistration($token, $registrationData, $program);
+        }
         
         return view('affiliate.payment', compact('program', 'registrationData', 'token'));
     }
@@ -239,6 +246,50 @@ class AffiliateController extends Controller
         $amountInWords = $this->numberToWords($program->registration_fee);
 
         // Redirect ke halaman kwitansi
+        return view('affiliate.receipt', compact('affiliator', 'program', 'receiptNumber', 'amountInWords'));
+    }
+
+    /**
+     * Process registration after QRIS payment confirmed
+     */
+    protected function processQrisRegistration($token, $registrationData, $program)
+    {
+        $photoPath = session('affiliate_registration_photo');
+
+        $affiliator = Affiliator::create([
+            'full_name' => $registrationData['full_name'],
+            'username' => $registrationData['username'],
+            'password' => Hash::make($registrationData['password']),
+            'phone_number' => $registrationData['phone_number'],
+            'email' => $registrationData['email'],
+            'photo' => $photoPath,
+            'partnership_program_id' => $program->id,
+            'payment_proof' => 'QRIS_PAYMENT', // Mark as QRIS payment
+            'payment_verified_at' => now(), // Auto-verified
+            'ppc_commission' => $registrationData['ppc_commission'],
+            'min_sale_commission' => $registrationData['min_sale_commission'],
+            'cookie_lifetime' => 30,
+            'bank_name' => $registrationData['bank_name'],
+            'bank_account_number' => $registrationData['bank_account_number'],
+            'bank_account_name' => $registrationData['bank_account_name'],
+            'upline_master_id' => $registrationData['upline_master_id'] ?? null,
+            'upline_leader_id' => $registrationData['upline_leader_id'] ?? null,
+            'upline_partner_id' => $registrationData['upline_partner_id'] ?? null,
+            'recruited_by' => session('affiliate_recruiter_id'),
+            'status' => 'active', // QRIS = auto-verified = active
+            'approved_at' => now(),
+        ]);
+
+        // Clear session & cache
+        session()->forget(['affiliate_registration_data', 'affiliate_registration_token', 'affiliate_registration_photo', 'affiliate_recruiter_id']);
+        \Illuminate\Support\Facades\Cache::forget('affiliate_qris_paid_' . $token);
+
+        // Send notification
+        $this->sendAffiliatorPaymentConfirmation($affiliator, $program, true);
+
+        $receiptNumber = 'RCP-' . strtoupper($affiliator->username) . '-' . now()->format('Ymd');
+        $amountInWords = $this->numberToWords($program->registration_fee);
+
         return view('affiliate.receipt', compact('affiliator', 'program', 'receiptNumber', 'amountInWords'));
     }
 
@@ -995,7 +1046,9 @@ class AffiliateController extends Controller
         // Tentukan 1 upline langsung
         $directUpline = null;
         $slug = $affiliator->partnershipProgram?->slug;
-        if ($slug === 'hm-seller' && $affiliator->upline_partner_id) {
+        if ($slug === 'hm-member' && $affiliator->upline_partner_id) {
+            $directUpline = $affiliator->uplinePartner;
+        } elseif ($slug === 'hm-seller' && $affiliator->upline_partner_id) {
             $directUpline = $affiliator->uplinePartner;
         } elseif ($slug === 'hm-partner' && $affiliator->upline_leader_id) {
             $directUpline = $affiliator->uplineLeader;
@@ -1011,6 +1064,12 @@ class AffiliateController extends Controller
             $downlines = $affiliator->downlinePartners;
         } elseif ($slug === 'hm-partner') {
             $downlines = $affiliator->downlineSellers;
+        } elseif ($slug === 'hm-seller') {
+            // HM Seller bisa punya downline HM Member
+            $downlines = Affiliator::where('upline_partner_id', $affiliator->id)
+                ->whereHas('partnershipProgram', fn($q) => $q->where('slug', 'hm-member'))
+                ->with('partnershipProgram')
+                ->get();
         }
 
         // Fee distributions yang diterima dari downline
