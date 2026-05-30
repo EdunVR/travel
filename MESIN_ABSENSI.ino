@@ -64,7 +64,7 @@ Keypad_I2C keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS, KEYPAD_ADDR);
 /* =========================
    LARAVEL API
 ========================= */
-const char* serverURL = "https://poshan.my.id/hm";
+const char* serverURL = "https://hmtourtravel.com";
 String apiEndpoint = "/api/morra/api/rfid";
 
 // Untuk mengabaikan verifikasi sertifikat SSL
@@ -279,6 +279,7 @@ void saveToOfflineQueue(String uid, String name, String type);
 void processOfflineQueue();
 void sendNextOfflineData();
 void checkModeFromServer();
+void forceAttendanceModeOnServer();
 void checkRFID();
 void checkKeypad();
 void resetKeypad();
@@ -1293,7 +1294,13 @@ void checkKeypad() {
   if (currentMode == MODE_MAIN_MENU) {
     if (key == '1') {
       currentMode = MODE_ATTENDANCE;
+      // PENTING: Navigasi ke attendance = paksa mode attendance
+      serverMode = "attendance";
+      tempUID = "";
+      inputMode = false;
+      currentInput = "";
       displayNeedsUpdate = true;
+      Serial.println("📌 Navigasi ke ATTENDANCE - mode dipaksa attendance");
     }
     else if (key == '2') {
       currentMode = MODE_REGISTER;
@@ -1357,6 +1364,41 @@ void resetPN532() {
    SERVER MODE FUNCTIONS
 ========================= */
 
+void forceAttendanceModeOnServer() {
+  if (WiFi.status() != WL_CONNECTED) return;
+  
+  Serial.println("🔄 Forcing attendance mode on server (startup reset)...");
+  
+  InsecureWiFiClient client;
+  client.setTimeout(3000);
+  
+  HTTPClient http;
+  
+  char modeUrl[128];
+  snprintf(modeUrl, sizeof(modeUrl), "%s%s/mode", serverURL, apiEndpoint.c_str());
+  
+  http.begin(client, modeUrl);
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(3000);
+  
+  int httpResponseCode = http.POST("{\"mode\":\"attendance\"}");
+  
+  if (httpResponseCode == 200) {
+    Serial.println("✅ Server mode reset to attendance on startup");
+  } else {
+    Serial.printf("⚠️ Failed to reset server mode, code: %d\n", httpResponseCode);
+  }
+  
+  http.end();
+  client.stop();
+  
+  // Pastikan local state juga attendance
+  serverMode = "attendance";
+  currentMode = MODE_ATTENDANCE;
+  
+  feedWatchdog();
+}
+
 void checkModeFromServer() {
   if (WiFi.status() != WL_CONNECTED) return;
 
@@ -1403,7 +1445,7 @@ void checkModeFromServer() {
           
         } else if (serverMode == "register" && currentMode != MODE_REGISTER) {
           currentMode = MODE_REGISTER;
-          Serial.println("✅ Switching to REGISTER MODE");
+          Serial.println("✅ Switching to REGISTER MODE (dari server)");
           
           // PENTING: Clear tempUID saat masuk register mode
           // Agar tidak menggunakan UID lama dari attendance
@@ -1990,10 +2032,6 @@ void checkRFID() {
         // Kirim UID ke form Laravel
         sendUIDToForm(uidStr);
         
-        inputMode = true;
-        currentInput = "";
-        lastKey = 0;
-        previewChar = "";
         statusMessage = "UID sent!";
         statusMessageTime = millis();
         displayNeedsUpdate = true;
@@ -2005,6 +2043,21 @@ void checkRFID() {
         yield();
         
         Serial.println("✅ UID sent to form");
+        
+        // PENTING: Setelah kartu terdeteksi di register mode,
+        // kembali ke attendance mode dan halaman attendance
+        Serial.println("🔄 Register card detected, switching back to ATTENDANCE mode");
+        serverMode = "attendance";
+        currentMode = MODE_ATTENDANCE;
+        tempUID = "";
+        inputMode = false;
+        currentInput = "";
+        lastKey = 0;
+        previewChar = "";
+        
+        // Force update display ke attendance
+        displayNeedsUpdate = true;
+        updateDisplay(true);
       }
       
       // Cleanup
@@ -2137,6 +2190,10 @@ void setup() {
       
       // Sync time from server
       syncTimeFromServer();
+      
+      // PENTING: Saat startup, paksa mode ke attendance di server
+      // Agar tidak stuck di register mode dari sesi sebelumnya
+      forceAttendanceModeOnServer();
     } else {
       Serial.println("\n❌ WiFi Connection Failed");
       playBeep(500, 200);
@@ -2144,7 +2201,17 @@ void setup() {
   }
   
   delay(1000);
-  showMainMenu();
+  
+  // Jika WiFi connected dan mode sudah di-set ke attendance,
+  // langsung masuk ke attendance mode (skip main menu)
+  if (WiFi.status() == WL_CONNECTED) {
+    currentMode = MODE_ATTENDANCE;
+    showAttendanceMode();
+    Serial.println("📌 Auto-start ke ATTENDANCE mode");
+  } else {
+    showMainMenu();
+  }
+  
   playBeep(1500, 100);
   
   Serial.println("=== READY ===\n");

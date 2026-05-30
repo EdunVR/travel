@@ -50,11 +50,15 @@ Route::prefix('morra')->group(function () {
         // Store new UID in cache for 5 minutes
         \Cache::put('detected_rfid_uid', $uid, 300);
         
-        \Log::info('RFID UID stored in cache', ['uid' => $uid]);
+        // PENTING: Reset mode ke attendance setelah UID terdeteksi
+        // Agar ESP32 tidak stuck di register mode
+        \Cache::put('rfid_mode', 'attendance', now()->addHours(24));
+        
+        \Log::info('RFID UID stored in cache, mode reset to attendance', ['uid' => $uid]);
         
         return response()->json([
             'success' => true,
-            'message' => 'UID received and stored',
+            'message' => 'UID received and stored, mode reset to attendance',
             'uid' => $uid
         ]);
     });

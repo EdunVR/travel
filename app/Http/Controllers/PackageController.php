@@ -1519,6 +1519,61 @@ class PackageController extends Controller
     }
 
     /**
+     * Stream Info Paket PDF for a specific keberangkatan
+     */
+    public function streamInfoPaket($id, $keberangkatanId)
+    {
+        try {
+            $package = TravelPackage::with([
+                'outlet',
+                'flightDeparture',
+                'flightReturn',
+                'hotelMakkah',
+                'hotelRoomTypeMakkah',
+                'hotelMadinah',
+                'hotelRoomTypeMadinah',
+            ])->find($id);
+            
+            if (!$package) {
+                abort(404, 'Package not found');
+            }
+
+            // If keberangkatanId is 0, pick the first keberangkatan for this package
+            if ($keberangkatanId == 0) {
+                $keberangkatan = \App\Models\Keberangkatan::with([
+                    'travelPackage',
+                    'jamaahBookings',
+                    'hotelBookings.hotel',
+                ])->where('id_travel_package', $id)->first();
+            } else {
+                $keberangkatan = \App\Models\Keberangkatan::with([
+                    'travelPackage',
+                    'jamaahBookings',
+                    'hotelBookings.hotel',
+                ])->where('id', $keberangkatanId)
+                  ->where('id_travel_package', $id)
+                  ->first();
+            }
+
+            if (!$keberangkatan) {
+                abort(404, 'Keberangkatan not found. Silakan buat keberangkatan terlebih dahulu.');
+            }
+
+            $pdf = \PDF::loadView('admin.travel.package.info-paket-pdf', compact('keberangkatan'));
+            $pdf->setPaper('A4', 'portrait');
+            
+            $filename = 'Info_Paket_' . $package->package_code . '_' . ($keberangkatan->departure_date ? $keberangkatan->departure_date->format('d_M_Y') : 'draft') . '.pdf';
+            
+            return $pdf->stream($filename);
+        } catch (\Exception $e) {
+            Log::error('Error streaming info paket PDF: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Gagal generate Info Paket PDF: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get tour plans for a package
      */
     public function getTourPlans($id)

@@ -683,6 +683,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('travel/package/data', [PackageController::class, 'getData'])->name('travel.package.data');
         Route::get('travel/package/{id}/detail', [PackageController::class, 'showPage'])->name('travel.package.detail');
         Route::get('travel/package/{id}/export-pdf', [PackageController::class, 'exportPdf'])->name('travel.package.export.pdf');
+        Route::get('travel/package/{id}/keberangkatan/{keberangkatanId}/info-paket-pdf', [PackageController::class, 'streamInfoPaket'])->name('travel.package.info-paket.pdf');
         Route::get('travel/package/{id}/hpp', [PackageController::class, 'getHpp'])->name('travel.package.hpp');
         Route::put('travel/package/{id}/hpp', [PackageController::class, 'updateHpp'])->name('travel.package.hpp.update');
         Route::post('travel/package/{id}/hpp/lock', [PackageController::class, 'lockHpp'])->name('travel.package.hpp.lock');

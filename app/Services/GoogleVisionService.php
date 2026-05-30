@@ -69,13 +69,16 @@ class GoogleVisionService
                 ],
             ];
 
-            $response = Http::timeout(30)
-                ->post($this->imageEndpoint . '?key=' . $this->apiKey, $payload);
+            $response = $this->postWithRetry(
+                $this->imageEndpoint . '?key=' . $this->apiKey,
+                $payload,
+                timeout: 30
+            );
 
-            if (!$response->successful()) {
+            if (!$response || !$response->successful()) {
                 Log::error('Google Vision image API error', [
-                    'status' => $response->status(),
-                    'body'   => substr($response->body(), 0, 500),
+                    'status' => $response ? $response->status() : 'no response',
+                    'body'   => $response ? substr($response->body(), 0, 500) : 'all retries failed',
                 ]);
                 return null;
             }
@@ -117,13 +120,16 @@ class GoogleVisionService
                 ],
             ];
 
-            $response = Http::timeout(60)
-                ->post($this->fileEndpoint . '?key=' . $this->apiKey, $payload);
+            $response = $this->postWithRetry(
+                $this->fileEndpoint . '?key=' . $this->apiKey,
+                $payload,
+                timeout: 90
+            );
 
-            if (!$response->successful()) {
+            if (!$response || !$response->successful()) {
                 Log::error('Google Vision PDF API error', [
-                    'status' => $response->status(),
-                    'body'   => substr($response->body(), 0, 500),
+                    'status' => $response ? $response->status() : 'no response',
+                    'body'   => $response ? substr($response->body(), 0, 500) : 'all retries failed',
                 ]);
                 return null;
             }
@@ -201,6 +207,43 @@ class GoogleVisionService
         }
 
         Log::warning('Google Vision PDF: no text found across all pages');
+        return null;
+    }
+
+    /**
+     * POST request with retry logic for handling DNS/connection timeouts.
+     * Retries up to 2 times with increasing connect timeout.
+     */
+    private function postWithRetry(string $url, array $payload, int $timeout = 60, int $maxRetries = 2): ?\Illuminate\Http\Client\Response
+    {
+        $lastException = null;
+
+        for ($attempt = 0; $attempt <= $maxRetries; $attempt++) {
+            try {
+                // Increase connect timeout on each retry
+                $connectTimeout = 15 + ($attempt * 10); // 15s, 25s, 35s
+
+                $response = Http::connectTimeout($connectTimeout)
+                    ->timeout($timeout)
+                    ->post($url, $payload);
+
+                return $response;
+
+            } catch (\Exception $e) {
+                $lastException = $e;
+                Log::warning("Google Vision request attempt " . ($attempt + 1) . " failed: " . $e->getMessage());
+
+                if ($attempt < $maxRetries) {
+                    // Wait before retry (1s, 2s)
+                    sleep($attempt + 1);
+                }
+            }
+        }
+
+        Log::error('Google Vision: all retry attempts failed', [
+            'lastError' => $lastException ? $lastException->getMessage() : 'unknown',
+        ]);
+
         return null;
     }
 

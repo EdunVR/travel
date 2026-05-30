@@ -31,6 +31,12 @@
                     <i class="bx" :class="exportingPdf ? 'bx-loader-alt bx-spin' : 'bx-download'"></i> 
                     <span x-text="exportingPdf ? 'Exporting...' : 'Export PDF'"></span>
                 </button>
+                <!-- Info Paket Button (direct link) -->
+                <a href="{{ route('admin.inventaris.travel.package.info-paket.pdf', ['id' => $package->id, 'keberangkatanId' => $package->keberangkatan()->first()->id ?? 0]) }}"
+                   target="_blank"
+                   class="inline-flex items-center gap-2 px-4 py-2 border border-indigo-300 text-indigo-700 rounded-lg hover:bg-indigo-50">
+                    <i class="bx bx-file"></i> Info Paket
+                </a>
                 <button @click="editPackage()" type="button" 
                         class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
                     <i class="bx bx-edit-alt"></i> Edit
