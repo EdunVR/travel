@@ -1569,8 +1569,10 @@ bool sendDataToServer(String uid, String name, String type, bool isOfflineRetry)
     return false;
   }
 
+  feedWatchdog(); // Feed sebelum operasi berat
+
   InsecureWiFiClient client;
-  client.setTimeout(3000); // Timeout lebih pendek
+  client.setTimeout(5000); // Timeout 5 detik untuk HTTPS
   
   HTTPClient http;
   
@@ -1580,25 +1582,33 @@ bool sendDataToServer(String uid, String name, String type, bool isOfflineRetry)
   
   http.begin(client, url);
   http.addHeader("Content-Type", "application/json");
-  http.setTimeout(3000);
+  http.setTimeout(5000);
   
-  DynamicJsonDocument doc(512);
-  doc["uid"] = uid;
-  doc["mode"] = type;
-  
-  if (type == "register" && name.length() > 0) {
-    doc["name"] = name;
-  }
-  
-  if (isOfflineRetry) {
-    doc["offline_retry"] = true;
-  }
-  
+  // Build JSON request (minimal allocation)
   String jsonString;
-  serializeJson(doc, jsonString);
+  {
+    DynamicJsonDocument doc(256);
+    doc["uid"] = uid;
+    doc["mode"] = type;
+    
+    if (type == "register" && name.length() > 0) {
+      doc["name"] = name;
+    }
+    
+    if (isOfflineRetry) {
+      doc["offline_retry"] = true;
+    }
+    
+    serializeJson(doc, jsonString);
+  } // doc freed here
+  
+  feedWatchdog(); // Feed sebelum POST
   
   int httpResponseCode = http.POST(jsonString);
+  jsonString = String(); // Free memory
   bool success = false;
+  
+  feedWatchdog(); // Feed setelah POST
   
   if (httpResponseCode > 0) {
     String response = http.getString();
@@ -1606,7 +1616,10 @@ bool sendDataToServer(String uid, String name, String type, bool isOfflineRetry)
     Serial.println("📨 Server response:");
     Serial.println(response);
     
-    DynamicJsonDocument responseDoc(1024);
+    feedWatchdog();
+    
+    // Parse response (gunakan ukuran lebih besar untuk safety)
+    DynamicJsonDocument responseDoc(2048);
     DeserializationError error = deserializeJson(responseDoc, response);
     
     if (!error && responseDoc["success"] == true) {
@@ -2001,11 +2014,11 @@ void checkRFID() {
       
       // Gunakan mode dari server untuk menentukan aksi
       if (serverMode == "attendance") {
-        yield(); // Feed watchdog sebelum HTTP
+        feedWatchdog(); // Feed watchdog sebelum HTTP call
         
         bool sendSuccess = sendDataToServer(uidStr, "", "attendance", false);
         
-        yield(); // Feed watchdog setelah HTTP
+        feedWatchdog(); // Feed watchdog setelah HTTP call
         
         if (sendSuccess) {
           // Success melody (lebih menarik!)

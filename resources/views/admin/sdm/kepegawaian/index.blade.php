@@ -680,15 +680,13 @@
                     $('#rfid_uid').val(result.uid);
                     stopRfidDetection();
                     
-                    // Show success message
-                    showDetectionStatus('Kartu terdeteksi! UID: ' + result.uid, 'success');
+                    // Show success message with clear instruction to save
+                    showDetectionStatus('✅ Kartu terdeteksi! UID: ' + result.uid + ' — Klik SIMPAN untuk menyimpan.', 'success');
                     
                     // Play success sound
                     playSuccessSound();
                     
-                    setTimeout(() => {
-                        hideDetectionStatus();
-                    }, 3000);
+                    // Don't auto-hide - keep showing until user saves
                 }
             } catch (error) {
                 console.error('Error checking for detected card:', error);
