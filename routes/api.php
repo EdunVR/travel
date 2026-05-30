@@ -42,19 +42,21 @@ Route::prefix('morra')->group(function () {
     
     // API untuk RFID Register UID (auto-fill form)
     Route::post('/api/rfid/register-uid', function(Request $request) {
-        $uid = $request->input('uid');
+        $uid = strtoupper($request->input('uid')); // Normalize ke uppercase
         
-        // Clear old UID first (prevent using old data)
-        \Cache::forget('detected_rfid_uid');
+        // Store UID di tabel rfid_settings
+        \DB::table('rfid_settings')->updateOrInsert(
+            ['key' => 'detected_uid'],
+            ['value' => $uid, 'updated_at' => now()]
+        );
         
-        // Store new UID in cache for 5 minutes
-        \Cache::put('detected_rfid_uid', $uid, 300);
+        // Reset mode ke attendance setelah UID terdeteksi
+        \DB::table('rfid_settings')->updateOrInsert(
+            ['key' => 'mode'],
+            ['value' => 'attendance', 'updated_at' => now()]
+        );
         
-        // PENTING: Reset mode ke attendance setelah UID terdeteksi
-        // Agar ESP32 tidak stuck di register mode
-        \Cache::put('rfid_mode', 'attendance', now()->addHours(24));
-        
-        \Log::info('RFID UID stored in cache, mode reset to attendance', ['uid' => $uid]);
+        \Log::info('RFID UID stored in DB, mode reset to attendance', ['uid' => $uid]);
         
         return response()->json([
             'success' => true,
@@ -63,15 +65,18 @@ Route::prefix('morra')->group(function () {
         ]);
     });
     
-    // API untuk Clear RFID UID Cache (saat mode berubah)
+    // API untuk Clear RFID UID (saat mode berubah)
     Route::post('/api/rfid/clear-uid', function() {
-        \Cache::forget('detected_rfid_uid');
+        \DB::table('rfid_settings')->updateOrInsert(
+            ['key' => 'detected_uid'],
+            ['value' => null, 'updated_at' => now()]
+        );
         
-        \Log::info('RFID UID cache cleared');
+        \Log::info('RFID UID cleared');
         
         return response()->json([
             'success' => true,
-            'message' => 'UID cache cleared'
+            'message' => 'UID cleared'
         ]);
     });
     
@@ -141,11 +146,12 @@ Route::get('/investors/search', function(Request $request) {
 
 // API untuk mengecek UID RFID yang terdeteksi
 Route::get('/detected-rfid-uid', function() {
-    $uid = \Cache::get('detected_rfid_uid');
+    $row = \DB::table('rfid_settings')->where('key', 'detected_uid')->first();
+    $uid = $row ? $row->value : null;
     
     if ($uid) {
-        // Clear cache after reading
-        \Cache::forget('detected_rfid_uid');
+        // Clear UID after reading (one-time read)
+        \DB::table('rfid_settings')->where('key', 'detected_uid')->update(['value' => null, 'updated_at' => now()]);
         
         return response()->json([
             'success' => true,

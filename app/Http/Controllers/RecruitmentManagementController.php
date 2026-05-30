@@ -156,6 +156,11 @@ class RecruitmentManagementController extends Controller
                 'hourly_rate', 'join_date', 'fingerprint_id', 'rfid_uid', 'jobdesk'
             ]);
 
+            // Normalize rfid_uid ke uppercase
+            if (!empty($data['rfid_uid'])) {
+                $data['rfid_uid'] = strtoupper($data['rfid_uid']);
+            }
+
             // Set fingerprint registration status
             $data['is_registered_fingerprint'] = !empty($data['fingerprint_id']);
 
@@ -266,6 +271,11 @@ class RecruitmentManagementController extends Controller
                 'hourly_rate', 'join_date', 'resign_date', 
                 'fingerprint_id', 'rfid_uid', 'jobdesk'
             ]);
+
+            // Normalize rfid_uid ke uppercase
+            if (!empty($data['rfid_uid'])) {
+                $data['rfid_uid'] = strtoupper($data['rfid_uid']);
+            }
 
             // Update fingerprint registration status
             $data['is_registered_fingerprint'] = !empty($data['fingerprint_id']);

@@ -1294,13 +1294,16 @@ void checkKeypad() {
   if (currentMode == MODE_MAIN_MENU) {
     if (key == '1') {
       currentMode = MODE_ATTENDANCE;
-      // PENTING: Navigasi ke attendance = paksa mode attendance
       serverMode = "attendance";
       tempUID = "";
       inputMode = false;
       currentInput = "";
       displayNeedsUpdate = true;
-      Serial.println("📌 Navigasi ke ATTENDANCE - mode dipaksa attendance");
+      
+      // Kirim ke server untuk reset mode ke attendance
+      forceAttendanceModeOnServer();
+      
+      Serial.println("📌 Navigasi ke ATTENDANCE - server notified");
     }
     else if (key == '2') {
       currentMode = MODE_REGISTER;

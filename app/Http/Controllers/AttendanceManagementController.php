@@ -1012,7 +1012,7 @@ class AttendanceManagementController extends Controller
             }
 
             $employee = Recruitment::findOrFail($request->employee_id);
-            $employee->rfid_uid = $request->rfid_uid;
+            $employee->rfid_uid = strtoupper($request->rfid_uid); // Normalize ke uppercase
             $employee->save();
 
             return response()->json([
@@ -1040,7 +1040,8 @@ class AttendanceManagementController extends Controller
     public function getRfidMode()
     {
         try {
-            $mode = \Cache::get('rfid_mode', 'attendance');
+            $row = \DB::table('rfid_settings')->where('key', 'mode')->first();
+            $mode = $row ? $row->value : 'attendance';
             
             return response()->json([
                 'success' => true,
@@ -1074,7 +1075,10 @@ class AttendanceManagementController extends Controller
                 ], 422);
             }
 
-            \Cache::put('rfid_mode', $request->mode, now()->addHours(24));
+            \DB::table('rfid_settings')->updateOrInsert(
+                ['key' => 'mode'],
+                ['value' => $request->mode, 'updated_at' => now()]
+            );
 
             return response()->json([
                 'success' => true,
@@ -1113,12 +1117,16 @@ class AttendanceManagementController extends Controller
                 ], 422);
             }
 
-            $uid = $request->uid;
+            $uid = strtoupper($request->uid); // Normalize ke uppercase
             $photoBase64 = $request->photo;
-            $currentMode = \Cache::get('rfid_mode', 'attendance');
+            $modeRow = \DB::table('rfid_settings')->where('key', 'mode')->first();
+            $currentMode = $modeRow ? $modeRow->value : 'attendance';
 
-            // Store detected UID in cache for frontend (non-blocking)
-            \Cache::put('detected_rfid_uid', $uid, now()->addMinutes(5));
+            // Store detected UID in DB for frontend polling
+            \DB::table('rfid_settings')->updateOrInsert(
+                ['key' => 'detected_uid'],
+                ['value' => $uid, 'updated_at' => now()]
+            );
 
             // Process photo in background if too large
             if ($photoBase64 && strlen($photoBase64) > 50000) {
@@ -1155,7 +1163,10 @@ class AttendanceManagementController extends Controller
         
         if ($existingEmployee) {
             // Card already registered, switch back to attendance mode
-            \Cache::put('rfid_mode', 'attendance', now()->addHours(24));
+            \DB::table('rfid_settings')->updateOrInsert(
+                ['key' => 'mode'],
+                ['value' => 'attendance', 'updated_at' => now()]
+            );
             
             return response()->json([
                 'success' => false,
@@ -1176,7 +1187,10 @@ class AttendanceManagementController extends Controller
         }
 
         // After successful registration detection, switch back to attendance mode
-        \Cache::put('rfid_mode', 'attendance', now()->addHours(24));
+        \DB::table('rfid_settings')->updateOrInsert(
+            ['key' => 'mode'],
+            ['value' => 'attendance', 'updated_at' => now()]
+        );
 
         return response()->json([
             'success' => true,
