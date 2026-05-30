@@ -1,4 +1,13 @@
-<x-layouts.admin :title="'Travel / Package Detail'">
+<?php if (isset($component)) { $__componentOriginalc8c9fd5d7827a77a31381de67195f0c3 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalc8c9fd5d7827a77a31381de67195f0c3 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.layouts.admin','data' => ['title' => 'Travel / Package Detail']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('layouts.admin'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute('Travel / Package Detail')]); ?>
     <style>
         [x-cloak] { display: none !important; }
         /* Ensure buttons are always clickable */
@@ -14,11 +23,11 @@
             z-index: 10 !important;
         }
     </style>
-    <div x-data="packageDetail({{ $package->id }})" x-init="init()" class="space-y-6">
+    <div x-data="packageDetail(<?php echo e($package->id); ?>)" x-init="init()" class="space-y-6">
         <!-- Header -->
         <div class="flex items-center justify-between">
             <div>
-                <a href="{{ route('admin.inventaris.travel.package.index') }}" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-2">
+                <a href="<?php echo e(route('admin.inventaris.travel.package.index')); ?>" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-2">
                     <i class="bx bx-arrow-back"></i> Back to Packages
                 </a>
                 <h1 class="text-2xl font-bold" x-text="package.package_name"></h1>
@@ -32,7 +41,7 @@
                     <span x-text="exportingPdf ? 'Exporting...' : 'Export PDF'"></span>
                 </button>
                 <!-- Info Paket Button (direct link to form) -->
-                <a href="{{ route('admin.inventaris.travel.package.info-paket.form', ['id' => $package->id]) }}"
+                <a href="<?php echo e(route('admin.inventaris.travel.package.info-paket.form', ['id' => $package->id])); ?>"
                    class="inline-flex items-center gap-2 px-4 py-2 border border-indigo-300 text-indigo-700 rounded-lg hover:bg-indigo-50">
                     <i class="bx bx-file"></i> Info Paket
                 </a>
@@ -402,13 +411,13 @@
                 </div>
 
                 <!-- Keberangkatan Tab -->
-                <div x-show="activeTab === 'keberangkatan'" x-data="keberangkatanTab({{ $package->id }})" x-init="init()">
-                    @include('admin.travel.package.partials.keberangkatan-tab', ['package' => $package])
+                <div x-show="activeTab === 'keberangkatan'" x-data="keberangkatanTab(<?php echo e($package->id); ?>)" x-init="init()">
+                    <?php echo $__env->make('admin.travel.package.partials.keberangkatan-tab', ['package' => $package], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
                 </div>
 
                 <!-- Workflow Tab -->
                 <div x-show="activeTab === 'workflow'">
-                    @include('admin.travel.package.workflow', ['packageId' => $package->id])
+                    <?php echo $__env->make('admin.travel.package.workflow', ['packageId' => $package->id], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
                 </div>
 
                 <!-- HPP Tab -->
@@ -514,18 +523,18 @@
 
                 <!-- Design Materials Tab -->
                 <div x-show="activeTab === 'materials'">
-                    @include('admin.travel.package.design-materials', ['packageId' => $package->id])
+                    <?php echo $__env->make('admin.travel.package.design-materials', ['packageId' => $package->id], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
                 </div>
 
                 <!-- Tour Plan Tab -->
                 <div x-show="activeTab === 'tourplan'">
-                    @include('admin.travel.package.partials.tour-plan-tab', ['package' => $package])
+                    <?php echo $__env->make('admin.travel.package.partials.tour-plan-tab', ['package' => $package], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
                 </div>
             </div>
         </div>
 
         <!-- Include HPP Modal (inside Alpine component scope) -->
-        @include('admin.travel.package.hpp-modal')
+        <?php echo $__env->make('admin.travel.package.hpp-modal', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
     </div>
 
     <script>
@@ -579,7 +588,7 @@
             
             async fetchPackage() {
                 try {
-                    const response = await fetch(`{{ url('admin/inventaris/travel/package') }}/${this.packageId}`);
+                    const response = await fetch(`<?php echo e(url('admin/inventaris/travel/package')); ?>/${this.packageId}`);
                     const data = await response.json();
                     
                     // Parse hpp_calculation properly
@@ -620,7 +629,7 @@
                 this.exportingPdf = true;
                 
                 // Create a temporary link and trigger download
-                const url = `{{ url('admin/inventaris/travel/package') }}/${this.packageId}/export-pdf`;
+                const url = `<?php echo e(url('admin/inventaris/travel/package')); ?>/${this.packageId}/export-pdf`;
                 const link = document.createElement('a');
                 link.href = url;
                 link.target = '_blank';
@@ -636,7 +645,7 @@
             },
             
             editPackage() {
-                window.location.href = `{{ url('admin/inventaris/travel/package') }}/${this.packageId}/edit`;
+                window.location.href = `<?php echo e(url('admin/inventaris/travel/package')); ?>/${this.packageId}/edit`;
             },
             
             async openHppModal() {
@@ -703,7 +712,7 @@
 
             async loadSaudiTransports() {
                 try {
-                    const url = '{{ route('admin.inventaris.travel.package.hpp.saudi-transports') }}';
+                    const url = '<?php echo e(route('admin.inventaris.travel.package.hpp.saudi-transports')); ?>';
                     const response = await fetch(url);
                     if (response.ok) {
                         this.availableSaudiTransports = await response.json();
@@ -801,7 +810,7 @@
                 
                 this.loadingHpp = true;
                 try {
-                    const baseUrl = '{{ url('admin/inventaris/travel/package') }}';
+                    const baseUrl = '<?php echo e(url('admin/inventaris/travel/package')); ?>';
                     const response = await fetch(`${baseUrl}/${this.selectedPackage.id}/hpp`);
                     
                     if (response.ok) {
@@ -883,7 +892,7 @@
             
             async loadFlights() {
                 try {
-                    const url = '{{ route('admin.inventaris.travel.package.hpp.flights') }}';
+                    const url = '<?php echo e(route('admin.inventaris.travel.package.hpp.flights')); ?>';
                     const params = new URLSearchParams();
                     
                     if (this.selectedPackage?.id_outlet) {
@@ -901,7 +910,7 @@
             
             async loadHotels() {
                 try {
-                    const url = '{{ route('admin.inventaris.travel.package.hpp.hotels') }}';
+                    const url = '<?php echo e(route('admin.inventaris.travel.package.hpp.hotels')); ?>';
                     const params = new URLSearchParams();
                     
                     if (this.selectedPackage?.id_outlet) {
@@ -988,7 +997,7 @@
                 };
                 
                 try {
-                    const baseUrl = '{{ url('admin/inventaris/travel/package') }}';
+                    const baseUrl = '<?php echo e(url('admin/inventaris/travel/package')); ?>';
                     const response = await fetch(`${baseUrl}/${this.selectedPackage.id}/hpp`, {
                         method: 'PUT',
                         headers: {
@@ -1037,7 +1046,7 @@
                 this.lockingHpp = true;
                 
                 try {
-                    const baseUrl = '{{ url('admin/inventaris/travel/package') }}';
+                    const baseUrl = '<?php echo e(url('admin/inventaris/travel/package')); ?>';
                     const response = await fetch(`${baseUrl}/${this.selectedPackage.id}/hpp/lock`, {
                         method: 'POST',
                         headers: {
@@ -1153,7 +1162,7 @@
             async fetchKeberangkatan() {
                 this.loadingKeberangkatan = true;
                 try {
-                    const res = await fetch(`{{ url('') }}/admin/inventaris/travel/keberangkatan/data?package_filter=${this.packageId}&per_page=100`, {
+                    const res = await fetch(`<?php echo e(url('')); ?>/admin/inventaris/travel/keberangkatan/data?package_filter=${this.packageId}&per_page=100`, {
                         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                     });
                     const data = await res.json();
@@ -1173,7 +1182,7 @@
 
             async fetchKbDetail(id) {
                 try {
-                    const res = await fetch(`{{ url('') }}/admin/inventaris/travel/keberangkatan/${id}`, {
+                    const res = await fetch(`<?php echo e(url('')); ?>/admin/inventaris/travel/keberangkatan/${id}`, {
                         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                     });
                     const kb = await res.json();
@@ -1191,7 +1200,7 @@
 
             async fetchKbBookings(kbId, kb) {
                 try {
-                    const res = await fetch(`{{ url('') }}/admin/inventaris/travel/booking/data?keberangkatan_id=${kbId}`, {
+                    const res = await fetch(`<?php echo e(url('')); ?>/admin/inventaris/travel/booking/data?keberangkatan_id=${kbId}`, {
                         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                     });
                     const data = await res.json();
@@ -1234,9 +1243,9 @@
                 this.kbForm = {
                     id: null,
                     keberangkatan_name: '',
-                    departure_date: '{{ $package->departure_date ? $package->departure_date->format("Y-m-d") : "" }}',
-                    return_date: '{{ $package->return_date ? $package->return_date->format("Y-m-d") : "" }}',
-                    total_jamaah: {{ $package->capacity }},
+                    departure_date: '<?php echo e($package->departure_date ? $package->departure_date->format("Y-m-d") : ""); ?>',
+                    return_date: '<?php echo e($package->return_date ? $package->return_date->format("Y-m-d") : ""); ?>',
+                    total_jamaah: <?php echo e($package->capacity); ?>,
                     status: 'planning'
                 };
                 this.showKbForm = true;
@@ -1259,18 +1268,18 @@
                 try {
                     const isEdit = !!this.kbForm.id;
                     const url = isEdit
-                        ? `{{ url('') }}/admin/inventaris/travel/keberangkatan/${this.kbForm.id}`
-                        : `{{ url('') }}/admin/inventaris/travel/keberangkatan`;
+                        ? `<?php echo e(url('')); ?>/admin/inventaris/travel/keberangkatan/${this.kbForm.id}`
+                        : `<?php echo e(url('')); ?>/admin/inventaris/travel/keberangkatan`;
                     const method = isEdit ? 'PUT' : 'POST';
                     const payload = {
                         ...this.kbForm,
                         id_travel_package: this.packageId,
-                        id_outlet: {{ $package->id_outlet }},
+                        id_outlet: <?php echo e($package->id_outlet); ?>,
                         keberangkatan_code: this.kbForm.keberangkatan_name.replace(/\s+/g, '-').toUpperCase() + '-' + Date.now().toString().slice(-4)
                     };
                     const res = await fetch(url, {
                         method,
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>', 'Accept': 'application/json' },
                         body: JSON.stringify(payload)
                     });
                     const result = await res.json();
@@ -1295,9 +1304,9 @@
                 if (!this.toDeleteKb) return;
                 this.deletingKb = true;
                 try {
-                    const res = await fetch(`{{ url('') }}/admin/inventaris/travel/keberangkatan/${this.toDeleteKb.id}`, {
+                    const res = await fetch(`<?php echo e(url('')); ?>/admin/inventaris/travel/keberangkatan/${this.toDeleteKb.id}`, {
                         method: 'DELETE',
-                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
+                        headers: { 'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>', 'Accept': 'application/json' }
                     });
                     if (res.ok) {
                         this.toDeleteKb = null;
@@ -1309,12 +1318,12 @@
             },
 
             downloadManifest(kbId) {
-                window.open(`{{ url('') }}/admin/inventaris/travel/keberangkatan/${kbId}/manifest`, '_blank');
+                window.open(`<?php echo e(url('')); ?>/admin/inventaris/travel/keberangkatan/${kbId}/manifest`, '_blank');
             },
 
             openRoomlistSetting(kb) {
                 // Buka halaman manage room position (stream PDF dengan live preview)
-                window.open(`{{ url('') }}/admin/inventaris/travel/document/${kb.id}/manage-room-position`, '_blank');
+                window.open(`<?php echo e(url('')); ?>/admin/inventaris/travel/document/${kb.id}/manage-room-position`, '_blank');
             },
 
             async openFinancialReport(kb) {
@@ -1347,7 +1356,7 @@
                 this.rabData = null;
                 this.showRabModal = true;
                 try {
-                    const url = `{{ url('') }}/admin/inventaris/travel/keberangkatan/${kb.id}/rab-modal`;
+                    const url = `<?php echo e(url('')); ?>/admin/inventaris/travel/keberangkatan/${kb.id}/rab-modal`;
                     const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
                     if (res.ok) {
                         this.rabData = await res.json();
@@ -1384,7 +1393,7 @@
 
                 this.updatingRab = true;
                 try {
-                    const url = `{{ url('') }}/admin/inventaris/travel/keberangkatan/${this.rabKb.id}/sesuaikan-laporan`;
+                    const url = `<?php echo e(url('')); ?>/admin/inventaris/travel/keberangkatan/${this.rabKb.id}/sesuaikan-laporan`;
                     const res = await fetch(url, {
                         method: 'POST',
                         headers: {
@@ -1428,7 +1437,7 @@
                 }
                 this.updatingRab = true;
                 try {
-                    const url = `{{ url('') }}/admin/inventaris/travel/keberangkatan/${this.rabKb.id}/reset-penyesuaian`;
+                    const url = `<?php echo e(url('')); ?>/admin/inventaris/travel/keberangkatan/${this.rabKb.id}/reset-penyesuaian`;
                     const res = await fetch(url, {
                         method: 'POST',
                         headers: {
@@ -1452,7 +1461,7 @@
                 if (!this.rabKb) return;
                 this.updatingRab = true;
                 try {
-                    const url = `{{ url('') }}/admin/inventaris/travel/keberangkatan/${this.rabKb.id}/rab-modal-update`;
+                    const url = `<?php echo e(url('')); ?>/admin/inventaris/travel/keberangkatan/${this.rabKb.id}/rab-modal-update`;
                     const res = await fetch(url, {
                         method: 'POST',
                         headers: {
@@ -1478,7 +1487,7 @@
             },
 
             async openAddJamaah(kb) {
-                window.location.href = `{{ route('admin.inventaris.booking.index') }}?keberangkatan=${kb.id}&package=${this.packageId}`;
+                window.location.href = `<?php echo e(route('admin.inventaris.booking.index')); ?>?keberangkatan=${kb.id}&package=${this.packageId}`;
             },
 
             formatCurrency(amount) {
@@ -1498,4 +1507,14 @@
         };
     }
     </script>
-</x-layouts.admin>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalc8c9fd5d7827a77a31381de67195f0c3)): ?>
+<?php $attributes = $__attributesOriginalc8c9fd5d7827a77a31381de67195f0c3; ?>
+<?php unset($__attributesOriginalc8c9fd5d7827a77a31381de67195f0c3); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc8c9fd5d7827a77a31381de67195f0c3)): ?>
+<?php $component = $__componentOriginalc8c9fd5d7827a77a31381de67195f0c3; ?>
+<?php unset($__componentOriginalc8c9fd5d7827a77a31381de67195f0c3); ?>
+<?php endif; ?>
+<?php /**PATH C:\xampp\htdocs\hm\resources\views/admin/travel/package/show.blade.php ENDPATH**/ ?>

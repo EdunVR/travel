@@ -1519,6 +1519,159 @@ class PackageController extends Controller
     }
 
     /**
+     * Show Info Paket form page
+     */
+    public function infoPaketForm($id)
+    {
+        $package = TravelPackage::with(['outlet', 'flightDeparture', 'flightReturn', 'hotelMakkah', 'hotelMadinah'])->findOrFail($id);
+        $keberangkatan = \App\Models\Keberangkatan::with(['jamaahBookings', 'hotelBookings.hotel'])
+            ->where('id_travel_package', $id)->first();
+
+        if (!$keberangkatan) {
+            return redirect()->route('admin.inventaris.travel.package.detail', $id)
+                ->with('error', 'Belum ada keberangkatan. Buat keberangkatan terlebih dahulu.');
+        }
+
+        return view('admin.travel.package.info-paket-form', compact('package', 'keberangkatan'));
+    }
+
+    /**
+     * Get Info Paket data (auto-fill or saved)
+     */
+    public function getInfoPaketData($id, $keberangkatanId)
+    {
+        $package = TravelPackage::with(['outlet', 'flightDeparture', 'flightReturn', 'hotelMakkah', 'hotelMadinah'])->findOrFail($id);
+        $keberangkatan = \App\Models\Keberangkatan::with(['jamaahBookings', 'hotelBookings.hotel'])
+            ->where('id', $keberangkatanId)->where('id_travel_package', $id)->firstOrFail();
+
+        // Check if saved data exists
+        $saved = \App\Models\InfoPaketData::where('id_travel_package', $id)
+            ->where('id_keberangkatan', $keberangkatanId)->first();
+
+        if ($saved) {
+            return response()->json([
+                'form' => [
+                    'group_name' => $saved->group_name,
+                    'tour_leader_name' => $saved->tour_leader_name,
+                    'adult_count' => $saved->adult_count,
+                    'child_count' => $saved->child_count,
+                    'infant_count' => $saved->infant_count,
+                    'rawdah_rows' => $saved->rawdah_rows ?? [],
+                    'itinerary_rows' => $saved->itinerary_rows ?? [],
+                ]
+            ]);
+        }
+
+        // Auto-fill from package data
+        $departureDate = $keberangkatan->departure_date;
+        $returnDate = $keberangkatan->return_date;
+        $rawdahDate = $departureDate ? $departureDate->copy()->addDay() : null;
+
+        // Count pax including family members
+        $adultCount = 0; $childCount = 0; $infantCount = 0;
+        foreach ($keberangkatan->jamaahBookings as $booking) {
+            $adultCount++;
+            $fm = $booking->family_members_booking;
+            if (is_string($fm)) $fm = json_decode($fm, true);
+            if (is_array($fm)) {
+                foreach ($fm as $member) {
+                    if (!empty($member['tanggal_lahir'])) {
+                        $age = \Carbon\Carbon::parse($member['tanggal_lahir'])->age;
+                        if ($age < 2) $infantCount++;
+                        elseif ($age <= 12) $childCount++;
+                        else $adultCount++;
+                    } else {
+                        $adultCount++;
+                    }
+                }
+            }
+        }
+        if ($keberangkatan->jamaahBookings->count() == 0 && $keberangkatan->total_jamaah > 0) {
+            $adultCount = $keberangkatan->total_jamaah;
+        }
+
+        // Group name
+        $groupName = $departureDate ? $departureDate->format('d') . ' ' . strtoupper($departureDate->translatedFormat('F')) . ' ' . $departureDate->format('Y') : '';
+
+        // Rawdah rows auto-fill
+        $rawdahDateStr = $rawdahDate ? $rawdahDate->format('d') . ' ' . strtoupper($rawdahDate->translatedFormat('F')) . ' ' . $rawdahDate->format('Y') : '';
+        $rawdahRows = [
+            ['activity' => 'RAWDAH FOR WOMEN', 'date' => $rawdahDateStr, 'time' => '07.00 WAS'],
+            ['activity' => 'RAWDAH FOR MEN', 'date' => $rawdahDateStr, 'time' => '17.00 WAS'],
+            ['activity' => 'UMRAH', 'date' => '', 'time' => ''],
+        ];
+
+        // Itinerary auto-fill from flight/hotel data
+        $itineraryRows = [];
+        $flightDep = $package->flightDeparture;
+        $flightRet = $package->flightReturn;
+
+        // Row 1: Airport to Hotel Madinah
+        if ($flightDep) {
+            $depDateStr = $departureDate ? $departureDate->format('d') . ' ' . strtoupper($departureDate->translatedFormat('F')) . ' ' . $departureDate->format('Y') : '';
+            $arrTime = $flightDep->arrival_time ? $flightDep->arrival_time->format('H.i') . ' WAS' : '';
+            $itineraryRows[] = [
+                'from' => strtoupper($flightDep->arrival_airport ?? '') . ' AIRPORT',
+                'to' => $package->hotelMadinah ? strtoupper($package->hotelMadinah->hotel_name) : 'HOTEL MADINAH',
+                'date' => $depDateStr,
+                'time' => $arrTime,
+                'remark' => 'Landing ' . ($flightDep->arrival_time ? $flightDep->arrival_time->format('H.i') : '') . ' BAWA KOPER',
+            ];
+        }
+
+        // Row last: Hotel Makkah to Airport (return)
+        if ($flightRet && $returnDate) {
+            $retDateStr = $returnDate->format('d') . ' ' . strtoupper($returnDate->translatedFormat('F')) . ' ' . $returnDate->format('Y');
+            $depTime = $flightRet->departure_time ? $flightRet->departure_time->format('H.i') . ' WAS' : '';
+            $itineraryRows[] = [
+                'from' => $package->hotelMakkah ? strtoupper($package->hotelMakkah->hotel_name) : 'HOTEL MAKKAH',
+                'to' => strtoupper($flightRet->departure_airport ?? '') . ' AIRPORT',
+                'date' => $retDateStr,
+                'time' => '',
+                'remark' => 'Takeoff Pukul ' . ($flightRet->departure_time ? $flightRet->departure_time->format('H.i') . ' WAS' : ''),
+            ];
+        }
+
+        return response()->json([
+            'form' => [
+                'group_name' => $groupName,
+                'tour_leader_name' => $package->ustadz_name ?? '',
+                'adult_count' => $adultCount,
+                'child_count' => $childCount,
+                'infant_count' => $infantCount,
+                'rawdah_rows' => $rawdahRows,
+                'itinerary_rows' => $itineraryRows,
+            ]
+        ]);
+    }
+
+    /**
+     * Save Info Paket data
+     */
+    public function saveInfoPaketData(Request $request, $id, $keberangkatanId)
+    {
+        try {
+            $data = \App\Models\InfoPaketData::updateOrCreate(
+                ['id_travel_package' => $id, 'id_keberangkatan' => $keberangkatanId],
+                [
+                    'group_name' => $request->input('group_name'),
+                    'tour_leader_name' => $request->input('tour_leader_name'),
+                    'adult_count' => $request->input('adult_count', 0),
+                    'child_count' => $request->input('child_count', 0),
+                    'infant_count' => $request->input('infant_count', 0),
+                    'itinerary_rows' => $request->input('itinerary_rows', []),
+                    'rawdah_rows' => $request->input('rawdah_rows', []),
+                ]
+            );
+
+            return response()->json(['success' => true, 'message' => 'Data info paket berhasil disimpan']);
+        } catch (\Exception $e) {
+            Log::error('Error saving info paket data: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Stream Info Paket PDF for a specific keberangkatan
      */
     public function streamInfoPaket($id, $keberangkatanId)
@@ -1559,7 +1712,11 @@ class PackageController extends Controller
                 abort(404, 'Keberangkatan not found. Silakan buat keberangkatan terlebih dahulu.');
             }
 
-            $pdf = \PDF::loadView('admin.travel.package.info-paket-pdf', compact('keberangkatan'));
+            // Load saved info paket data
+            $infoPaketData = \App\Models\InfoPaketData::where('id_travel_package', $id)
+                ->where('id_keberangkatan', $keberangkatan->id)->first();
+
+            $pdf = \PDF::loadView('admin.travel.package.info-paket-pdf', compact('keberangkatan', 'infoPaketData'));
             $pdf->setPaper('A4', 'portrait');
             
             $filename = 'Info_Paket_' . $package->package_code . '_' . ($keberangkatan->departure_date ? $keberangkatan->departure_date->format('d_M_Y') : 'draft') . '.pdf';

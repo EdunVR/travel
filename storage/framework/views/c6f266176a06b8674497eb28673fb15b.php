@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{ $package->package_name }} | HM Tour</title>
+<title><?php echo e($package->package_name); ?> | HM Tour</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>tailwind.config={theme:{extend:{colors:{'green-brand':'#2E7D32','green-mid':'#4CAF50','green-pale':'#E8F5E9'}}}}</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -50,7 +50,7 @@ html{scroll-behavior:smooth}
 
 <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 py-3">
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-<a href="/"><img src="{{ url('WEB_HMTour/wp-content/uploads/2023/04/Logo-HM_UMRAH-3.png') }}" alt="HM Tour" class="h-11 w-auto object-contain" onerror="this.style.display='none'"></a>
+<a href="/"><img src="<?php echo e(url('WEB_HMTour/wp-content/uploads/2023/04/Logo-HM_UMRAH-3.png')); ?>" alt="HM Tour" class="h-11 w-auto object-contain" onerror="this.style.display='none'"></a>
 <div class="hidden lg:flex items-center gap-6">
 <a href="/" class="text-gray-600 hover:text-green-brand text-sm font-medium">Beranda</a>
 <a href="/#paket" class="text-gray-600 hover:text-green-brand text-sm font-medium">Paket</a>
@@ -66,7 +66,7 @@ html{scroll-behavior:smooth}
 <div class="flex items-center text-sm text-gray-500">
 <a href="/" class="hover:text-green-brand breadcrumb-item">Beranda</a>
 <a href="/#paket" class="hover:text-green-brand breadcrumb-item">Paket</a>
-<span class="breadcrumb-item text-gray-800 font-semibold">{{ Str::limit($package->package_name,40) }}</span>
+<span class="breadcrumb-item text-gray-800 font-semibold"><?php echo e(Str::limit($package->package_name,40)); ?></span>
 </div>
 </div>
 </div>
@@ -74,262 +74,263 @@ html{scroll-behavior:smooth}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 <div class="grid lg:grid-cols-3 gap-8">
 
-{{-- LEFT --}}
+
 <div class="lg:col-span-2 space-y-6">
 
-{{-- Gallery --}}
+
 <div>
-<div class="gallery-main mb-3 bg-gray-100" style="height:420px;cursor:pointer" onclick="openImageModal('{{ $package->image_path ? asset('storage/'.$package->image_path) : '' }}')">
-@if($package->image_path)
-<img id="gallery-main-img" src="{{ asset('storage/'.$package->image_path) }}" alt="{{ $package->package_name }}" class="w-full h-full object-cover" onerror="this.parentElement.style.background='linear-gradient(135deg,#e8f5e9,#c8e6c9)'">
-@elseif(is_array($package->package_photos) && count($package->package_photos)>0)
-<img id="gallery-main-img" src="{{ asset('storage/'.$package->package_photos[0]) }}" alt="{{ $package->package_name }}" class="w-full h-full object-cover">
-@else
+<div class="gallery-main mb-3 bg-gray-100" style="height:420px;cursor:pointer" onclick="openImageModal('<?php echo e($package->image_path ? asset('storage/'.$package->image_path) : ''); ?>')">
+<?php if($package->image_path): ?>
+<img id="gallery-main-img" src="<?php echo e(asset('storage/'.$package->image_path)); ?>" alt="<?php echo e($package->package_name); ?>" class="w-full h-full object-cover" onerror="this.parentElement.style.background='linear-gradient(135deg,#e8f5e9,#c8e6c9)'">
+<?php elseif(is_array($package->package_photos) && count($package->package_photos)>0): ?>
+<img id="gallery-main-img" src="<?php echo e(asset('storage/'.$package->package_photos[0])); ?>" alt="<?php echo e($package->package_name); ?>" class="w-full h-full object-cover">
+<?php else: ?>
 <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-100 to-green-200"><i class="fas fa-kaaba text-green-400 text-6xl"></i></div>
-@endif
+<?php endif; ?>
 </div>
-@if(is_array($package->package_photos) && count($package->package_photos)>1)
+<?php if(is_array($package->package_photos) && count($package->package_photos)>1): ?>
 <div class="flex gap-2 overflow-x-auto pb-1">
-@foreach($package->package_photos as $i=>$photo)
-<div class="gallery-thumb flex-shrink-0 w-20 h-16 {{ $i===0?'active':'' }}" onclick="switchImg('{{ asset('storage/'.$photo) }}',this)">
-<img src="{{ asset('storage/'.$photo) }}" class="w-full h-full object-cover">
+<?php $__currentLoopData = $package->package_photos; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i=>$photo): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+<div class="gallery-thumb flex-shrink-0 w-20 h-16 <?php echo e($i===0?'active':''); ?>" onclick="switchImg('<?php echo e(asset('storage/'.$photo)); ?>',this)">
+<img src="<?php echo e(asset('storage/'.$photo)); ?>" class="w-full h-full object-cover">
 </div>
-@endforeach
+<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </div>
-@endif
+<?php endif; ?>
 </div>
 
-{{-- Title --}}
+
 <div>
 <div class="flex flex-wrap items-center gap-2 mb-3">
-<span class="bg-green-gradient text-white text-xs font-bold px-3 py-1 rounded-full">{{ ucwords(str_replace('_',' ',$package->package_type)) }}</span>
-@if($package->departure_date && \Carbon\Carbon::parse($package->departure_date)->isFuture())
+<span class="bg-green-gradient text-white text-xs font-bold px-3 py-1 rounded-full"><?php echo e(ucwords(str_replace('_',' ',$package->package_type))); ?></span>
+<?php if($package->departure_date && \Carbon\Carbon::parse($package->departure_date)->isFuture()): ?>
 <span class="bg-green-pale text-green-brand text-xs font-semibold px-3 py-1 rounded-full border border-green-200"><i class="fas fa-check-circle mr-1"></i>Tersedia</span>
-@endif
-@if($package->package_code)<span class="text-gray-400 text-xs">Kode: {{ $package->package_code }}</span>@endif
+<?php endif; ?>
+<?php if($package->package_code): ?><span class="text-gray-400 text-xs">Kode: <?php echo e($package->package_code); ?></span><?php endif; ?>
 </div>
-<h1 class="font-playfair text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{{ $package->package_name }}</h1>
-@if($package->outlet)<p class="text-gray-500 text-sm"><i class="fas fa-building text-green-brand mr-1"></i>{{ $package->outlet->nama_outlet }}@if($package->outlet->kota)  {{ $package->outlet->kota }}@endif</p>@endif
+<h1 class="font-playfair text-2xl sm:text-3xl font-bold text-gray-900 mb-2"><?php echo e($package->package_name); ?></h1>
+<?php if($package->outlet): ?><p class="text-gray-500 text-sm"><i class="fas fa-building text-green-brand mr-1"></i><?php echo e($package->outlet->nama_outlet); ?><?php if($package->outlet->kota): ?>  <?php echo e($package->outlet->kota); ?><?php endif; ?></p><?php endif; ?>
 </div>
 
-{{-- Stats Bar --}}
+
 <div class="stats-bar p-4">
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-0">
 <div class="stats-item px-4 py-3">
 <div class="flex items-center gap-2 mb-1"><i class="fas fa-clock text-green-brand text-xs"></i><span class="font-bold text-gray-800 text-sm">Durasi</span></div>
-<p class="text-gray-700 text-sm font-semibold">{{ $package->duration_days ? $package->duration_days.' Hari' : '-' }}</p>
+<p class="text-gray-700 text-sm font-semibold"><?php echo e($package->duration_days ? $package->duration_days.' Hari' : '-'); ?></p>
 </div>
 <div class="stats-item px-4 py-3">
 <div class="flex items-center gap-2 mb-1"><i class="fas fa-calendar text-green-brand text-xs"></i><span class="font-bold text-gray-800 text-sm">Keberangkatan</span></div>
-<p class="text-gray-700 text-sm font-semibold">{{ $package->departure_date ? \Carbon\Carbon::parse($package->departure_date)->format('d M Y') : '-' }}</p>
+<p class="text-gray-700 text-sm font-semibold"><?php echo e($package->departure_date ? \Carbon\Carbon::parse($package->departure_date)->format('d M Y') : '-'); ?></p>
 </div>
 <div class="stats-item px-4 py-3">
 <div class="flex items-center gap-2 mb-1"><i class="fas fa-users text-green-brand text-xs"></i><span class="font-bold text-gray-800 text-sm">Sisa Seat</span></div>
-@php
+<?php
     $availableSeats = $package->getAvailableSeats();
     $capacityPercentage = ($availableSeats / max($package->capacity, 1)) * 100;
     $colorClass = $capacityPercentage <= 20 ? 'text-red-600' : ($capacityPercentage <= 50 ? 'text-orange-600' : 'text-green-600');
-@endphp
-<p class="text-sm font-semibold {{ $colorClass }}">{{ $availableSeats }} Orang</p>
+?>
+<p class="text-sm font-semibold <?php echo e($colorClass); ?>"><?php echo e($availableSeats); ?> Orang</p>
 </div>
 <div class="px-4 py-3">
 <div class="flex items-center gap-2 mb-1"><i class="fas fa-user-tie text-green-brand text-xs"></i><span class="font-bold text-gray-800 text-sm">Ustadz</span></div>
-<p class="text-gray-700 text-sm font-semibold">{{ $package->ustadz_name ?? '-' }}</p>
+<p class="text-gray-700 text-sm font-semibold"><?php echo e($package->ustadz_name ?? '-'); ?></p>
 </div>
 </div>
 </div>
 
-{{-- Penerbangan Info --}}
-@if($package->flightDeparture || $package->flightReturn || $package->hotelMakkah || $package->hotelMadinah)
+
+<?php if($package->flightDeparture || $package->flightReturn || $package->hotelMakkah || $package->hotelMadinah): ?>
 <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
 <h2 class="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2"><i class="fas fa-plane text-green-brand"></i> Info Penerbangan & Hotel</h2>
 <div class="grid sm:grid-cols-2 gap-4">
-@if($package->flightDeparture)
+<?php if($package->flightDeparture): ?>
 <div class="bg-blue-50 rounded-xl p-4">
 <div class="text-xs text-blue-600 font-bold uppercase tracking-wider mb-2"> Penerbangan Berangkat</div>
-<div class="font-bold text-gray-900">{{ $package->flightDeparture->airline_name }}</div>
-<div class="text-xs text-gray-600 mt-1">{{ $package->flightDeparture->departure_airport }}  {{ $package->flightDeparture->arrival_airport }}</div>
-@if($package->departure_datetime)<div class="text-xs text-gray-500 mt-1">{{ \Carbon\Carbon::parse($package->departure_datetime)->format('d M Y H:i') }}</div>@endif
+<div class="font-bold text-gray-900"><?php echo e($package->flightDeparture->airline_name); ?></div>
+<div class="text-xs text-gray-600 mt-1"><?php echo e($package->flightDeparture->departure_airport); ?>  <?php echo e($package->flightDeparture->arrival_airport); ?></div>
+<?php if($package->departure_datetime): ?><div class="text-xs text-gray-500 mt-1"><?php echo e(\Carbon\Carbon::parse($package->departure_datetime)->format('d M Y H:i')); ?></div><?php endif; ?>
 </div>
-@endif
-@if($package->flightReturn)
+<?php endif; ?>
+<?php if($package->flightReturn): ?>
 <div class="bg-blue-50 rounded-xl p-4">
 <div class="text-xs text-blue-600 font-bold uppercase tracking-wider mb-2"> Penerbangan Pulang</div>
-<div class="font-bold text-gray-900">{{ $package->flightReturn->airline_name }}</div>
-<div class="text-xs text-gray-600 mt-1">{{ $package->flightReturn->departure_airport }}  {{ $package->flightReturn->arrival_airport }}</div>
-@if($package->return_datetime)<div class="text-xs text-gray-500 mt-1">{{ \Carbon\Carbon::parse($package->return_datetime)->format('d M Y H:i') }}</div>@endif
+<div class="font-bold text-gray-900"><?php echo e($package->flightReturn->airline_name); ?></div>
+<div class="text-xs text-gray-600 mt-1"><?php echo e($package->flightReturn->departure_airport); ?>  <?php echo e($package->flightReturn->arrival_airport); ?></div>
+<?php if($package->return_datetime): ?><div class="text-xs text-gray-500 mt-1"><?php echo e(\Carbon\Carbon::parse($package->return_datetime)->format('d M Y H:i')); ?></div><?php endif; ?>
 </div>
-@endif
-@if($package->hotelMakkah)
+<?php endif; ?>
+<?php if($package->hotelMakkah): ?>
 <div class="bg-green-pale rounded-xl p-4">
 <div class="text-xs text-green-brand font-bold uppercase tracking-wider mb-2"> Hotel Makkah</div>
-<div class="font-bold text-gray-900">{{ $package->hotelMakkah->hotel_name ?? $package->hotelMakkah->name ?? '-' }}</div>
-@if($package->makkah_check_in && $package->makkah_check_out)
-<div class="text-xs text-gray-500 mt-1">{{ \Carbon\Carbon::parse($package->makkah_check_in)->format('d M') }}  {{ \Carbon\Carbon::parse($package->makkah_check_out)->format('d M Y') }}</div>
-@endif
+<div class="font-bold text-gray-900"><?php echo e($package->hotelMakkah->hotel_name ?? $package->hotelMakkah->name ?? '-'); ?></div>
+<?php if($package->makkah_check_in && $package->makkah_check_out): ?>
+<div class="text-xs text-gray-500 mt-1"><?php echo e(\Carbon\Carbon::parse($package->makkah_check_in)->format('d M')); ?>  <?php echo e(\Carbon\Carbon::parse($package->makkah_check_out)->format('d M Y')); ?></div>
+<?php endif; ?>
 </div>
-@endif
-@if($package->hotelMadinah)
+<?php endif; ?>
+<?php if($package->hotelMadinah): ?>
 <div class="bg-green-pale rounded-xl p-4">
 <div class="text-xs text-green-brand font-bold uppercase tracking-wider mb-2"> Hotel Madinah</div>
-<div class="font-bold text-gray-900">{{ $package->hotelMadinah->hotel_name ?? $package->hotelMadinah->name ?? '-' }}</div>
-@if($package->madinah_check_in && $package->madinah_check_out)
-<div class="text-xs text-gray-500 mt-1">{{ \Carbon\Carbon::parse($package->madinah_check_in)->format('d M') }}  {{ \Carbon\Carbon::parse($package->madinah_check_out)->format('d M Y') }}</div>
-@endif
+<div class="font-bold text-gray-900"><?php echo e($package->hotelMadinah->hotel_name ?? $package->hotelMadinah->name ?? '-'); ?></div>
+<?php if($package->madinah_check_in && $package->madinah_check_out): ?>
+<div class="text-xs text-gray-500 mt-1"><?php echo e(\Carbon\Carbon::parse($package->madinah_check_in)->format('d M')); ?>  <?php echo e(\Carbon\Carbon::parse($package->madinah_check_out)->format('d M Y')); ?></div>
+<?php endif; ?>
 </div>
-@endif
+<?php endif; ?>
 </div>
 </div>
-@endif
+<?php endif; ?>
 
-{{-- Deskripsi --}}
-@if($package->description)
+
+<?php if($package->description): ?>
 <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
 <h2 class="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2"><i class="fas fa-info-circle text-green-brand"></i> Deskripsi Paket</h2>
-<div class="text-gray-600 leading-relaxed text-sm">{!! nl2br(e($package->description)) !!}</div>
+<div class="text-gray-600 leading-relaxed text-sm"><?php echo nl2br(e($package->description)); ?></div>
 </div>
-@endif
+<?php endif; ?>
 
-{{-- Inclusions --}}
-@if($package->inclusions)
+
+<?php if($package->inclusions): ?>
 <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
 <h2 class="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2"><i class="fas fa-check-circle text-green-brand"></i> Sudah Termasuk</h2>
 <ul class="space-y-2">
-@foreach($package->getInclusionsArray() as $item)
-<li class="flex items-start gap-2 text-gray-700 text-sm"><span class="text-green-brand font-bold mt-0.5">✓</span>{{ $item }}</li>
-@endforeach
+<?php $__currentLoopData = $package->getInclusionsArray(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+<li class="flex items-start gap-2 text-gray-700 text-sm"><span class="text-green-brand font-bold mt-0.5">✓</span><?php echo e($item); ?></li>
+<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </ul>
 </div>
-@endif
+<?php endif; ?>
 
-{{-- Tour Plan --}}
-@if($package->tourPlans && $package->tourPlans->count() > 0)
+
+<?php if($package->tourPlans && $package->tourPlans->count() > 0): ?>
 <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
 <h2 class="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2"><i class="fas fa-calendar-alt text-green-brand"></i> Rencana Perjalanan</h2>
 <div class="space-y-4">
-@foreach($package->tourPlans as $day)
+<?php $__currentLoopData = $package->tourPlans; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $day): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
 <div class="border border-gray-200 rounded-xl overflow-hidden">
-<div class="bg-gradient-to-r from-green-pale to-green-100 px-4 py-3 border-b border-green-200 cursor-pointer hover:bg-green-100 transition-colors" onclick="toggleTourDay({{ $day->day_number }})">
+<div class="bg-gradient-to-r from-green-pale to-green-100 px-4 py-3 border-b border-green-200 cursor-pointer hover:bg-green-100 transition-colors" onclick="toggleTourDay(<?php echo e($day->day_number); ?>)">
 <div class="flex items-center gap-3">
-<span class="inline-flex items-center justify-center w-10 h-10 bg-green-brand text-white rounded-full text-sm font-bold">{{ $day->day_number }}</span>
+<span class="inline-flex items-center justify-center w-10 h-10 bg-green-brand text-white rounded-full text-sm font-bold"><?php echo e($day->day_number); ?></span>
 <div class="flex-1">
-<h3 class="font-bold text-gray-900">{{ $day->day_title }}</h3>
-<p class="text-xs text-gray-600 mt-0.5"><i class="fas fa-calendar text-green-brand mr-1"></i>{{ \Carbon\Carbon::parse($day->day_date)->format('d F Y') }}</p>
+<h3 class="font-bold text-gray-900"><?php echo e($day->day_title); ?></h3>
+<p class="text-xs text-gray-600 mt-0.5"><i class="fas fa-calendar text-green-brand mr-1"></i><?php echo e(\Carbon\Carbon::parse($day->day_date)->format('d F Y')); ?></p>
 </div>
-<i id="toggle-icon-{{ $day->day_number }}" class="fas fa-chevron-{{ $day->day_number === 1 ? 'up' : 'down' }} text-green-brand transition-transform"></i>
+<i id="toggle-icon-<?php echo e($day->day_number); ?>" class="fas fa-chevron-<?php echo e($day->day_number === 1 ? 'up' : 'down'); ?> text-green-brand transition-transform"></i>
 </div>
-@if($day->description)
-<p class="text-sm text-gray-700 mt-2">{{ $day->description }}</p>
-@endif
+<?php if($day->description): ?>
+<p class="text-sm text-gray-700 mt-2"><?php echo e($day->description); ?></p>
+<?php endif; ?>
 </div>
-@if($day->activities && $day->activities->count() > 0)
-<div id="tour-day-{{ $day->day_number }}" class="p-4 space-y-3 transition-all duration-300" style="{{ $day->day_number === 1 ? '' : 'display: none;' }}">
-@foreach($day->activities as $activity)
+<?php if($day->activities && $day->activities->count() > 0): ?>
+<div id="tour-day-<?php echo e($day->day_number); ?>" class="p-4 space-y-3 transition-all duration-300" style="<?php echo e($day->day_number === 1 ? '' : 'display: none;'); ?>">
+<?php $__currentLoopData = $day->activities; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $activity): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
 <div class="flex gap-3 items-start">
 <div class="flex-shrink-0 w-14 text-center">
-<span class="inline-block px-2 py-1 bg-green-100 text-green-brand rounded-lg text-xs font-bold">{{ \Carbon\Carbon::parse($activity->activity_time)->format('H:i') }}</span>
+<span class="inline-block px-2 py-1 bg-green-100 text-green-brand rounded-lg text-xs font-bold"><?php echo e(\Carbon\Carbon::parse($activity->activity_time)->format('H:i')); ?></span>
 </div>
 <div class="flex-1">
-<h4 class="font-semibold text-gray-900 text-sm">{{ $activity->activity_title }}</h4>
-@if($activity->activity_description)
-<p class="text-xs text-gray-600 mt-1">{{ $activity->activity_description }}</p>
-@endif
+<h4 class="font-semibold text-gray-900 text-sm"><?php echo e($activity->activity_title); ?></h4>
+<?php if($activity->activity_description): ?>
+<p class="text-xs text-gray-600 mt-1"><?php echo e($activity->activity_description); ?></p>
+<?php endif; ?>
 </div>
 </div>
-@endforeach
+<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </div>
-@endif
+<?php endif; ?>
 </div>
-@endforeach
+<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </div>
 </div>
-@endif
+<?php endif; ?>
 
-{{-- Paket Terkait --}}
-@if($relatedPackages->count()>0)
+
+<?php if($relatedPackages->count()>0): ?>
 <div>
 <h2 class="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2"><i class="fas fa-th-large text-green-brand"></i> Paket Terkait</h2>
 <div class="grid sm:grid-cols-3 gap-4">
-@foreach($relatedPackages as $rel)
-<a href="{{ route('public.paket.show',$rel->id) }}" class="card-hover bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm group block">
+<?php $__currentLoopData = $relatedPackages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $rel): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+<a href="<?php echo e(route('public.paket.show',$rel->id)); ?>" class="card-hover bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm group block">
 <div class="h-32 overflow-hidden bg-green-pale">
-@if($rel->image_path)
-<img src="{{ asset('storage/'.$rel->image_path) }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.parentElement.style.background='#e8f5e9';this.remove()">
-@else
+<?php if($rel->image_path): ?>
+<img src="<?php echo e(asset('storage/'.$rel->image_path)); ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.parentElement.style.background='#e8f5e9';this.remove()">
+<?php else: ?>
 <div class="w-full h-full flex items-center justify-center"><i class="fas fa-kaaba text-green-300 text-3xl"></i></div>
-@endif
+<?php endif; ?>
 </div>
 <div class="p-3">
-<p class="font-semibold text-gray-900 text-sm line-clamp-2">{{ $rel->package_name }}</p>
-@if($rel->price)<p class="text-green-brand font-bold text-xs mt-1">Rp {{ number_format($rel->price,0,',','.') }}</p>@endif
+<p class="font-semibold text-gray-900 text-sm line-clamp-2"><?php echo e($rel->package_name); ?></p>
+<?php if($rel->price): ?><p class="text-green-brand font-bold text-xs mt-1">Rp <?php echo e(number_format($rel->price,0,',','.')); ?></p><?php endif; ?>
 </div>
 </a>
-@endforeach
+<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </div>
 </div>
-@endif
+<?php endif; ?>
 
-</div>{{-- end left --}}
+</div>
 
-{{-- RIGHT: Form Pemesanan --}}
+
 <div class="lg:col-span-1">
 <div class="sticky-form space-y-4">
 
-{{-- Harga & Form --}}
+
 <div class="bg-white rounded-2xl border border-green-200 shadow-lg p-6">
 
-{{-- Pilih Paket Harga --}}
-@if(count($pricePackages)>0)
+
+<?php if(count($pricePackages)>0): ?>
 <div class="mb-5">
 <p class="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wider">Pilih Paket Harga</p>
 <div class="space-y-2" id="pkg-list">
-@foreach($pricePackages as $pi=>$pkg)
-<div class="price-pkg-btn {{ $pi===0?'selected':'' }}"
-     data-pkg="{{ $pi }}"
-     data-name="{{ $pkg['name'] ?? 'Paket '.($pi+1) }}"
+<?php $__currentLoopData = $pricePackages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $pi=>$pkg): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+<div class="price-pkg-btn <?php echo e($pi===0?'selected':''); ?>"
+     data-pkg="<?php echo e($pi); ?>"
+     data-name="<?php echo e($pkg['name'] ?? 'Paket '.($pi+1)); ?>"
      onclick="selectPkg(this)">
 <div class="flex items-center justify-between">
-<span class="font-bold text-gray-900 text-sm">{{ $pkg['name'] ?? 'Paket '.($pi+1) }}</span>
-@if(!empty($pkg['variants']))
-<span class="text-xs text-gray-400">{{ count($pkg['variants']) }} varian</span>
-@endif
+<span class="font-bold text-gray-900 text-sm"><?php echo e($pkg['name'] ?? 'Paket '.($pi+1)); ?></span>
+<?php if(!empty($pkg['variants'])): ?>
+<span class="text-xs text-gray-400"><?php echo e(count($pkg['variants'])); ?> varian</span>
+<?php endif; ?>
 </div>
-@if(!empty($pkg['variants']))
-<div class="flex flex-wrap gap-2 mt-2 variant-group" id="variants-{{ $pi }}" style="{{ $pi===0?'':'display:none' }}">
-@foreach($pkg['variants'] as $vi=>$v)
+<?php if(!empty($pkg['variants'])): ?>
+<div class="flex flex-wrap gap-2 mt-2 variant-group" id="variants-<?php echo e($pi); ?>" style="<?php echo e($pi===0?'':'display:none'); ?>">
+<?php $__currentLoopData = $pkg['variants']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $vi=>$v): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
 <button type="button"
-        class="variant-btn {{ $vi===0?'selected':'' }}"
-        data-type="{{ $v['type'] ?? '' }}"
-        data-price="{{ $v['price'] ?? 0 }}"
+        class="variant-btn <?php echo e($vi===0?'selected':''); ?>"
+        data-type="<?php echo e($v['type'] ?? ''); ?>"
+        data-price="<?php echo e($v['price'] ?? 0); ?>"
         onclick="selectVariant(this,event)">
-{{ $v['type'] ?? '-' }}
-@if(!empty($v['price']))
-<span class="block text-green-brand text-xs font-bold">Rp {{ number_format($v['price'],0,',','.') }}</span>
-@endif
+<?php echo e($v['type'] ?? '-'); ?>
+
+<?php if(!empty($v['price'])): ?>
+<span class="block text-green-brand text-xs font-bold">Rp <?php echo e(number_format($v['price'],0,',','.')); ?></span>
+<?php endif; ?>
 </button>
-@endforeach
+<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </div>
-@endif
+<?php endif; ?>
 </div>
-@endforeach
+<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </div>
 </div>
-@else
-{{-- Tidak ada price_packages: tampilkan harga tunggal dari field price --}}
-@if($package->price)
+<?php else: ?>
+
+<?php if($package->price): ?>
 <div class="mb-5 p-3 bg-green-pale rounded-xl border border-green-200">
 <p class="text-xs text-green-brand font-bold">Harga Paket</p>
-<p class="text-2xl font-black text-green-brand mt-1">Rp {{ number_format($package->price,0,',','.') }}</p>
+<p class="text-2xl font-black text-green-brand mt-1">Rp <?php echo e(number_format($package->price,0,',','.')); ?></p>
 <p class="text-xs text-gray-500 mt-0.5">per orang</p>
 </div>
-@endif
-@endif
+<?php endif; ?>
+<?php endif; ?>
 
-{{-- Harga Terpilih --}}
+
 <div class="text-center mb-5 p-4 bg-green-pale rounded-xl">
 <div class="text-xs text-gray-500 mb-1">Harga per orang</div>
 <div id="selected-price-display" class="text-3xl font-black text-green-brand">
-@php
+<?php
   $initPrice = 0;
   if(count($pricePackages)>0 && !empty($pricePackages[0]['variants'][0]['price'])) {
     $initPrice = $pricePackages[0]['variants'][0]['price'];
@@ -343,41 +344,44 @@ html{scroll-behavior:smooth}
     $handlingFee = $package->handling_lounge_fee_amount;
     $initPrice += $handlingFee;
   }
-@endphp
-@if($initPrice > 0)
-Rp {{ number_format($initPrice,0,',','.') }}
-@else
+?>
+<?php if($initPrice > 0): ?>
+Rp <?php echo e(number_format($initPrice,0,',','.')); ?>
+
+<?php else: ?>
 Hubungi Kami
-@endif
+<?php endif; ?>
 </div>
 <div id="selected-pkg-label" class="text-xs text-gray-500 mt-1">
-@if(count($pricePackages)>0)
-{{ $pricePackages[0]['name'] ?? '' }}
-@if(!empty($pricePackages[0]['variants'][0]['type']))
-&mdash; {{ $pricePackages[0]['variants'][0]['type'] }}
-@endif
-@endif
+<?php if(count($pricePackages)>0): ?>
+<?php echo e($pricePackages[0]['name'] ?? ''); ?>
+
+<?php if(!empty($pricePackages[0]['variants'][0]['type'])): ?>
+&mdash; <?php echo e($pricePackages[0]['variants'][0]['type']); ?>
+
+<?php endif; ?>
+<?php endif; ?>
 </div>
-@if($handlingFee > 0)
+<?php if($handlingFee > 0): ?>
 <div class="text-xs text-gray-600 mt-2 pt-2 border-t border-gray-200">
-<i class='bx bx-info-circle'></i> Sudah termasuk {{ $package->handling_lounge_fee_description ?? 'Handling & Lounge Fee' }} (Rp {{ number_format($handlingFee, 0, ',', '.') }})
+<i class='bx bx-info-circle'></i> Sudah termasuk <?php echo e($package->handling_lounge_fee_description ?? 'Handling & Lounge Fee'); ?> (Rp <?php echo e(number_format($handlingFee, 0, ',', '.')); ?>)
 </div>
-@endif
+<?php endif; ?>
 </div>
 
-{{-- Form --}}
-<form action="{{ route('public.booking.submit') }}" method="POST" id="order-form" onsubmit="return prepareFormSubmit(event)">
-@csrf
-<input type="hidden" name="package_id" id="f_package_id" value="{{ $package->id }}">
+
+<form action="<?php echo e(route('public.booking.submit')); ?>" method="POST" id="order-form" onsubmit="return prepareFormSubmit(event)">
+<?php echo csrf_field(); ?>
+<input type="hidden" name="package_id" id="f_package_id" value="<?php echo e($package->id); ?>">
 <input type="hidden" name="jamaah_name" id="f_jamaah_name" value="">
 <input type="hidden" name="jamaah_phone" id="f_jamaah_phone" value="">
 <input type="hidden" name="jamaah_email" id="f_jamaah_email" value="">
 <input type="hidden" name="room_type" id="f_room_type" value="">
 <input type="hidden" name="total_price" id="f_total_price" value="0">
 <input type="hidden" name="equipment" id="f_equipment" value="[]">
-<input type="hidden" name="price_package_name" id="f_pkg_name" value="{{ count($pricePackages)>0 ? ($pricePackages[0]['name'] ?? '') : '' }}">
-<input type="hidden" name="price_variant" id="f_variant" value="{{ count($pricePackages)>0 ? ($pricePackages[0]['variants'][0]['type'] ?? '') : '' }}">
-<input type="hidden" name="selected_price" id="f_price" value="{{ count($pricePackages)>0 ? ($pricePackages[0]['variants'][0]['price'] ?? $package->price ?? 0) : ($package->price ?? 0) }}">
+<input type="hidden" name="price_package_name" id="f_pkg_name" value="<?php echo e(count($pricePackages)>0 ? ($pricePackages[0]['name'] ?? '') : ''); ?>">
+<input type="hidden" name="price_variant" id="f_variant" value="<?php echo e(count($pricePackages)>0 ? ($pricePackages[0]['variants'][0]['type'] ?? '') : ''); ?>">
+<input type="hidden" name="selected_price" id="f_price" value="<?php echo e(count($pricePackages)>0 ? ($pricePackages[0]['variants'][0]['price'] ?? $package->price ?? 0) : ($package->price ?? 0)); ?>">
 
 <div class="space-y-3">
 <div>
@@ -407,24 +411,26 @@ Hubungi Kami
 <p class="text-xs text-gray-400 mt-1">Format: DD-MM-YYYY — Diperlukan untuk penentuan dokumen perjalanan</p>
 </div>
 
-{{-- Pilih Keberangkatan --}}
-@if($keberangkatanList->count()>0)
+
+<?php if($keberangkatanList->count()>0): ?>
 <div>
 <label class="block text-xs font-bold text-gray-700 mb-1">Pilih Keberangkatan</label>
 <select name="id_keberangkatan"
         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-brand appearance-none">
-@foreach($keberangkatanList as $index => $kb)
-<option value="{{ $kb->id }}" {{ $index === 0 ? 'selected' : '' }}>
-{{ \Carbon\Carbon::parse($kb->departure_date)->format('d M Y') }}
-{{ $kb->keberangkatan_name ? '— '.$kb->keberangkatan_name : '' }}
-(Sisa: {{ $kb->getAvailableCapacity() }} kursi)
+<?php $__currentLoopData = $keberangkatanList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $kb): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+<option value="<?php echo e($kb->id); ?>" <?php echo e($index === 0 ? 'selected' : ''); ?>>
+<?php echo e(\Carbon\Carbon::parse($kb->departure_date)->format('d M Y')); ?>
+
+<?php echo e($kb->keberangkatan_name ? '— '.$kb->keberangkatan_name : ''); ?>
+
+(Sisa: <?php echo e($kb->getAvailableCapacity()); ?> kursi)
 </option>
-@endforeach
+<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </select>
 </div>
-@endif
+<?php endif; ?>
 
-{{-- Anggota Keluarga --}}
+
 <div>
 <div class="flex items-center justify-between mb-2">
 <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Anggota Keluarga</label>
@@ -449,7 +455,7 @@ Hubungi Kami
 </div>
 </div>
 
-{{-- Tambah Perlengkapan --}}
+
 <div>
 <div class="flex items-center justify-between mb-2">
 <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Perlengkapan</label>
@@ -462,8 +468,8 @@ Hubungi Kami
 <p class="text-xs text-gray-400 mt-1">Tambahkan perlengkapan umrah/haji sesuai kebutuhan</p>
 </div>
 
-{{-- Handling & Lounge Fee --}}
-@if($package->include_handling_lounge_fee && $package->handling_lounge_fee_amount > 0)
+
+<?php if($package->include_handling_lounge_fee && $package->handling_lounge_fee_amount > 0): ?>
 <div class="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-xl p-4">
 <div class="flex items-start gap-3">
 <div class="flex-shrink-0 w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center">
@@ -471,21 +477,23 @@ Hubungi Kami
 </div>
 <div class="flex-1">
 <h4 class="font-bold text-gray-900 text-sm mb-1">
-{{ $package->handling_lounge_fee_description ?? 'Handling & Lounge Fee Wajib' }}
+<?php echo e($package->handling_lounge_fee_description ?? 'Handling & Lounge Fee Wajib'); ?>
+
 </h4>
 <p class="text-xs text-gray-600 mb-2">
 Biaya tambahan wajib yang <strong>sudah termasuk</strong> dalam harga paket yang ditampilkan di atas.
 </p>
 <div class="flex items-center gap-2">
 <span class="text-2xl font-black text-yellow-700">
-Rp {{ number_format($package->handling_lounge_fee_amount, 0, ',', '.') }}
+Rp <?php echo e(number_format($package->handling_lounge_fee_amount, 0, ',', '.')); ?>
+
 </span>
 <span class="text-xs text-gray-500">per paket</span>
 </div>
 </div>
 </div>
 </div>
-@endif
+<?php endif; ?>
 
 <div>
 <label class="block text-xs font-bold text-gray-700 mb-2">Opsi Pembayaran *</label>
@@ -522,7 +530,7 @@ Rp {{ number_format($package->handling_lounge_fee_amount, 0, ',', '.') }}
 </div>
 </div>
 
-{{-- Preview Rincian Harga --}}
+
 <div id="price-preview" class="mt-4 border border-green-100 rounded-xl overflow-hidden hidden">
 <div class="bg-green-pale px-4 py-2 text-xs font-bold text-green-brand uppercase tracking-wider">Rincian Harga</div>
 <div id="price-rows" class="divide-y divide-gray-50"></div>
@@ -541,7 +549,7 @@ Rp {{ number_format($package->handling_lounge_fee_amount, 0, ',', '.') }}
 <p class="text-center text-gray-400 text-xs mt-3"><i class="fas fa-lock mr-1"></i>Data Anda aman & terlindungi</p>
 </div>
 
-{{-- Kontak --}}
+
 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
 <p class="text-xs font-bold text-gray-700 mb-3">Butuh bantuan?</p>
 <a href="https://wa.me/628976688800" target="_blank" class="flex items-center gap-3 p-3 bg-green-pale rounded-xl hover:bg-green-100 transition-all mb-2">
@@ -551,16 +559,16 @@ Rp {{ number_format($package->handling_lounge_fee_amount, 0, ',', '.') }}
 </div>
 
 </div>
-</div>{{-- end right --}}
+</div>
 
-</div>{{-- end grid --}}
-</div>{{-- end max-w --}}
-</div>{{-- end pt-20 --}}
+</div>
+</div>
+</div>
 
 <footer class="bg-green-brand text-white py-8 mt-12">
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-<img src="{{ url('WEB_HMTour/wp-content/uploads/2025/10/Logo-HM_UMRAH-3-WHITE.png') }}" alt="HM Tour" class="h-10 w-auto object-contain" onerror="this.style.display='none'">
-<p class="text-green-200 text-xs">&copy; {{ date('Y') }} HM Tour & Travel. Berizin Kemenag RI.</p>
+<img src="<?php echo e(url('WEB_HMTour/wp-content/uploads/2025/10/Logo-HM_UMRAH-3-WHITE.png')); ?>" alt="HM Tour" class="h-10 w-auto object-contain" onerror="this.style.display='none'">
+<p class="text-green-200 text-xs">&copy; <?php echo e(date('Y')); ?> HM Tour & Travel. Berizin Kemenag RI.</p>
 <a href="/" class="text-green-200 hover:text-white text-xs"> Kembali ke Beranda</a>
 </div>
 </footer>
@@ -569,7 +577,7 @@ Rp {{ number_format($package->handling_lounge_fee_amount, 0, ',', '.') }}
 <i class="fab fa-whatsapp text-white text-2xl"></i>
 </a>
 
-{{-- Image Modal --}}
+
 <div id="imageModal" class="fixed inset-0 z-[100] hidden bg-black bg-opacity-90 flex items-center justify-center p-4" onclick="closeImageModal()">
 <div class="relative max-w-7xl max-h-full">
 <button onclick="closeImageModal()" class="absolute -top-12 right-0 text-white hover:text-gray-300 text-4xl font-bold">&times;</button>
@@ -577,7 +585,7 @@ Rp {{ number_format($package->handling_lounge_fee_amount, 0, ',', '.') }}
 </div>
 </div>
 
-{{-- Equipment Modal with Cart Sidebar --}}
+
 <div id="equipmentModal" class="fixed inset-0 z-[100] hidden bg-black bg-opacity-50 flex items-center justify-center p-4" onclick="closeEquipmentModal(event)">
 <div class="relative bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
 <div class="bg-green-gradient text-white px-6 py-4 flex items-center justify-between">
@@ -688,8 +696,8 @@ function toggleTourDay(dayNumber) {
 }
 
 // ===== Price data dari Blade =====
-var pricePackagesData = @json($pricePackages);
-var handlingFeeAmount = {{ $package->include_handling_lounge_fee && $package->handling_lounge_fee_amount > 0 ? $package->handling_lounge_fee_amount : 0 }};
+var pricePackagesData = <?php echo json_encode($pricePackages, 15, 512) ?>;
+var handlingFeeAmount = <?php echo e($package->include_handling_lounge_fee && $package->handling_lounge_fee_amount > 0 ? $package->handling_lounge_fee_amount : 0); ?>;
 var currentPrice = (parseFloat(document.getElementById('f_price').value)||0) + handlingFeeAmount;
 var familyRowCount = 0;
 
@@ -959,7 +967,7 @@ function loadProducts() {
   document.getElementById('equipmentGrid').classList.add('hidden');
   document.getElementById('equipmentEmpty').classList.add('hidden');
 
-  const baseUrl = '{{ url('/') }}';
+  const baseUrl = '<?php echo e(url('/')); ?>';
   fetch(baseUrl + '/api/products')
     .then(response => response.json())
     .then(data => {
@@ -987,14 +995,14 @@ function renderProducts(products) {
   products.forEach(function(product) {
     var existing = selectedEquipment.find(e => e.id == product.id_produk);
     var qty = existing ? existing.qty : 1;
-    var imgSrc = product.image_url || '{{ asset("img/no-image.png") }}';
+    var imgSrc = product.image_url || '<?php echo e(asset("img/no-image.png")); ?>';
 
     var card = document.createElement('div');
     card.className = 'bg-white border border-gray-200 rounded-xl p-3 hover:border-green-400 hover:shadow-md transition-all';
     card.innerHTML = 
       '<div class="flex gap-3">' +
         '<div class="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">' +
-          '<img src="' + imgSrc + '" alt="' + product.nama_produk + '" class="w-full h-full object-cover" onerror="this.src=\'{{ asset("img/no-image.png") }}\'">' +
+          '<img src="' + imgSrc + '" alt="' + product.nama_produk + '" class="w-full h-full object-cover" onerror="this.src=\'<?php echo e(asset("img/no-image.png")); ?>\'">' +
         '</div>' +
         '<div class="flex-1 min-w-0">' +
           '<div class="font-semibold text-gray-900 text-sm truncate">' + product.nama_produk + '</div>' +
@@ -1295,7 +1303,7 @@ function prepareFormSubmit(event) {
   }
   var tokenValue = csrfToken ? (csrfToken.value || csrfToken.content) : '';
   
-  var baseUrl = '{{ url('/') }}';
+  var baseUrl = '<?php echo e(url('/')); ?>';
 
   // Disable button to prevent double submit
   var btnPesan = document.getElementById('btnPesanKonfirmasi');
@@ -1326,7 +1334,7 @@ function prepareFormSubmit(event) {
         alert('Pemesanan berhasil! Silakan kirim pesan WhatsApp ke jamaah.');
         window.location.href = data.fallback_url;
       } else {
-        window.location.href = baseUrl + '/paket/' + {{ $package->id }} + '/invoice/' + data.booking_id;
+        window.location.href = baseUrl + '/paket/' + <?php echo e($package->id); ?> + '/invoice/' + data.booking_id;
       }
     } else {
       alert('Terjadi kesalahan: ' + (data.message || 'Silakan coba lagi'));
@@ -1380,3 +1388,4 @@ flatpickr('#f_tanggal_lahir_display', {
 </script>
 </body>
 </html>
+<?php /**PATH C:\xampp\htdocs\hm\resources\views/public/paket-detail.blade.php ENDPATH**/ ?>

@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Information Package - {{ $keberangkatan->keberangkatan_name }}</title>
+    <title>Information Package - <?php echo e($keberangkatan->keberangkatan_name); ?></title>
     <style>
         @page {
             size: A4;
@@ -96,7 +96,7 @@
     </style>
 </head>
 <body>
-    @php
+    <?php
         $package = $keberangkatan->travelPackage;
         $companyName = 'HM TOUR & TRAVEL';
         if ($package && $package->outlet) {
@@ -224,24 +224,24 @@
         
         // Same room allocation applies to Makkah (same jamaah, same room types)
         $makkahRoomCounts = $madinahRoomCounts;
-    @endphp
+    ?>
 
     <!-- TITLE -->
-    <h2>INFORMATION PACKAGE {{ $companyName }}</h2>
-    <h3>GROUP {{ $departureDate ? $departureDate->format('d') : '' }} {{ $departureDate ? strtoupper($departureDate->translatedFormat('F')) : '' }} {{ $departureDate ? $departureDate->format('Y') : '' }}</h3>
+    <h2>INFORMATION PACKAGE <?php echo e($companyName); ?></h2>
+    <h3>GROUP <?php echo e($departureDate ? $departureDate->format('d') : ''); ?> <?php echo e($departureDate ? strtoupper($departureDate->translatedFormat('F')) : ''); ?> <?php echo e($departureDate ? $departureDate->format('Y') : ''); ?></h3>
 
     <!-- HEADER INFO -->
     <table class="data" style="margin-bottom: 15px;">
         <tr>
             <td style="width: 15%;"><strong>NAME GROUP</strong></td>
-            <td style="width: 35%;">{{ $groupName }}</td>
+            <td style="width: 35%;"><?php echo e($groupName); ?></td>
             <td style="width: 15%;"><strong>NO. OF PAX</strong></td>
             <td style="width: 35%;"><strong>TOUR LEADER NAME</strong></td>
         </tr>
         <tr>
-            <td>{{ $groupName }}</td>
-            <td><strong>ADULT</strong> {{ $adultCount }} &nbsp;&nbsp;&nbsp; <strong>CHILD</strong> {{ $childCount }} &nbsp;&nbsp;&nbsp; <strong>INFANT</strong> {{ $infantCount }}</td>
-            <td colspan="2">{{ $tourLeader }}</td>
+            <td><?php echo e($groupName); ?></td>
+            <td><strong>ADULT</strong> <?php echo e($adultCount); ?> &nbsp;&nbsp;&nbsp; <strong>CHILD</strong> <?php echo e($childCount); ?> &nbsp;&nbsp;&nbsp; <strong>INFANT</strong> <?php echo e($infantCount); ?></td>
+            <td colspan="2"><?php echo e($tourLeader); ?></td>
         </tr>
     </table>
 
@@ -260,85 +260,89 @@
             </tr>
         </thead>
         <tbody>
-            @if($flightDeparture)
+            <?php if($flightDeparture): ?>
             <tr>
-                <td class="text-center">{{ $flightDeparture->flight_number }}</td>
-                <td class="text-center">{{ $flightDeparture->departure_airport }}</td>
-                <td class="text-center">{{ $flightDeparture->arrival_airport }}</td>
+                <td class="text-center"><?php echo e($flightDeparture->flight_number); ?></td>
+                <td class="text-center"><?php echo e($flightDeparture->departure_airport); ?></td>
+                <td class="text-center"><?php echo e($flightDeparture->arrival_airport); ?></td>
                 <td class="text-center">
-                    @if($package->departure_datetime)
-                        {{ $package->departure_datetime->format('d M Y') }}
-                    @elseif($departureDate)
-                        {{ $departureDate->format('d M Y') }}
-                    @else
+                    <?php if($package->departure_datetime): ?>
+                        <?php echo e($package->departure_datetime->format('d M Y')); ?>
+
+                    <?php elseif($departureDate): ?>
+                        <?php echo e($departureDate->format('d M Y')); ?>
+
+                    <?php else: ?>
                         -
-                    @endif
+                    <?php endif; ?>
                 </td>
                 <td class="text-center">
-                    @if($package->departure_datetime)
-                        {{ $package->departure_datetime->format('H.i') }} WIB
-                    @elseif($flightDeparture->departure_time)
-                        {{ $flightDeparture->departure_time->format('H.i') }} WIB
-                    @else
+                    <?php if($package->departure_datetime): ?>
+                        <?php echo e($package->departure_datetime->format('H.i')); ?> WIB
+                    <?php elseif($flightDeparture->departure_time): ?>
+                        <?php echo e($flightDeparture->departure_time->format('H.i')); ?> WIB
+                    <?php else: ?>
                         -
-                    @endif
+                    <?php endif; ?>
                 </td>
                 <td class="text-center">
-                    @if($flightDeparture->arrival_time)
-                        {{ $flightDeparture->arrival_time->format('H.i') }} WAS
-                    @else
+                    <?php if($flightDeparture->arrival_time): ?>
+                        <?php echo e($flightDeparture->arrival_time->format('H.i')); ?> WAS
+                    <?php else: ?>
                         -
-                    @endif
+                    <?php endif; ?>
                 </td>
                 <td class="text-center">
-                    @if($flightDeparture->arrival_time)
-                        Landing {{ $flightDeparture->arrival_time->format('H.i') }} WAS
-                    @endif
+                    <?php if($flightDeparture->arrival_time): ?>
+                        Landing <?php echo e($flightDeparture->arrival_time->format('H.i')); ?> WAS
+                    <?php endif; ?>
                 </td>
             </tr>
-            @endif
-            @if($flightReturn)
+            <?php endif; ?>
+            <?php if($flightReturn): ?>
             <tr>
-                <td class="text-center">{{ $flightReturn->flight_number }}</td>
-                <td class="text-center">{{ $flightReturn->departure_airport }}</td>
-                <td class="text-center">{{ $flightReturn->arrival_airport }}</td>
+                <td class="text-center"><?php echo e($flightReturn->flight_number); ?></td>
+                <td class="text-center"><?php echo e($flightReturn->departure_airport); ?></td>
+                <td class="text-center"><?php echo e($flightReturn->arrival_airport); ?></td>
                 <td class="text-center">
-                    @if($package->return_datetime)
-                        {{ $package->return_datetime->format('d M Y') }}
-                    @elseif($returnDate)
-                        {{ $returnDate->format('d M Y') }}
-                    @else
+                    <?php if($package->return_datetime): ?>
+                        <?php echo e($package->return_datetime->format('d M Y')); ?>
+
+                    <?php elseif($returnDate): ?>
+                        <?php echo e($returnDate->format('d M Y')); ?>
+
+                    <?php else: ?>
                         -
-                    @endif
+                    <?php endif; ?>
                 </td>
                 <td class="text-center">
-                    @if($package->return_datetime)
-                        {{ $package->return_datetime->format('H.i') }} WAS
-                    @elseif($flightReturn->departure_time)
-                        {{ $flightReturn->departure_time->format('H.i') }} WAS
-                    @else
+                    <?php if($package->return_datetime): ?>
+                        <?php echo e($package->return_datetime->format('H.i')); ?> WAS
+                    <?php elseif($flightReturn->departure_time): ?>
+                        <?php echo e($flightReturn->departure_time->format('H.i')); ?> WAS
+                    <?php else: ?>
                         -
-                    @endif
+                    <?php endif; ?>
                 </td>
                 <td class="text-center">
-                    @if($flightReturn->arrival_time)
-                        {{ $flightReturn->arrival_time->format('H.i') }} WIB
-                    @else
+                    <?php if($flightReturn->arrival_time): ?>
+                        <?php echo e($flightReturn->arrival_time->format('H.i')); ?> WIB
+                    <?php else: ?>
                         -
-                    @endif
+                    <?php endif; ?>
                 </td>
                 <td class="text-center">
-                    @if($flightReturn->arrival_time)
-                        Landing {{ $flightReturn->arrival_time->format('H.i') }} WIB
-                    @endif
+                    <?php if($flightReturn->arrival_time): ?>
+                        Landing <?php echo e($flightReturn->arrival_time->format('H.i')); ?> WIB
+                    <?php endif; ?>
                 </td>
             </tr>
-            @endif
-            @if(!$flightDeparture && !$flightReturn)
+            <?php endif; ?>
+            <?php if(!$flightDeparture && !$flightReturn): ?>
             <tr>
                 <td colspan="7" class="text-center" style="color: #999; padding: 10px;">Belum ada data penerbangan</td>
             </tr>
-            @endif
+            <?php endif; ?>
         </tbody>
     </table>
 
@@ -370,60 +374,61 @@
             </tr>
         </thead>
         <tbody>
-            @if($hotelMadinah)
+            <?php if($hotelMadinah): ?>
             <tr>
                 <td class="text-center">MED</td>
-                <td>{{ strtoupper($hotelMadinah->hotel_name) }}</td>
-                <td class="text-center">{{ $madinahCheckIn ? $madinahCheckIn->format('d M') : '-' }}</td>
-                <td class="text-center">{{ $madinahCheckOut ? $madinahCheckOut->format('d M') : '-' }}</td>
-                <td class="text-center">{{ $madinahNights ?: '' }}</td>
-                <td class="text-center">{{ $madinahRoomCounts['sgl'] ?: '' }}</td>
-                <td class="text-center">{{ $madinahRoomCounts['dbl'] ?: '' }}</td>
-                <td class="text-center">{{ $madinahRoomCounts['trpl'] ?: '' }}</td>
-                <td class="text-center">{{ $madinahRoomCounts['quad'] ?: '' }}</td>
-                <td class="text-center">{{ $madinahRoomCounts['quint'] ?: '' }}</td>
-                <td class="text-center">{{ $madinahRoomCounts['total'] ?: '' }}</td>
+                <td><?php echo e(strtoupper($hotelMadinah->hotel_name)); ?></td>
+                <td class="text-center"><?php echo e($madinahCheckIn ? $madinahCheckIn->format('d M') : '-'); ?></td>
+                <td class="text-center"><?php echo e($madinahCheckOut ? $madinahCheckOut->format('d M') : '-'); ?></td>
+                <td class="text-center"><?php echo e($madinahNights ?: ''); ?></td>
+                <td class="text-center"><?php echo e($madinahRoomCounts['sgl'] ?: ''); ?></td>
+                <td class="text-center"><?php echo e($madinahRoomCounts['dbl'] ?: ''); ?></td>
+                <td class="text-center"><?php echo e($madinahRoomCounts['trpl'] ?: ''); ?></td>
+                <td class="text-center"><?php echo e($madinahRoomCounts['quad'] ?: ''); ?></td>
+                <td class="text-center"><?php echo e($madinahRoomCounts['quint'] ?: ''); ?></td>
+                <td class="text-center"><?php echo e($madinahRoomCounts['total'] ?: ''); ?></td>
             </tr>
-            @endif
-            @if($hotelMakkah)
+            <?php endif; ?>
+            <?php if($hotelMakkah): ?>
             <tr>
                 <td class="text-center">MEK</td>
-                <td>{{ strtoupper($hotelMakkah->hotel_name) }}</td>
-                <td class="text-center">{{ $makkahCheckIn ? $makkahCheckIn->format('d M') : '-' }}</td>
-                <td class="text-center">{{ $makkahCheckOut ? $makkahCheckOut->format('d M') : '-' }}</td>
-                <td class="text-center">{{ $makkahNights ?: '' }}</td>
-                <td class="text-center">{{ $makkahRoomCounts['sgl'] ?: '' }}</td>
-                <td class="text-center">{{ $makkahRoomCounts['dbl'] ?: '' }}</td>
-                <td class="text-center">{{ $makkahRoomCounts['trpl'] ?: '' }}</td>
-                <td class="text-center">{{ $makkahRoomCounts['quad'] ?: '' }}</td>
-                <td class="text-center">{{ $makkahRoomCounts['quint'] ?: '' }}</td>
-                <td class="text-center">{{ $makkahRoomCounts['total'] ?: '' }}</td>
+                <td><?php echo e(strtoupper($hotelMakkah->hotel_name)); ?></td>
+                <td class="text-center"><?php echo e($makkahCheckIn ? $makkahCheckIn->format('d M') : '-'); ?></td>
+                <td class="text-center"><?php echo e($makkahCheckOut ? $makkahCheckOut->format('d M') : '-'); ?></td>
+                <td class="text-center"><?php echo e($makkahNights ?: ''); ?></td>
+                <td class="text-center"><?php echo e($makkahRoomCounts['sgl'] ?: ''); ?></td>
+                <td class="text-center"><?php echo e($makkahRoomCounts['dbl'] ?: ''); ?></td>
+                <td class="text-center"><?php echo e($makkahRoomCounts['trpl'] ?: ''); ?></td>
+                <td class="text-center"><?php echo e($makkahRoomCounts['quad'] ?: ''); ?></td>
+                <td class="text-center"><?php echo e($makkahRoomCounts['quint'] ?: ''); ?></td>
+                <td class="text-center"><?php echo e($makkahRoomCounts['total'] ?: ''); ?></td>
             </tr>
-            @endif
-            @foreach($otherHotels as $otherHotel)
+            <?php endif; ?>
+            <?php $__currentLoopData = $otherHotels; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $otherHotel): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <tr>
-                <td class="text-center">{{ strtoupper(substr($otherHotel['city'] ?? '-', 0, 3)) }}</td>
-                <td>{{ strtoupper($otherHotel['hotel_name'] ?? '-') }}</td>
-                <td class="text-center">{{ isset($otherHotel['check_in']) ? \Carbon\Carbon::parse($otherHotel['check_in'])->format('d M') : '-' }}</td>
-                <td class="text-center">{{ isset($otherHotel['check_out']) ? \Carbon\Carbon::parse($otherHotel['check_out'])->format('d M') : '-' }}</td>
+                <td class="text-center"><?php echo e(strtoupper(substr($otherHotel['city'] ?? '-', 0, 3))); ?></td>
+                <td><?php echo e(strtoupper($otherHotel['hotel_name'] ?? '-')); ?></td>
+                <td class="text-center"><?php echo e(isset($otherHotel['check_in']) ? \Carbon\Carbon::parse($otherHotel['check_in'])->format('d M') : '-'); ?></td>
+                <td class="text-center"><?php echo e(isset($otherHotel['check_out']) ? \Carbon\Carbon::parse($otherHotel['check_out'])->format('d M') : '-'); ?></td>
                 <td class="text-center">
-                    @if(isset($otherHotel['check_in']) && isset($otherHotel['check_out']))
-                        {{ \Carbon\Carbon::parse($otherHotel['check_in'])->diffInDays(\Carbon\Carbon::parse($otherHotel['check_out'])) }}
-                    @endif
+                    <?php if(isset($otherHotel['check_in']) && isset($otherHotel['check_out'])): ?>
+                        <?php echo e(\Carbon\Carbon::parse($otherHotel['check_in'])->diffInDays(\Carbon\Carbon::parse($otherHotel['check_out']))); ?>
+
+                    <?php endif; ?>
                 </td>
                 <td class="text-center"></td>
-                <td class="text-center">{{ $otherHotel['dbl'] ?? '' }}</td>
-                <td class="text-center">{{ $otherHotel['trpl'] ?? '' }}</td>
-                <td class="text-center">{{ $otherHotel['quad'] ?? '' }}</td>
-                <td class="text-center">{{ $otherHotel['quint'] ?? '' }}</td>
-                <td class="text-center">{{ $otherHotel['total_rooms'] ?? '' }}</td>
+                <td class="text-center"><?php echo e($otherHotel['dbl'] ?? ''); ?></td>
+                <td class="text-center"><?php echo e($otherHotel['trpl'] ?? ''); ?></td>
+                <td class="text-center"><?php echo e($otherHotel['quad'] ?? ''); ?></td>
+                <td class="text-center"><?php echo e($otherHotel['quint'] ?? ''); ?></td>
+                <td class="text-center"><?php echo e($otherHotel['total_rooms'] ?? ''); ?></td>
             </tr>
-            @endforeach
-            @if(!$hotelMadinah && !$hotelMakkah && count($otherHotels) == 0)
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            <?php if(!$hotelMadinah && !$hotelMakkah && count($otherHotels) == 0): ?>
             <tr>
                 <td colspan="11" class="text-center" style="color: #999; padding: 10px;">Belum ada data akomodasi</td>
             </tr>
-            @endif
+            <?php endif; ?>
         </tbody>
     </table>
 
@@ -438,14 +443,14 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($rawdahRows as $idx => $row)
+            <?php $__currentLoopData = $rawdahRows; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $idx => $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <tr>
-                <td class="text-center">{{ $idx + 1 }}</td>
-                <td>{{ $row['activity'] ?? '' }}</td>
-                <td class="text-center">{{ $row['date'] ?? '' }}</td>
-                <td class="text-center">{{ $row['time'] ?? '' }}</td>
+                <td class="text-center"><?php echo e($idx + 1); ?></td>
+                <td><?php echo e($row['activity'] ?? ''); ?></td>
+                <td class="text-center"><?php echo e($row['date'] ?? ''); ?></td>
+                <td class="text-center"><?php echo e($row['time'] ?? ''); ?></td>
             </tr>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </tbody>
     </table>
 
@@ -462,42 +467,43 @@
             </tr>
         </thead>
         <tbody>
-            @if(count($itineraryRows) > 0)
-                @foreach($itineraryRows as $idx => $row)
-                @php
+            <?php if(count($itineraryRows) > 0): ?>
+                <?php $__currentLoopData = $itineraryRows; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $idx => $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <?php
                     $from = $row['from'] ?? '';
                     $to = $row['to'] ?? '';
                     $isMerged = (empty($from) && !empty($to)) || (!empty($from) && empty($to) && str_contains(strtoupper($from), 'CITY TOUR'));
-                @endphp
+                ?>
                 <tr>
-                    <td class="text-center">{{ $idx + 1 }}</td>
-                    @if(empty($from) && empty($to))
+                    <td class="text-center"><?php echo e($idx + 1); ?></td>
+                    <?php if(empty($from) && empty($to)): ?>
                         <td colspan="2" class="text-center">-</td>
-                    @elseif(empty($from) && !empty($to))
-                        <td colspan="2" class="text-center">{{ strtoupper($to) }}</td>
-                    @else
-                        <td>{{ strtoupper($from) }}</td>
-                        <td>{{ strtoupper($to) }}</td>
-                    @endif
-                    <td class="text-center">{{ $row['date'] ?? '' }}</td>
-                    <td class="text-center">{{ $row['time'] ?? '' }}</td>
-                    <td>{{ $row['remark'] ?? '' }}</td>
+                    <?php elseif(empty($from) && !empty($to)): ?>
+                        <td colspan="2" class="text-center"><?php echo e(strtoupper($to)); ?></td>
+                    <?php else: ?>
+                        <td><?php echo e(strtoupper($from)); ?></td>
+                        <td><?php echo e(strtoupper($to)); ?></td>
+                    <?php endif; ?>
+                    <td class="text-center"><?php echo e($row['date'] ?? ''); ?></td>
+                    <td class="text-center"><?php echo e($row['time'] ?? ''); ?></td>
+                    <td><?php echo e($row['remark'] ?? ''); ?></td>
                 </tr>
-                @endforeach
-            @else
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            <?php else: ?>
                 <tr>
                     <td colspan="6" class="text-center" style="color: #999; padding: 10px;">
                         Belum ada data itinerary. Silakan isi melalui form penyesuaian info paket.
                     </td>
                 </tr>
-            @endif
+            <?php endif; ?>
         </tbody>
     </table>
 
     <!-- Footer -->
     <div style="margin-top: 20px; text-align: center; font-size: 8px; color: #666; border-top: 1px solid #ccc; padding-top: 8px;">
-        <p>Dokumen ini digenerate secara otomatis pada {{ now()->format('d F Y H:i:s') }} WIB</p>
-        <p>{{ $companyName }}</p>
+        <p>Dokumen ini digenerate secara otomatis pada <?php echo e(now()->format('d F Y H:i:s')); ?> WIB</p>
+        <p><?php echo e($companyName); ?></p>
     </div>
 </body>
 </html>
+<?php /**PATH C:\xampp\htdocs\hm\resources\views/admin/travel/package/info-paket-pdf.blade.php ENDPATH**/ ?>

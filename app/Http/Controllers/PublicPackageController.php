@@ -993,6 +993,76 @@ class PublicPackageController extends Controller
                 }
             }
 
+            // 3b. Auto-create hotel bookings from package hotels (include paket)
+            $roomType = $validated['price_variant'] ?? $validated['room_type'] ?? 'double';
+            
+            // Hotel Madinah
+            if ($package->id_hotel_madinah) {
+                $madinahNights = ($package->madinah_check_in && $package->madinah_check_out) 
+                    ? $package->madinah_check_in->diffInDays($package->madinah_check_out) : 0;
+                \App\Models\JamaahHotelBooking::create([
+                    'id_jamaah_booking' => $booking->id,
+                    'id_hotel' => $package->id_hotel_madinah,
+                    'city_type' => 'madinah',
+                    'room_type' => $roomType,
+                    'check_in_date' => $package->madinah_check_in,
+                    'check_out_date' => $package->madinah_check_out,
+                    'nights' => $madinahNights,
+                    'price_per_night' => 0,
+                    'is_charged' => false, // Include paket
+                    'notes' => 'Include paket',
+                    'sort_order' => 1,
+                ]);
+            }
+            
+            // Hotel Makkah
+            if ($package->id_hotel_makkah) {
+                $makkahNights = ($package->makkah_check_in && $package->makkah_check_out) 
+                    ? $package->makkah_check_in->diffInDays($package->makkah_check_out) : 0;
+                \App\Models\JamaahHotelBooking::create([
+                    'id_jamaah_booking' => $booking->id,
+                    'id_hotel' => $package->id_hotel_makkah,
+                    'city_type' => 'makkah',
+                    'room_type' => $roomType,
+                    'check_in_date' => $package->makkah_check_in,
+                    'check_out_date' => $package->makkah_check_out,
+                    'nights' => $makkahNights,
+                    'price_per_night' => 0,
+                    'is_charged' => false, // Include paket
+                    'notes' => 'Include paket',
+                    'sort_order' => 2,
+                ]);
+            }
+            
+            // Hotel Tambahan (dari JSON field 'hotels' di paket)
+            $additionalHotels = $package->hotels;
+            if (is_string($additionalHotels)) $additionalHotels = json_decode($additionalHotels, true);
+            if (is_array($additionalHotels) && count($additionalHotels) > 0) {
+                $sortOrder = 3;
+                foreach ($additionalHotels as $addHotel) {
+                    $hotelId = $addHotel['id_hotel'] ?? $addHotel['id'] ?? null;
+                    $cityType = strtolower($addHotel['city'] ?? $addHotel['city_type'] ?? 'other');
+                    $checkIn = !empty($addHotel['check_in']) ? $addHotel['check_in'] : null;
+                    $checkOut = !empty($addHotel['check_out']) ? $addHotel['check_out'] : null;
+                    $nights = ($checkIn && $checkOut) ? \Carbon\Carbon::parse($checkIn)->diffInDays(\Carbon\Carbon::parse($checkOut)) : 0;
+                    
+                    \App\Models\JamaahHotelBooking::create([
+                        'id_jamaah_booking' => $booking->id,
+                        'id_hotel' => $hotelId,
+                        'city_type' => $cityType,
+                        'room_type' => $roomType,
+                        'check_in_date' => $checkIn,
+                        'check_out_date' => $checkOut,
+                        'nights' => $nights,
+                        'price_per_night' => 0,
+                        'is_charged' => false, // Include paket
+                        'notes' => 'Include paket - ' . ($addHotel['hotel_name'] ?? ''),
+                        'sort_order' => $sortOrder,
+                    ]);
+                    $sortOrder++;
+                }
+            }
+
             // 4. Create piutang
             \App\Models\Piutang::create([
                 'id_jamaah_booking' => $booking->id,

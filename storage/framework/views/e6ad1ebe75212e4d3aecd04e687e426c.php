@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Invoice {{ $booking->booking_code }} | HM Tour</title>
+<title>Invoice <?php echo e($booking->booking_code); ?> | HM Tour</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -21,25 +21,26 @@
 <div class="bg-green-gradient text-white p-6">
 <div class="flex items-center justify-between">
 <div>
-<img src="{{ url('WEB_HMTour/wp-content/uploads/2023/04/Logo-HM_UMRAH-3-WHITE.png') }}" alt="HM Tour" class="h-10 w-auto object-contain mb-2" onerror="this.style.display='none'">
+<img src="<?php echo e(url('WEB_HMTour/wp-content/uploads/2023/04/Logo-HM_UMRAH-3-WHITE.png')); ?>" alt="HM Tour" class="h-10 w-auto object-contain mb-2" onerror="this.style.display='none'">
 <p class="text-green-100 text-sm">Invoice Pemesanan Paket</p>
 </div>
 <div class="text-right">
-<div class="text-2xl font-black">{{ $booking->booking_code }}</div>
-<div class="text-green-200 text-xs mt-1">{{ now()->format('d M Y') }}</div>
+<div class="text-2xl font-black"><?php echo e($booking->booking_code); ?></div>
+<div class="text-green-200 text-xs mt-1"><?php echo e(now()->format('d M Y')); ?></div>
 </div>
 </div>
 </div>
 
 <!-- Status -->
-<div class="px-6 py-3 {{ ($booking->paid_amount ?? 0) > 0 ? 'bg-blue-50 border-b border-blue-100' : 'bg-yellow-50 border-b border-yellow-100' }} flex items-center gap-2">
-<span class="w-2 h-2 rounded-full {{ ($booking->paid_amount ?? 0) > 0 ? 'bg-blue-400' : 'bg-yellow-400' }} animate-pulse"></span>
-<span class="{{ ($booking->paid_amount ?? 0) > 0 ? 'text-blue-700' : 'text-yellow-700' }} text-sm font-semibold">
-@if(($booking->paid_amount ?? 0) > 0)
-Status: PEMBAYARAN SEBAGIAN - Sisa Rp {{ number_format($grandTotal - ($booking->paid_amount ?? 0), 0, ',', '.') }}
-@else
+<div class="px-6 py-3 <?php echo e(($booking->paid_amount ?? 0) > 0 ? 'bg-blue-50 border-b border-blue-100' : 'bg-yellow-50 border-b border-yellow-100'); ?> flex items-center gap-2">
+<span class="w-2 h-2 rounded-full <?php echo e(($booking->paid_amount ?? 0) > 0 ? 'bg-blue-400' : 'bg-yellow-400'); ?> animate-pulse"></span>
+<span class="<?php echo e(($booking->paid_amount ?? 0) > 0 ? 'text-blue-700' : 'text-yellow-700'); ?> text-sm font-semibold">
+<?php if(($booking->paid_amount ?? 0) > 0): ?>
+Status: PEMBAYARAN SEBAGIAN - Sisa Rp <?php echo e(number_format($grandTotal - ($booking->paid_amount ?? 0), 0, ',', '.')); ?>
+
+<?php else: ?>
 Status: PENDING - Menunggu Pembayaran
-@endif
+<?php endif; ?>
 </span>
 </div>
 
@@ -50,18 +51,20 @@ Status: PENDING - Menunggu Pembayaran
 <div>
 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Paket Perjalanan</h3>
 <div class="bg-gray-50 rounded-xl p-4">
-<div class="font-bold text-gray-900 text-lg">{{ $package->package_name }}</div>
+<div class="font-bold text-gray-900 text-lg"><?php echo e($package->package_name); ?></div>
 <div class="text-sm text-gray-500 mt-1">
-{{ ucwords(str_replace('_',' ',$package->package_type)) }}
-@if($package->duration_days) &bull; {{ $package->duration_days }} Hari @endif
-@if($booking->price_package_name) &bull; {{ $booking->price_package_name }} @endif
-@if($booking->price_variant) ({{ $booking->price_variant }}) @endif
+<?php echo e(ucwords(str_replace('_',' ',$package->package_type))); ?>
+
+<?php if($package->duration_days): ?> &bull; <?php echo e($package->duration_days); ?> Hari <?php endif; ?>
+<?php if($booking->price_package_name): ?> &bull; <?php echo e($booking->price_package_name); ?> <?php endif; ?>
+<?php if($booking->price_variant): ?> (<?php echo e($booking->price_variant); ?>) <?php endif; ?>
 </div>
-@if($package->departure_date)
+<?php if($package->departure_date): ?>
 <div class="text-sm text-green-700 font-semibold mt-2">
-✈️ Keberangkatan: {{ \Carbon\Carbon::parse($package->departure_date)->format('d M Y') }}
+✈️ Keberangkatan: <?php echo e(\Carbon\Carbon::parse($package->departure_date)->format('d M Y')); ?>
+
 </div>
-@endif
+<?php endif; ?>
 </div>
 </div>
 
@@ -71,11 +74,11 @@ Status: PENDING - Menunggu Pembayaran
 <div class="grid grid-cols-2 gap-3">
 <div class="bg-gray-50 rounded-xl p-3">
 <div class="text-xs text-gray-400">Nama</div>
-<div class="font-semibold text-gray-900">{{ $booking->jamaah->nama }}</div>
+<div class="font-semibold text-gray-900"><?php echo e($booking->jamaah->nama); ?></div>
 </div>
 <div class="bg-gray-50 rounded-xl p-3">
 <div class="text-xs text-gray-400">Telepon</div>
-<div class="font-semibold text-gray-900">{{ $booking->jamaah->telepon }}</div>
+<div class="font-semibold text-gray-900"><?php echo e($booking->jamaah->telepon); ?></div>
 </div>
 </div>
 </div>
@@ -84,14 +87,14 @@ Status: PENDING - Menunggu Pembayaran
 <div>
 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Rincian Harga</h3>
 <div class="border border-gray-100 rounded-xl overflow-hidden">
-@foreach($priceBreakdown as $item)
+<?php $__currentLoopData = $priceBreakdown; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
 <div class="flex items-center justify-between px-4 py-3 border-b border-gray-50 last:border-0">
-<span class="text-sm text-gray-700">{{ $item['label'] }}</span>
-<span class="font-semibold text-gray-900 text-sm">Rp {{ number_format($item['amount'],0,',','.') }}</span>
+<span class="text-sm text-gray-700"><?php echo e($item['label']); ?></span>
+<span class="font-semibold text-gray-900 text-sm">Rp <?php echo e(number_format($item['amount'],0,',','.')); ?></span>
 </div>
-@endforeach
+<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
-@if($booking->discount_amount > 0)
+<?php if($booking->discount_amount > 0): ?>
 <div class="flex items-center justify-between px-4 py-3 bg-red-50 border-b border-red-100">
 <span class="text-sm text-red-700 font-semibold">
 <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -99,23 +102,23 @@ Status: PENDING - Menunggu Pembayaran
 </svg>
 Diskon
 </span>
-<span class="font-bold text-red-600 text-sm">- Rp {{ number_format($booking->discount_amount,0,',','.') }}</span>
+<span class="font-bold text-red-600 text-sm">- Rp <?php echo e(number_format($booking->discount_amount,0,',','.')); ?></span>
 </div>
-@endif
+<?php endif; ?>
 
-@if(isset($voucherDiscount) && $voucherDiscount > 0)
+<?php if(isset($voucherDiscount) && $voucherDiscount > 0): ?>
 <div class="flex items-center justify-between px-4 py-3 bg-green-50 border-b border-green-100">
 <span class="text-sm text-green-700 font-semibold">
 <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
 </svg>
-Diskon Voucher ({{ $booking->voucher_code }})
+Diskon Voucher (<?php echo e($booking->voucher_code); ?>)
 </span>
-<span class="font-bold text-green-600 text-sm">- Rp {{ number_format($voucherDiscount,0,',','.') }}</span>
+<span class="font-bold text-green-600 text-sm">- Rp <?php echo e(number_format($voucherDiscount,0,',','.')); ?></span>
 </div>
-@endif
+<?php endif; ?>
 
-@if(isset($adminDiscount) && $adminDiscount > 0)
+<?php if(isset($adminDiscount) && $adminDiscount > 0): ?>
 <div class="flex items-center justify-between px-4 py-3 bg-blue-50 border-b border-blue-100">
 <span class="text-sm text-blue-700 font-semibold">
 <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,73 +126,73 @@ Diskon Voucher ({{ $booking->voucher_code }})
 </svg>
 Diskon Admin
 </span>
-<span class="font-bold text-blue-600 text-sm">- Rp {{ number_format($adminDiscount,0,',','.') }}</span>
+<span class="font-bold text-blue-600 text-sm">- Rp <?php echo e(number_format($adminDiscount,0,',','.')); ?></span>
 </div>
-@endif
+<?php endif; ?>
 
 <div class="flex items-center justify-between px-4 py-4 bg-green-50">
 <span class="font-bold text-gray-900">Total</span>
-<span class="font-black text-green-700 text-xl">Rp {{ number_format($grandTotal,0,',','.') }}</span>
+<span class="font-black text-green-700 text-xl">Rp <?php echo e(number_format($grandTotal,0,',','.')); ?></span>
 </div>
 </div>
 
-@if($booking->discount_amount > 0)
+<?php if($booking->discount_amount > 0): ?>
 <div class="mt-2 bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start gap-2">
 <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
 </svg>
 <div class="text-xs text-yellow-700">
-<span class="font-semibold">Selamat!</span> Anda mendapatkan diskon sebesar Rp {{ number_format($booking->discount_amount,0,',','.') }} untuk pemesanan ini.
+<span class="font-semibold">Selamat!</span> Anda mendapatkan diskon sebesar Rp <?php echo e(number_format($booking->discount_amount,0,',','.')); ?> untuk pemesanan ini.
 </div>
 </div>
-@endif
+<?php endif; ?>
 
-@if(isset($voucherDiscount) && $voucherDiscount > 0)
+<?php if(isset($voucherDiscount) && $voucherDiscount > 0): ?>
 <div class="mt-2 bg-green-50 border border-green-200 rounded-lg p-3 flex items-start gap-2">
 <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
 </svg>
 <div class="text-xs text-green-700">
-<span class="font-semibold">Voucher Diterapkan!</span> Anda mendapatkan diskon voucher <strong>{{ $booking->voucher_code }}</strong> sebesar Rp {{ number_format($voucherDiscount,0,',','.') }}.
+<span class="font-semibold">Voucher Diterapkan!</span> Anda mendapatkan diskon voucher <strong><?php echo e($booking->voucher_code); ?></strong> sebesar Rp <?php echo e(number_format($voucherDiscount,0,',','.')); ?>.
 </div>
 </div>
-@endif
+<?php endif; ?>
 
-@if(isset($adminDiscount) && $adminDiscount > 0)
+<?php if(isset($adminDiscount) && $adminDiscount > 0): ?>
 <div class="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
 <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
 </svg>
 <div class="text-xs text-blue-700">
-<span class="font-semibold">Diskon Khusus!</span> Admin telah memberikan diskon sebesar Rp {{ number_format($adminDiscount,0,',','.') }} untuk pemesanan ini.
+<span class="font-semibold">Diskon Khusus!</span> Admin telah memberikan diskon sebesar Rp <?php echo e(number_format($adminDiscount,0,',','.')); ?> untuk pemesanan ini.
 </div>
 </div>
-@endif
+<?php endif; ?>
 </div>
 
 <!-- Anggota Keluarga -->
-@if(!empty($familyMembers))
+<?php if(!empty($familyMembers)): ?>
 <div>
 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Anggota Keluarga</h3>
 <div class="space-y-2">
-@foreach($familyMembers as $fm)
+<?php $__currentLoopData = $familyMembers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $fm): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
 <div class="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
 <div>
-<span class="font-semibold text-gray-900 text-sm">{{ $fm['nama'] }}</span>
-@if(!empty($fm['hubungan'])) <span class="text-gray-400 text-xs ml-1">({{ $fm['hubungan'] }})</span> @endif
+<span class="font-semibold text-gray-900 text-sm"><?php echo e($fm['nama']); ?></span>
+<?php if(!empty($fm['hubungan'])): ?> <span class="text-gray-400 text-xs ml-1">(<?php echo e($fm['hubungan']); ?>)</span> <?php endif; ?>
 </div>
-@if(!empty($fm['tanggal_lahir']))
-<span class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($fm['tanggal_lahir'])->age }} tahun</span>
-@endif
+<?php if(!empty($fm['tanggal_lahir'])): ?>
+<span class="text-xs text-gray-500"><?php echo e(\Carbon\Carbon::parse($fm['tanggal_lahir'])->age); ?> tahun</span>
+<?php endif; ?>
 </div>
-@endforeach
+<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </div>
 </div>
-@endif
+<?php endif; ?>
 
 <!-- Voucher Diskon -->
-@if(($booking->paid_amount ?? 0) == 0)
-{{-- Only show voucher form if no payment has been made yet --}}
+<?php if(($booking->paid_amount ?? 0) == 0): ?>
+
 <div>
 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Kode Voucher Diskon</h3>
 <div class="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-4">
@@ -242,8 +245,8 @@ Hapus
 </div>
 </div>
 </div>
-@else
-{{-- Show message that discount is only available before first payment --}}
+<?php else: ?>
+
 <div>
 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Kode Voucher Diskon</h3>
 <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
@@ -254,13 +257,13 @@ Hapus
 <div>
 <p class="text-sm font-semibold text-blue-700 mb-1">Diskon Tidak Tersedia</p>
 <p class="text-xs text-blue-600">
-Voucher diskon hanya dapat digunakan sebelum pembayaran pertama. Anda sudah melakukan pembayaran sebesar Rp {{ number_format($booking->paid_amount, 0, ',', '.') }}.
+Voucher diskon hanya dapat digunakan sebelum pembayaran pertama. Anda sudah melakukan pembayaran sebesar Rp <?php echo e(number_format($booking->paid_amount, 0, ',', '.')); ?>.
 </p>
 </div>
 </div>
 </div>
 </div>
-@endif
+<?php endif; ?>
 
 <!-- Status Pembayaran -->
 <div>
@@ -268,7 +271,7 @@ Voucher diskon hanya dapat digunakan sebelum pembayaran pertama. Anda sudah mela
 <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 space-y-3" id="paymentStatusCard">
 <div class="flex items-center justify-between pb-2 border-b border-blue-200">
 <span class="text-sm text-gray-600">Total Tagihan</span>
-<span class="font-bold text-gray-900" id="displayGrandTotal">Rp {{ number_format($grandTotal, 0, ',', '.') }}</span>
+<span class="font-bold text-gray-900" id="displayGrandTotal">Rp <?php echo e(number_format($grandTotal, 0, ',', '.')); ?></span>
 </div>
 <div id="voucherDiscountRow" class="flex items-center justify-between pb-2 border-b border-blue-200" style="display: none;">
 <span class="text-sm text-green-600 font-semibold">Diskon Voucher</span>
@@ -276,24 +279,24 @@ Voucher diskon hanya dapat digunakan sebelum pembayaran pertama. Anda sudah mela
 </div>
 <div id="finalTotalRow" class="flex items-center justify-between pb-2 border-b border-blue-200" style="display: none;">
 <span class="text-sm text-gray-700 font-semibold">Total Setelah Diskon</span>
-<span class="font-bold text-blue-600" id="displayFinalTotal">Rp {{ number_format($grandTotal, 0, ',', '.') }}</span>
+<span class="font-bold text-blue-600" id="displayFinalTotal">Rp <?php echo e(number_format($grandTotal, 0, ',', '.')); ?></span>
 </div>
 <div class="flex items-center justify-between pb-2 border-b border-blue-200">
 <span class="text-sm text-gray-600">Sudah Dibayar</span>
-<span class="font-semibold text-green-600">Rp {{ number_format($booking->paid_amount ?? 0, 0, ',', '.') }}</span>
+<span class="font-semibold text-green-600">Rp <?php echo e(number_format($booking->paid_amount ?? 0, 0, ',', '.')); ?></span>
 </div>
 <div class="flex items-center justify-between">
 <span class="text-sm font-semibold text-gray-700">Sisa Tagihan</span>
-<span class="font-bold text-red-600 text-lg" id="displayRemainingBalance">Rp {{ number_format($grandTotal - ($booking->paid_amount ?? 0), 0, ',', '.') }}</span>
+<span class="font-bold text-red-600 text-lg" id="displayRemainingBalance">Rp <?php echo e(number_format($grandTotal - ($booking->paid_amount ?? 0), 0, ',', '.')); ?></span>
 </div>
 </div>
 
-@if($booking->id_invoice)
-@php
+<?php if($booking->id_invoice): ?>
+<?php
     // Generate secure token for public invoice access
     $invoiceToken = hash('sha256', $booking->id . $booking->id_invoice . config('app.key'));
     $publicInvoiceUrl = route('public.invoice', ['bookingId' => $booking->id, 'token' => $invoiceToken]);
-@endphp
+?>
 <div class="mt-3 bg-white border-2 border-green-200 rounded-xl p-4">
 <div class="flex items-center justify-between mb-3">
 <div class="flex items-center gap-2">
@@ -303,11 +306,12 @@ Voucher diskon hanya dapat digunakan sebelum pembayaran pertama. Anda sudah mela
 <span class="font-bold text-gray-900 text-sm">Invoice Tersedia</span>
 </div>
 <span class="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">
-{{ $booking->invoice->no_invoice ?? 'INV-' . $booking->booking_code }}
+<?php echo e($booking->invoice->no_invoice ?? 'INV-' . $booking->booking_code); ?>
+
 </span>
 </div>
 <div class="flex gap-2">
-<a href="{{ $publicInvoiceUrl }}" 
+<a href="<?php echo e($publicInvoiceUrl); ?>" 
    target="_blank"
    class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg text-sm text-center transition-all flex items-center justify-center gap-2">
 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -316,7 +320,7 @@ Voucher diskon hanya dapat digunakan sebelum pembayaran pertama. Anda sudah mela
 </svg>
 Lihat Invoice
 </a>
-<a href="{{ $publicInvoiceUrl }}" 
+<a href="<?php echo e($publicInvoiceUrl); ?>" 
    download
    class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-2.5 px-4 rounded-lg text-sm text-center transition-all flex items-center justify-center gap-2">
 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -329,11 +333,11 @@ Download Invoice
 Invoice resmi untuk pembayaran Anda
 </p>
 </div>
-@endif
+<?php endif; ?>
 </div>
 
 <!-- Add Family Member Section (Task 10) -->
-@if($booking->payment_status !== 'unpaid')
+<?php if($booking->payment_status !== 'unpaid'): ?>
 <div>
     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Tambah Anggota Keluarga</h3>
     <div class="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-4">
@@ -351,11 +355,11 @@ Invoice resmi untuk pembayaran Anda
         </button>
     </div>
 </div>
-@endif
+<?php endif; ?>
 
 <!-- FORM PEMBAYARAN -->
-<form action="{{ route('public.paket.pay', ['packageId' => $package->id, 'bookingId' => $booking->id]) }}" method="POST" enctype="multipart/form-data" id="paymentForm" onsubmit="return disableBtnTransfer()">
-@csrf
+<form action="<?php echo e(route('public.paket.pay', ['packageId' => $package->id, 'bookingId' => $booking->id])); ?>" method="POST" enctype="multipart/form-data" id="paymentForm" onsubmit="return disableBtnTransfer()">
+<?php echo csrf_field(); ?>
 
 <!-- Hidden inputs for voucher -->
 <input type="hidden" name="voucher_code" id="voucher_code_input" value="">
@@ -368,7 +372,7 @@ Invoice resmi untuk pembayaran Anda
 <div class="flex items-center justify-between">
 <div>
 <div class="font-bold text-gray-900">
-@php
+<?php
 // Prioritas: custom_payment_amount > remaining balance
 $paidAmount = $booking->paid_amount ?? 0;
 $remainingBalance = $grandTotal - $paidAmount;
@@ -403,27 +407,29 @@ if (!empty($booking->custom_payment_amount)) {
     $paymentLabel = 'Pembayaran Selanjutnya';
     $paymentDetail = 'Sisa tagihan Anda';
 }
-@endphp
-{{ $paymentLabel }}
-@if($paymentDetail)
-<div class="text-xs text-gray-500 mt-1">{{ $paymentDetail }}</div>
-@endif
+?>
+<?php echo e($paymentLabel); ?>
+
+<?php if($paymentDetail): ?>
+<div class="text-xs text-gray-500 mt-1"><?php echo e($paymentDetail); ?></div>
+<?php endif; ?>
 </div>
 <div class="text-xs text-gray-500 mt-1">
-@if(!empty($booking->custom_payment_amount))
+<?php if(!empty($booking->custom_payment_amount)): ?>
 Jumlah pembayaran telah diatur oleh admin
-@elseif(!$isFirstPayment)
+<?php elseif(!$isFirstPayment): ?>
 Silakan transfer sesuai nominal yang tertera
-@else
+<?php else: ?>
 Pilihan pembayaran Anda
-@endif
+<?php endif; ?>
 </div>
 </div>
 <div class="text-green-700 font-black text-2xl">
-Rp {{ number_format($paymentAmount, 0, ',', '.') }}
+Rp <?php echo e(number_format($paymentAmount, 0, ',', '.')); ?>
+
 </div>
 </div>
-@if(!empty($booking->custom_payment_amount))
+<?php if(!empty($booking->custom_payment_amount)): ?>
 <div class="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
 <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -432,26 +438,26 @@ Rp {{ number_format($paymentAmount, 0, ',', '.') }}
 <span class="font-semibold">Catatan:</span> Jumlah pembayaran ini telah disesuaikan oleh admin. Silakan transfer sesuai nominal yang tertera di atas.
 </div>
 </div>
-@endif
-@if(!$isFirstPayment && $paidAmount > 0)
+<?php endif; ?>
+<?php if(!$isFirstPayment && $paidAmount > 0): ?>
 <div class="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3">
 <div class="flex justify-between text-xs text-gray-600 mb-1">
 <span>Total Tagihan</span>
-<span>Rp {{ number_format($grandTotal, 0, ',', '.') }}</span>
+<span>Rp <?php echo e(number_format($grandTotal, 0, ',', '.')); ?></span>
 </div>
 <div class="flex justify-between text-xs text-green-600 mb-1">
 <span>Sudah Dibayar</span>
-<span>Rp {{ number_format($paidAmount, 0, ',', '.') }}</span>
+<span>Rp <?php echo e(number_format($paidAmount, 0, ',', '.')); ?></span>
 </div>
 <div class="flex justify-between text-xs font-bold text-gray-900 pt-1 border-t border-gray-200">
 <span>Sisa Tagihan</span>
-<span>Rp {{ number_format($remainingBalance, 0, ',', '.') }}</span>
+<span>Rp <?php echo e(number_format($remainingBalance, 0, ',', '.')); ?></span>
 </div>
 </div>
-@endif
+<?php endif; ?>
 </div>
-<input type="hidden" name="payment_type" value="{{ $booking->payment_type }}">
-<input type="hidden" name="dp_option" value="{{ $booking->dp_option }}">
+<input type="hidden" name="payment_type" value="<?php echo e($booking->payment_type); ?>">
+<input type="hidden" name="dp_option" value="<?php echo e($booking->dp_option); ?>">
 </div>
 
 <!-- Catatan -->
@@ -487,27 +493,27 @@ Rp {{ number_format($paymentAmount, 0, ',', '.') }}
 <!-- Transfer Bank Section -->
 <div id="transferSection">
 <!-- Rekening Bank (existing) -->
-@if($bankAccounts->isNotEmpty())
+<?php if($bankAccounts->isNotEmpty()): ?>
 <div>
 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Transfer ke Rekening</h3>
 <div class="space-y-2">
-@foreach($bankAccounts as $bank)
+<?php $__currentLoopData = $bankAccounts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $bank): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
 <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
 <div class="flex items-center justify-between">
 <div class="flex-1">
-<div class="font-bold text-blue-900">{{ $bank->bank_name }}</div>
-<div class="text-blue-700 font-mono text-lg font-bold mt-1" id="acc_{{ $bank->id }}">{{ $bank->account_number }}</div>
-<div class="text-blue-600 text-sm">a/n {{ $bank->account_holder_name ?? $bank->account_holder ?? '' }}</div>
+<div class="font-bold text-blue-900"><?php echo e($bank->bank_name); ?></div>
+<div class="text-blue-700 font-mono text-lg font-bold mt-1" id="acc_<?php echo e($bank->id); ?>"><?php echo e($bank->account_number); ?></div>
+<div class="text-blue-600 text-sm">a/n <?php echo e($bank->account_holder_name ?? $bank->account_holder ?? ''); ?></div>
 </div>
-<button type="button" onclick="copyToClipboard('{{ $bank->account_number }}', {{ $bank->id }})" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all">
-<span id="copyBtn_{{ $bank->id }}">📋 Copy</span>
+<button type="button" onclick="copyToClipboard('<?php echo e($bank->account_number); ?>', <?php echo e($bank->id); ?>)" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all">
+<span id="copyBtn_<?php echo e($bank->id); ?>">📋 Copy</span>
 </button>
 </div>
 </div>
-@endforeach
+<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </div>
 </div>
-@endif
+<?php endif; ?>
 
 <!-- Upload Bukti Transfer -->
 <div>
@@ -554,8 +560,9 @@ Rp {{ number_format($paymentAmount, 0, ',', '.') }}
 </div>
 </div>
 <div class="text-sm text-purple-700">
-<strong>Merchant:</strong> {{ config('services.qris.merchant_name', 'HM TOUR AND TRAVEL') }}<br>
-<strong>NMID:</strong> {{ config('services.qris.nmid') }}
+<strong>Merchant:</strong> <?php echo e(config('services.qris.merchant_name', 'HM TOUR AND TRAVEL')); ?><br>
+<strong>NMID:</strong> <?php echo e(config('services.qris.nmid')); ?>
+
 </div>
 </div>
 
@@ -641,10 +648,10 @@ TAMPILKAN QR CODE QRIS
 <!-- Footer -->
 <div class="px-6 py-4 bg-gray-50 border-t border-gray-100">
 <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
-<a href="{{ url('/') }}" class="inline-flex items-center gap-2 text-green-brand hover:text-green-mid font-semibold text-sm transition-colors">
+<a href="<?php echo e(url('/')); ?>" class="inline-flex items-center gap-2 text-green-brand hover:text-green-mid font-semibold text-sm transition-colors">
 <i class="fas fa-home"></i> Kembali ke Homepage
 </a>
-<p class="text-gray-400 text-xs">&copy; {{ date('Y') }} HM Tour & Travel. Berizin Kemenag RI.</p>
+<p class="text-gray-400 text-xs">&copy; <?php echo e(date('Y')); ?> HM Tour & Travel. Berizin Kemenag RI.</p>
 </div>
 </div>
 
@@ -654,7 +661,7 @@ TAMPILKAN QR CODE QRIS
 <script>
 // Voucher data
 let voucherData = null;
-const originalGrandTotal = {{ $grandTotal }};
+const originalGrandTotal = <?php echo e($grandTotal); ?>;
 
 function copyToClipboard(text, id) {
     navigator.clipboard.writeText(text).then(() => {
@@ -694,11 +701,11 @@ function applyVoucher() {
     btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Validasi...';
     
     // Validate voucher via AJAX
-    fetch('{{ route("voucher.validate") }}', {
+    fetch('<?php echo e(route("voucher.validate")); ?>', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
         },
         body: JSON.stringify({
             code: code,
@@ -766,7 +773,7 @@ function removeVoucher() {
 function updateTotalAmount() {
     const discountAmount = voucherData ? voucherData.discount_amount : 0;
     const finalAmount = originalGrandTotal - discountAmount;
-    const paidAmount = {{ $booking->paid_amount ?? 0 }};
+    const paidAmount = <?php echo e($booking->paid_amount ?? 0); ?>;
     const remainingBalance = finalAmount - paidAmount;
     
     // Update display
@@ -852,7 +859,7 @@ function selectPaymentMethod(method) {
 
 function generateQris() {
     const btn = document.getElementById('btnGenerateQris');
-    let amount = {{ $paymentAmount ?? 0 }};
+    let amount = <?php echo e($paymentAmount ?? 0); ?>;
     
     if (amount < 1000) {
         alert('Jumlah pembayaran minimal Rp 1.000');
@@ -862,11 +869,11 @@ function generateQris() {
     btn.disabled = true;
     btn.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Membuat QRIS...';
     
-    fetch('{{ route("public.qris.generate", ["packageId" => $package->id, "bookingId" => $booking->id]) }}', {
+    fetch('<?php echo e(route("public.qris.generate", ["packageId" => $package->id, "bookingId" => $booking->id])); ?>', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
             'Accept': 'application/json'
         },
         body: JSON.stringify({ amount: amount })
@@ -983,7 +990,7 @@ function startQrisStatusCheck(trxNumber) {
     
     // Check every 5 seconds
     qrisCheckInterval = setInterval(function() {
-        fetch('{{ url("/qris") }}/' + trxNumber + '/check-status', {
+        fetch('<?php echo e(url("/qris")); ?>/' + trxNumber + '/check-status', {
             headers: { 'Accept': 'application/json' }
         })
         .then(response => response.json())
@@ -1039,8 +1046,8 @@ window.addEventListener('beforeunload', function() {
             </button>
         </div>
         
-        <form action="{{ route('public.booking.add-family-member', ['bookingId' => $booking->id]) }}" method="POST">
-            @csrf
+        <form action="<?php echo e(route('public.booking.add-family-member', ['bookingId' => $booking->id])); ?>" method="POST">
+            <?php echo csrf_field(); ?>
             
             <div class="space-y-4">
                 <div>
@@ -1111,3 +1118,4 @@ document.getElementById('addFamilyMemberModal')?.addEventListener('click', funct
 
 </body>
 </html>
+<?php /**PATH C:\xampp\htdocs\hm\resources\views/public/invoice-booking.blade.php ENDPATH**/ ?>
