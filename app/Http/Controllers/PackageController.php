@@ -1548,7 +1548,30 @@ class PackageController extends Controller
         $saved = \App\Models\InfoPaketData::where('id_travel_package', $id)
             ->where('id_keberangkatan', $keberangkatanId)->first();
 
+        // Always generate itinerary from tour plan transport activities
+        $tourPlans = $package->tourPlans()->with('activities')->orderBy('day_number')->get();
+        $transportItinerary = [];
+        foreach ($tourPlans as $plan) {
+            if ($plan->activities) {
+                foreach ($plan->activities as $activity) {
+                    if ($activity->is_transport_info) {
+                        $dateStr = $plan->day_date ? \Carbon\Carbon::parse($plan->day_date)->format('d') . ' ' . strtoupper(\Carbon\Carbon::parse($plan->day_date)->translatedFormat('F')) . ' ' . \Carbon\Carbon::parse($plan->day_date)->format('Y') : '';
+                        $timeStr = $activity->activity_time ? $activity->activity_time . ' WAS' : '';
+                        $transportItinerary[] = [
+                            'from' => strtoupper($activity->transport_from ?? ''),
+                            'to' => strtoupper($activity->transport_to ?? ''),
+                            'date' => $dateStr,
+                            'time' => $timeStr,
+                            'remark' => $activity->transport_remark ?? '',
+                        ];
+                    }
+                }
+            }
+        }
+
         if ($saved) {
+            // Use saved header data, but override itinerary with tour plan transport if available
+            $itineraryToUse = !empty($transportItinerary) ? $transportItinerary : ($saved->itinerary_rows ?? []);
             return response()->json([
                 'form' => [
                     'group_name' => $saved->group_name,
@@ -1557,7 +1580,7 @@ class PackageController extends Controller
                     'child_count' => $saved->child_count,
                     'infant_count' => $saved->infant_count,
                     'rawdah_rows' => $saved->rawdah_rows ?? [],
-                    'itinerary_rows' => $saved->itinerary_rows ?? [],
+                    'itinerary_rows' => $itineraryToUse,
                 ]
             ]);
         }
@@ -1601,35 +1624,36 @@ class PackageController extends Controller
             ['activity' => 'UMRAH', 'date' => '', 'time' => ''],
         ];
 
-        // Itinerary auto-fill from flight/hotel data
-        $itineraryRows = [];
-        $flightDep = $package->flightDeparture;
-        $flightRet = $package->flightReturn;
+        // Use transport itinerary already computed above, with flight fallback
+        $itineraryRows = $transportItinerary;
+        
+        // Fallback: if no transport activities found, use flight data
+        if (empty($itineraryRows)) {
+            $flightDep = $package->flightDeparture;
+            $flightRet = $package->flightReturn;
 
-        // Row 1: Airport to Hotel Madinah
-        if ($flightDep) {
-            $depDateStr = $departureDate ? $departureDate->format('d') . ' ' . strtoupper($departureDate->translatedFormat('F')) . ' ' . $departureDate->format('Y') : '';
-            $arrTime = $flightDep->arrival_time ? $flightDep->arrival_time->format('H.i') . ' WAS' : '';
-            $itineraryRows[] = [
-                'from' => strtoupper($flightDep->arrival_airport ?? '') . ' AIRPORT',
-                'to' => $package->hotelMadinah ? strtoupper($package->hotelMadinah->hotel_name) : 'HOTEL MADINAH',
-                'date' => $depDateStr,
-                'time' => $arrTime,
-                'remark' => 'Landing ' . ($flightDep->arrival_time ? $flightDep->arrival_time->format('H.i') : '') . ' BAWA KOPER',
-            ];
-        }
+            if ($flightDep) {
+                $depDateStr = $departureDate ? $departureDate->format('d') . ' ' . strtoupper($departureDate->translatedFormat('F')) . ' ' . $departureDate->format('Y') : '';
+                $arrTime = $flightDep->arrival_time ? $flightDep->arrival_time->format('H.i') . ' WAS' : '';
+                $itineraryRows[] = [
+                    'from' => strtoupper($flightDep->arrival_airport ?? '') . ' AIRPORT',
+                    'to' => $package->hotelMadinah ? strtoupper($package->hotelMadinah->hotel_name) : 'HOTEL MADINAH',
+                    'date' => $depDateStr,
+                    'time' => $arrTime,
+                    'remark' => 'Landing ' . ($flightDep->arrival_time ? $flightDep->arrival_time->format('H.i') : '') . ' BAWA KOPER',
+                ];
+            }
 
-        // Row last: Hotel Makkah to Airport (return)
-        if ($flightRet && $returnDate) {
-            $retDateStr = $returnDate->format('d') . ' ' . strtoupper($returnDate->translatedFormat('F')) . ' ' . $returnDate->format('Y');
-            $depTime = $flightRet->departure_time ? $flightRet->departure_time->format('H.i') . ' WAS' : '';
-            $itineraryRows[] = [
-                'from' => $package->hotelMakkah ? strtoupper($package->hotelMakkah->hotel_name) : 'HOTEL MAKKAH',
-                'to' => strtoupper($flightRet->departure_airport ?? '') . ' AIRPORT',
-                'date' => $retDateStr,
-                'time' => '',
-                'remark' => 'Takeoff Pukul ' . ($flightRet->departure_time ? $flightRet->departure_time->format('H.i') . ' WAS' : ''),
-            ];
+            if ($flightRet && $returnDate) {
+                $retDateStr = $returnDate->format('d') . ' ' . strtoupper($returnDate->translatedFormat('F')) . ' ' . $returnDate->format('Y');
+                $itineraryRows[] = [
+                    'from' => $package->hotelMakkah ? strtoupper($package->hotelMakkah->hotel_name) : 'HOTEL MAKKAH',
+                    'to' => strtoupper($flightRet->departure_airport ?? '') . ' AIRPORT',
+                    'date' => $retDateStr,
+                    'time' => '',
+                    'remark' => 'Takeoff Pukul ' . ($flightRet->departure_time ? $flightRet->departure_time->format('H.i') . ' WAS' : ''),
+                ];
+            }
         }
 
         return response()->json([
@@ -1772,7 +1796,11 @@ class PackageController extends Controller
                             'activity_time' => $activityData['activity_time'],
                             'activity_title' => $activityData['activity_title'],
                             'activity_description' => $activityData['activity_description'] ?? null,
-                            'order' => $activityData['order'] ?? 0
+                            'order' => $activityData['order'] ?? 0,
+                            'is_transport_info' => !empty($activityData['is_transport_info']),
+                            'transport_from' => $activityData['transport_from'] ?? null,
+                            'transport_to' => $activityData['transport_to'] ?? null,
+                            'transport_remark' => $activityData['transport_remark'] ?? null,
                         ]);
                     }
                 }

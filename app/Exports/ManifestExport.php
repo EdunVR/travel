@@ -32,27 +32,27 @@ class ManifestExport implements WithEvents, WithTitle
 
                 // Row 1: Title
                 $sheet->setCellValue('A1', 'MANIFEST ' . $this->departureDate);
-                $sheet->mergeCells('A1:M1');
+                $sheet->mergeCells('A1:N1');
                 $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
                 // Row 2: Package name
                 $sheet->setCellValue('A2', $this->packageName);
-                $sheet->mergeCells('A2:M2');
+                $sheet->mergeCells('A2:N2');
                 $sheet->getStyle('A2')->getFont()->setSize(9)->setItalic(true);
                 $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
                 // Row 3: Empty spacer
                 // Row 4: Header
-                $headers = ['NO', 'TITLE', 'FULL NAME', 'GENDER', 'NO PASSPORT', 'ISSUED DATE', 'EXPIRE DATE', 'NAT', 'DATE OF BIRTH', 'OFFICE ISSUED', 'BIRTH CITY', 'RELATION', 'GROUP'];
-                $cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
+                $headers = ['NO', 'TITLE', 'FULL NAME', 'GENDER', 'NO PASSPORT', 'ISSUED DATE', 'EXPIRE DATE', 'NAT', 'DATE OF BIRTH', 'OFFICE ISSUED', 'BIRTH CITY', 'RELATION', 'GROUP', 'AGE'];
+                $cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'];
                 
                 foreach ($headers as $i => $h) {
                     $sheet->setCellValue($cols[$i] . '4', $h);
                 }
 
                 // Header style
-                $sheet->getStyle('A4:M4')->applyFromArray([
+                $sheet->getStyle('A4:N4')->applyFromArray([
                     'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 10],
                     'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '1B5E20']],
                     'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
@@ -78,17 +78,18 @@ class ManifestExport implements WithEvents, WithTitle
                     $sheet->setCellValue("K{$rowNum}", $row['birth_city'] ?? '');
                     $sheet->setCellValue("L{$rowNum}", $relation);
                     $sheet->setCellValue("M{$rowNum}", $row['group_label'] ?? '');
+                    $sheet->setCellValue("N{$rowNum}", $row['age'] ?? '');
 
                     // Alternating row color
                     if ($idx % 2 === 1) {
-                        $sheet->getStyle("A{$rowNum}:M{$rowNum}")->getFill()
+                        $sheet->getStyle("A{$rowNum}:N{$rowNum}")->getFill()
                             ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                             ->getStartColor()->setRGB('E8F5E9');
                     }
 
                     // BERDEKATAN highlight
                     if (($row['group_label'] ?? '') === 'BERDEKATAN') {
-                        $sheet->getStyle("A{$rowNum}:M{$rowNum}")->getFill()
+                        $sheet->getStyle("A{$rowNum}:N{$rowNum}")->getFill()
                             ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                             ->getStartColor()->setRGB('C8E6C9');
                     }
@@ -100,7 +101,7 @@ class ManifestExport implements WithEvents, WithTitle
 
                 // Borders on all data (header + rows)
                 if ($lastRow >= 4) {
-                    $sheet->getStyle("A4:M{$lastRow}")->applyFromArray([
+                    $sheet->getStyle("A4:N{$lastRow}")->applyFromArray([
                         'borders' => [
                             'allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => '333333']],
                         ],
@@ -117,7 +118,7 @@ class ManifestExport implements WithEvents, WithTitle
                 }
 
                 // Column widths
-                $widths = ['A' => 5, 'B' => 7, 'C' => 32, 'D' => 9, 'E' => 14, 'F' => 12, 'G' => 12, 'H' => 6, 'I' => 12, 'J' => 18, 'K' => 14, 'L' => 24, 'M' => 14];
+                $widths = ['A' => 5, 'B' => 7, 'C' => 32, 'D' => 9, 'E' => 14, 'F' => 12, 'G' => 12, 'H' => 6, 'I' => 12, 'J' => 18, 'K' => 14, 'L' => 24, 'M' => 14, 'N' => 5];
                 foreach ($widths as $col => $w) {
                     $sheet->getColumnDimension($col)->setWidth($w);
                 }

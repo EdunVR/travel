@@ -1787,6 +1787,11 @@
               if (data.data.tanggal_lahir) this.formData.passport_tanggal_lahir = data.data.tanggal_lahir;
               if (data.data.tanggal_kadaluarsa) this.formData.passport_tanggal_kadaluarsa = data.data.tanggal_kadaluarsa;
               if (data.data.kewarganegaraan) this.formData.passport_kewarganegaraan = data.data.kewarganegaraan;
+              if (data.data.title) this.formData.passport_title = data.data.title;
+              if (data.data.gender) this.formData.passport_gender = data.data.gender;
+              if (data.data.tanggal_terbit) this.formData.passport_tanggal_terbit = data.data.tanggal_terbit;
+              if (data.data.kantor_terbit) this.formData.passport_kantor_terbit = data.data.kantor_terbit;
+              if (data.data.tempat_lahir) this.formData.passport_tempat_lahir = data.data.tempat_lahir;
               
               console.log('✅ Passport OCR berhasil:', data.data);
             } else {
@@ -2064,7 +2069,7 @@
             passport_kantor_terbit: '', passport_tempat_lahir: '', passport_kewarganegaraan: '',
             passport_foto: null, passport_foto_preview: null, passportProcessing: false,
             // KTP
-            ktp_nik: '', ktp_nama: '', ktp_tempat_lahir: '', ktp_alamat: '',
+            ktp_nik: '', ktp_nama: '', ktp_tempat_lahir: '', ktp_tanggal_lahir: '', ktp_alamat: '',
             ktp_foto: null, ktp_foto_preview: null, ktpProcessing: false,
             // Dokumen upload (file objects + previews)
             akta_lahir: null, akta_lahir_preview: null,
@@ -2149,7 +2154,7 @@
           this.formData.family_members[idx].passport_foto = file;
           this.formData.family_members[idx].passportProcessing = true;
           const fd = new FormData();
-          fd.append('passport_image', file);
+          fd.append('image', file);
           try {
             const res = await fetch('<?php echo e(route("admin.crm.pelanggan.ocr.passport")); ?>', {
               method: 'POST',
@@ -2159,10 +2164,16 @@
             const data = await res.json();
             if (data.success) {
               const m = this.formData.family_members[idx];
-              if (data.data.passport_nomor) m.passport_nomor = data.data.passport_nomor;
-              if (data.data.passport_nama) m.passport_nama = data.data.passport_nama;
-              if (data.data.passport_tanggal_lahir) m.passport_tanggal_lahir = data.data.passport_tanggal_lahir;
-              if (data.data.passport_tanggal_kadaluarsa) m.passport_tanggal_kadaluarsa = data.data.passport_tanggal_kadaluarsa;
+              if (data.data.nomor) m.passport_nomor = data.data.nomor;
+              if (data.data.nama) m.passport_nama = data.data.nama;
+              if (data.data.tanggal_lahir) m.passport_tanggal_lahir = data.data.tanggal_lahir;
+              if (data.data.tanggal_kadaluarsa) m.passport_tanggal_kadaluarsa = data.data.tanggal_kadaluarsa;
+              if (data.data.kewarganegaraan) m.passport_kewarganegaraan = data.data.kewarganegaraan;
+              if (data.data.title) m.passport_title = data.data.title;
+              if (data.data.gender) m.passport_gender = data.data.gender;
+              if (data.data.tanggal_terbit) m.passport_tanggal_terbit = data.data.tanggal_terbit;
+              if (data.data.kantor_terbit) m.passport_kantor_terbit = data.data.kantor_terbit;
+              if (data.data.tempat_lahir) m.passport_tempat_lahir = data.data.tempat_lahir;
             }
           } catch(e) {}
           this.formData.family_members[idx].passportProcessing = false;
@@ -2177,7 +2188,7 @@
           this.formData.family_members[idx].ktp_foto = file;
           this.formData.family_members[idx].ktpProcessing = true;
           const fd = new FormData();
-          fd.append('ktp_image', file);
+          fd.append('image', file);
           try {
             const res = await fetch('<?php echo e(route("admin.crm.pelanggan.ocr.ktp")); ?>', {
               method: 'POST',
@@ -2187,11 +2198,11 @@
             const data = await res.json();
             if (data.success) {
               const m = this.formData.family_members[idx];
-              if (data.data.ktp_nik) m.ktp_nik = data.data.ktp_nik;
-              if (data.data.ktp_nama) m.ktp_nama = data.data.ktp_nama;
-              if (data.data.ktp_tempat_lahir) m.ktp_tempat_lahir = data.data.ktp_tempat_lahir;
-              if (data.data.ktp_tanggal_lahir) m.ktp_tanggal_lahir = data.data.ktp_tanggal_lahir;
-              if (data.data.ktp_alamat) m.ktp_alamat = data.data.ktp_alamat;
+              if (data.data.nik) m.ktp_nik = data.data.nik;
+              if (data.data.nama) m.ktp_nama = data.data.nama;
+              if (data.data.tempat_lahir) m.ktp_tempat_lahir = data.data.tempat_lahir;
+              if (data.data.tanggal_lahir) m.ktp_tanggal_lahir = data.data.tanggal_lahir;
+              if (data.data.alamat) m.ktp_alamat = data.data.alamat;
             }
           } catch(e) {}
           this.formData.family_members[idx].ktpProcessing = false;

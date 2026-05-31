@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Manifest {{ $departureDate ?? '' }}</title>
+    <title>Manifest <?php echo e($departureDate ?? ''); ?></title>
     <style>
         @page {
             size: A4 landscape;
@@ -61,41 +61,43 @@
     </style>
 </head>
 <body>
-    {{-- HEADER / KOP SURAT --}}
+    
     <div class="header">
         <table class="header-table" cellpadding="0" cellspacing="0">
             <tr>
-                @if($logoBase64)
+                <?php if($logoBase64): ?>
                 <td class="header-logo">
-                    <img src="{{ $logoBase64 }}" alt="Logo">
+                    <img src="<?php echo e($logoBase64); ?>" alt="Logo">
                 </td>
-                @endif
+                <?php endif; ?>
                 <td class="header-info">
-                    <p class="company-name">{{ $companySettings->company_name ?? 'HM Tour & Travel' }}</p>
+                    <p class="company-name"><?php echo e($companySettings->company_name ?? 'HM Tour & Travel'); ?></p>
                     <p class="company-tagline">Berizin Kemenag RI — Penyelenggara Perjalanan Ibadah Umrah & Haji</p>
-                    <p class="company-address">{{ $companySettings->company_address ?? '' }} {{ $companySettings->company_phone ? '| Telp: ' . $companySettings->company_phone : '' }}</p>
+                    <p class="company-address"><?php echo e($companySettings->company_address ?? ''); ?> <?php echo e($companySettings->company_phone ? '| Telp: ' . $companySettings->company_phone : ''); ?></p>
                 </td>
                 <td class="header-right">
                     <p class="doc-label">Kode Keberangkatan</p>
-                    <p class="doc-code">{{ $keberangkatan->keberangkatan_code ?? '-' }}</p>
+                    <p class="doc-code"><?php echo e($keberangkatan->keberangkatan_code ?? '-'); ?></p>
                     <p class="doc-label" style="margin-top: 4px;">Paket</p>
-                    <p class="doc-code" style="font-size: 7pt;">{{ $keberangkatan->travelPackage->package_name ?? '-' }}</p>
+                    <p class="doc-code" style="font-size: 7pt;"><?php echo e($keberangkatan->travelPackage->package_name ?? '-'); ?></p>
                 </td>
             </tr>
         </table>
     </div>
 
-    {{-- TITLE --}}
-    <div class="title">MANIFEST {{ $departureDate }}</div>
+    
+    <div class="title">MANIFEST <?php echo e($departureDate); ?></div>
     <div class="subtitle">
-        Tanggal Keberangkatan: {{ $keberangkatan->departure_date ? \Carbon\Carbon::parse($keberangkatan->departure_date)->format('d/m/Y') : '-' }}
+        Tanggal Keberangkatan: <?php echo e($keberangkatan->departure_date ? \Carbon\Carbon::parse($keberangkatan->departure_date)->format('d/m/Y') : '-'); ?>
+
         &nbsp;&bull;&nbsp;
-        Tanggal Kepulangan: {{ $keberangkatan->return_date ? \Carbon\Carbon::parse($keberangkatan->return_date)->format('d/m/Y') : '-' }}
+        Tanggal Kepulangan: <?php echo e($keberangkatan->return_date ? \Carbon\Carbon::parse($keberangkatan->return_date)->format('d/m/Y') : '-'); ?>
+
         &nbsp;&bull;&nbsp;
-        Total Jamaah: {{ count($manifestRows) }} orang
+        Total Jamaah: <?php echo e(count($manifestRows)); ?> orang
     </div>
 
-    @php
+    <?php
         function fmtDate($date) {
             if (empty($date)) return '-';
             try { return \Carbon\Carbon::parse($date)->format('d-M-y'); } catch (\Exception $e) { return $date; }
@@ -125,9 +127,9 @@
                 $groupMap[$i] = ['is_first' => ($i === $g['start']), 'span' => $span];
             }
         }
-    @endphp
+    ?>
 
-    {{-- TABLE --}}
+    
     <table class="manifest-table">
         <thead>
             <tr>
@@ -148,51 +150,53 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($manifestRows as $idx => $row)
+            <?php $__currentLoopData = $manifestRows; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $idx => $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <tr>
-                    @if(isset($groupMap[$idx]))
-                        @if($groupMap[$idx]['is_first'])
-                            <td class="berdekatan-cell" rowspan="{{ $groupMap[$idx]['span'] }}">BERDEKATAN</td>
-                        @endif
-                    @else
+                    <?php if(isset($groupMap[$idx])): ?>
+                        <?php if($groupMap[$idx]['is_first']): ?>
+                            <td class="berdekatan-cell" rowspan="<?php echo e($groupMap[$idx]['span']); ?>">BERDEKATAN</td>
+                        <?php endif; ?>
+                    <?php else: ?>
                         <td class="group-indicator">—</td>
-                    @endif
-                    <td class="no-col">{{ $idx + 1 }}</td>
-                    <td class="center">{{ $row['title'] ?? '' }}</td>
-                    <td class="name-col">{{ strtoupper($row['full_name'] ?? '') }}</td>
-                    <td class="center">{{ fmtGender($row['gender'] ?? '') }}</td>
-                    <td class="passport-col">{{ $row['passport_no'] ?? '-' }}</td>
-                    <td class="date-col">{{ fmtDate($row['issued_date'] ?? '') }}</td>
-                    <td class="date-col">{{ fmtDate($row['expire_date'] ?? '') }}</td>
-                    <td class="nat-col">{{ $row['nationality'] ?? 'IDN' }}</td>
-                    <td class="date-col">{{ fmtDate($row['date_of_birth'] ?? '') }}</td>
-                    <td class="center" style="font-size:6.5pt;">{{ $row['office_issued'] ?? '-' }}</td>
-                    <td class="center" style="font-size:6.5pt;">{{ $row['birth_city'] ?? '-' }}</td>
+                    <?php endif; ?>
+                    <td class="no-col"><?php echo e($idx + 1); ?></td>
+                    <td class="center"><?php echo e($row['title'] ?? ''); ?></td>
+                    <td class="name-col"><?php echo e(strtoupper($row['full_name'] ?? '')); ?></td>
+                    <td class="center"><?php echo e(fmtGender($row['gender'] ?? '')); ?></td>
+                    <td class="passport-col"><?php echo e($row['passport_no'] ?? '-'); ?></td>
+                    <td class="date-col"><?php echo e(fmtDate($row['issued_date'] ?? '')); ?></td>
+                    <td class="date-col"><?php echo e(fmtDate($row['expire_date'] ?? '')); ?></td>
+                    <td class="nat-col"><?php echo e($row['nationality'] ?? 'IDN'); ?></td>
+                    <td class="date-col"><?php echo e(fmtDate($row['date_of_birth'] ?? '')); ?></td>
+                    <td class="center" style="font-size:6.5pt;"><?php echo e($row['office_issued'] ?? '-'); ?></td>
+                    <td class="center" style="font-size:6.5pt;"><?php echo e($row['birth_city'] ?? '-'); ?></td>
                     <td style="font-size:6.5pt;">
-                        @if(($row['type'] ?? '') === 'main')
+                        <?php if(($row['type'] ?? '') === 'main'): ?>
                             <span style="color:#888;font-style:italic;">—</span>
-                        @else
-                            {{ $row['relation'] ?? '' }}
-                        @endif
+                        <?php else: ?>
+                            <?php echo e($row['relation'] ?? ''); ?>
+
+                        <?php endif; ?>
                     </td>
-                    <td class="center">{{ $row['age'] ?? '' }}</td>
+                    <td class="center"><?php echo e($row['age'] ?? ''); ?></td>
                 </tr>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </tbody>
     </table>
 
-    {{-- FOOTER --}}
+    
     <div class="footer">
         <table class="footer-table" cellpadding="0" cellspacing="0">
             <tr>
                 <td class="footer-left">
-                    {{ $companySettings->company_name ?? 'HM Tour & Travel' }} — Manifest Keberangkatan
+                    <?php echo e($companySettings->company_name ?? 'HM Tour & Travel'); ?> — Manifest Keberangkatan
                 </td>
                 <td class="footer-right">
-                    Dicetak: {{ \Carbon\Carbon::now()->format('d-m-Y H:i') }} | Halaman 1
+                    Dicetak: <?php echo e(\Carbon\Carbon::now()->format('d-m-Y H:i')); ?> | Halaman 1
                 </td>
             </tr>
         </table>
     </div>
 </body>
 </html>
+<?php /**PATH C:\xampp\htdocs\hm\resources\views/admin/travel/keberangkatan/manifest-table-pdf.blade.php ENDPATH**/ ?>

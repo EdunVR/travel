@@ -95,32 +95,65 @@
                             <div class="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                                 <i class="bx bx-time text-blue-600"></i>
                             </div>
-                            <div class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-3">
-                                <div class="md:col-span-2">
-                                    <label class="block text-xs font-medium text-gray-600 mb-1">Jam</label>
-                                    <input type="time" 
-                                           x-model="activity.activity_time"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                            <div class="flex-1">
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                    <div class="md:col-span-2">
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Jam</label>
+                                        <input type="time" 
+                                               x-model="activity.activity_time"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                    </div>
+                                    <div class="md:col-span-4">
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Judul Kegiatan</label>
+                                        <input type="text" 
+                                               x-model="activity.activity_title"
+                                               placeholder="Judul Kegiatan"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                    </div>
+                                    <div class="md:col-span-5">
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Deskripsi (opsional)</label>
+                                        <input type="text" 
+                                               x-model="activity.activity_description"
+                                               placeholder="Deskripsi kegiatan"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                    </div>
+                                    <div class="md:col-span-1 flex items-end justify-center">
+                                        <button @click="removeActivity(dayIndex, actIndex)" type="button"
+                                                class="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors">
+                                            <i class="bx bx-trash text-lg"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="md:col-span-4">
-                                    <label class="block text-xs font-medium text-gray-600 mb-1">Judul Kegiatan</label>
-                                    <input type="text" 
-                                           x-model="activity.activity_title"
-                                           placeholder="Judul Kegiatan"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                <!-- Transport Info Checkbox -->
+                                <div class="mt-2">
+                                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" x-model="activity.is_transport_info"
+                                               class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                                        <span class="text-xs font-medium text-indigo-700"><i class="bx bx-bus"></i> Keperluan Transport Info Paket</span>
+                                    </label>
                                 </div>
-                                <div class="md:col-span-5">
-                                    <label class="block text-xs font-medium text-gray-600 mb-1">Deskripsi (opsional)</label>
-                                    <input type="text" 
-                                           x-model="activity.activity_description"
-                                           placeholder="Deskripsi kegiatan"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-                                </div>
-                                <div class="md:col-span-1 flex items-end justify-center">
-                                    <button @click="removeActivity(dayIndex, actIndex)" type="button"
-                                            class="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors">
-                                        <i class="bx bx-trash text-lg"></i>
-                                    </button>
+                                <!-- Transport Fields (shown when checked) -->
+                                <div x-show="activity.is_transport_info" x-transition class="mt-2 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <div>
+                                            <label class="block text-xs font-medium text-indigo-700 mb-1">FROM</label>
+                                            <input type="text" x-model="activity.transport_from"
+                                                   placeholder="Contoh: JEDDAH AIRPORT"
+                                                   class="w-full px-3 py-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-indigo-700 mb-1">TO</label>
+                                            <input type="text" x-model="activity.transport_to"
+                                                   placeholder="Contoh: MADINAH HOTEL"
+                                                   class="w-full px-3 py-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-indigo-700 mb-1">REMARK</label>
+                                            <input type="text" x-model="activity.transport_remark"
+                                                   placeholder="Contoh: Landing 17.30 BAWA KOPER"
+                                                   class="w-full px-3 py-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -225,7 +258,11 @@ function tourPlanTab() {
                 activity_time: '09:00',
                 activity_title: '',
                 activity_description: '',
-                order: day.activities.length + 1
+                order: day.activities.length + 1,
+                is_transport_info: false,
+                transport_from: '',
+                transport_to: '',
+                transport_remark: ''
             });
         },
 

@@ -1775,6 +1775,7 @@ class KeberangkatanController extends Controller
                 'birth_city'    => $jamaah->passport_tempat_lahir ?: $jamaah->ktp_tempat_lahir ?: '',
                 'relation'      => '',
                 'group_label'   => '',
+                'age'           => ($jamaah->passport_tanggal_lahir ?: $jamaah->ktp_tanggal_lahir) ? \Carbon\Carbon::parse($jamaah->passport_tanggal_lahir ?: $jamaah->ktp_tanggal_lahir)->age : '',
             ];
 
             // Family members
@@ -1810,6 +1811,7 @@ class KeberangkatanController extends Controller
                     'birth_city'    => $fm['passport_tempat_lahir'] ?? '',
                     'relation'      => $relation,
                     'group_label'   => '',
+                    'age'           => !empty($fm['passport_tanggal_lahir'] ?? $fm['tanggal_lahir'] ?? '') ? \Carbon\Carbon::parse($fm['passport_tanggal_lahir'] ?? $fm['tanggal_lahir'])->age : '',
                 ];
             }
         }

@@ -939,38 +939,71 @@ class CustomerManagementController extends Controller
      */
     public function ocrKtp(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'image' => 'required|image|max:2048', // max 2MB
-        ]);
-
-        if ($validator->fails()) {
+        // Accept file from multiple possible field names
+        $file = $request->file('image') ?? $request->file('ktp_image');
+        
+        if (!$file) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
+                'message' => 'File tidak ditemukan.'
             ], 422);
         }
 
+        // Validate file
+        $extension = strtolower($file->getClientOriginalExtension());
+        if (!in_array($extension, ['jpg', 'jpeg', 'png', 'pdf'])) {
+            return response()->json(['success' => false, 'message' => 'Format file harus JPG, PNG, atau PDF'], 422);
+        }
+        if ($file->getSize() > 5 * 1024 * 1024) {
+            return response()->json(['success' => false, 'message' => 'Ukuran file maksimal 5MB'], 422);
+        }
+
         try {
-            $image = $request->file('image');
-            
-            // Simple OCR simulation - In production, use Tesseract OCR or cloud OCR service
-            // For now, return empty data structure
-            $ocrData = $this->processKtpOcr($image);
+            $path = $file->store('temp/ktp_ocr', 'public');
+            $fullPath = storage_path('app/public/' . $path);
+
+            // Use Google Vision (primary) or Tesseract (fallback) - same as public manifest
+            $vision = new \App\Services\GoogleVisionService();
+            $text = '';
+
+            if ($vision->isAvailable()) {
+                $text = $vision->extractText($fullPath) ?? '';
+            }
+
+            // Fallback to Tesseract for images only
+            if (empty($text) && $file->getMimeType() !== 'application/pdf') {
+                try {
+                    $text = \OnePointHub\LaravelOcr\Facades\Ocr::scan($fullPath, 'ind', 3) ?? '';
+                } catch (\Exception $e) {}
+            }
+
+            \Storage::disk('public')->delete($path);
+
+            if (empty($text)) {
+                return response()->json([
+                    'success' => true,
+                    'data' => ['nik' => '', 'nama' => '', 'tempat_lahir' => '', 'tanggal_lahir' => '', 'alamat' => '', 'error' => 'OCR tidak dapat mengekstrak teks. Pastikan file jelas.']
+                ]);
+            }
+
+            // Use KtpParserHelper trait method for consistent parsing
+            $parsedData = $this->parseKtpTextNew($text);
 
             return response()->json([
                 'success' => true,
                 'message' => 'OCR KTP berhasil diproses',
-                'data' => $ocrData
+                'data' => [
+                    'nik' => $parsedData['nik'] ?? '',
+                    'nama' => $parsedData['nama'] ?? '',
+                    'tempat_lahir' => $parsedData['tempat_lahir'] ?? '',
+                    'tanggal_lahir' => $parsedData['tanggal_lahir'] ?? '',
+                    'alamat' => $parsedData['alamat'] ?? '',
+                ]
             ]);
 
         } catch (\Exception $e) {
             \Log::error('Error processing KTP OCR: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memproses OCR KTP: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Gagal memproses OCR KTP: ' . $e->getMessage()], 500);
         }
     }
 
@@ -979,37 +1012,73 @@ class CustomerManagementController extends Controller
      */
     public function ocrPassport(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'image' => 'required|image|max:2048', // max 2MB
-        ]);
+        // Accept file from multiple possible field names
+        $file = $request->file('image') ?? $request->file('passport_image');
+        
+        if (!$file) {
+            return response()->json(['success' => false, 'message' => 'File tidak ditemukan.'], 422);
+        }
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
-            ], 422);
+        // Validate file
+        $extension = strtolower($file->getClientOriginalExtension());
+        if (!in_array($extension, ['jpg', 'jpeg', 'png', 'pdf'])) {
+            return response()->json(['success' => false, 'message' => 'Format file harus JPG, PNG, atau PDF'], 422);
+        }
+        if ($file->getSize() > 5 * 1024 * 1024) {
+            return response()->json(['success' => false, 'message' => 'Ukuran file maksimal 5MB'], 422);
         }
 
         try {
-            $image = $request->file('image');
-            
-            // Process OCR
-            $ocrData = $this->processPassportOcr($image);
+            $path = $file->store('temp/passport_ocr', 'public');
+            $fullPath = storage_path('app/public/' . $path);
+
+            // Use Google Vision (primary) or Tesseract (fallback) - same as public manifest
+            $vision = new \App\Services\GoogleVisionService();
+            $text = '';
+
+            if ($vision->isAvailable()) {
+                $text = $vision->extractText($fullPath) ?? '';
+            }
+
+            // Fallback to Tesseract for images only
+            if (empty($text) && $file->getMimeType() !== 'application/pdf') {
+                try {
+                    $text = \OnePointHub\LaravelOcr\Facades\Ocr::scan($fullPath, 'eng', 3) ?? '';
+                } catch (\Exception $e) {}
+            }
+
+            \Storage::disk('public')->delete($path);
+
+            if (empty($text)) {
+                return response()->json([
+                    'success' => true,
+                    'data' => ['nomor' => '', 'nama' => '', 'tanggal_lahir' => '', 'tanggal_kadaluarsa' => '', 'kewarganegaraan' => '', 'error' => 'OCR tidak dapat mengekstrak teks. Pastikan file jelas.']
+                ]);
+            }
+
+            // Use PassportParserHelper trait method for consistent parsing
+            $parsedData = $this->parsePassportTextNew($text);
 
             return response()->json([
                 'success' => true,
                 'message' => 'OCR Passport berhasil diproses',
-                'data' => $ocrData
+                'data' => [
+                    'nomor' => $parsedData['nomor'] ?? '',
+                    'nama' => $parsedData['nama'] ?? '',
+                    'tanggal_lahir' => $parsedData['tanggal_lahir'] ?? '',
+                    'tanggal_kadaluarsa' => $parsedData['tanggal_kadaluarsa'] ?? '',
+                    'kewarganegaraan' => $parsedData['kewarganegaraan'] ?? '',
+                    'title' => $parsedData['title'] ?? '',
+                    'gender' => $parsedData['gender'] ?? '',
+                    'tanggal_terbit' => $parsedData['tanggal_terbit'] ?? '',
+                    'kantor_terbit' => $parsedData['kantor_terbit'] ?? '',
+                    'tempat_lahir' => $parsedData['tempat_lahir'] ?? '',
+                ]
             ]);
 
         } catch (\Exception $e) {
             \Log::error('Error processing Passport OCR: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memproses OCR Passport: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Gagal memproses OCR Passport: ' . $e->getMessage()], 500);
         }
     }
 

@@ -91,6 +91,7 @@
                 <th>No. Passport</th>
                 <th>Exp. Passport</th>
                 <th>Status Dokumen</th>
+                <th width="30">Age</th>
             </tr>
         </thead>
         <tbody>
@@ -123,6 +124,7 @@
                     <td class="{{ $isComplete ? 'status-complete' : 'status-incomplete' }}">
                         {{ $approvedCount }}/5 {{ $isComplete ? 'Lengkap' : 'Belum' }}
                     </td>
+                    <td style="text-align:center;">{{ $jamaah->ktp_tanggal_lahir ? \Carbon\Carbon::parse($jamaah->ktp_tanggal_lahir)->age : '-' }}</td>
                 </tr>
                 <!-- Anggota Keluarga -->
                 @foreach($familyMembers as $fm)
@@ -134,11 +136,12 @@
                     <td>{{ $fm['passport_nomor'] ?? '-' }}</td>
                     <td>{{ isset($fm['passport_exp']) ? \Carbon\Carbon::parse($fm['passport_exp'])->format('d M Y') : '-' }}</td>
                     <td>-</td>
+                    <td style="text-align:center;">{{ !empty($fm['tanggal_lahir']) ? \Carbon\Carbon::parse($fm['tanggal_lahir'])->age : '-' }}</td>
                 </tr>
                 @endforeach
             @empty
                 <tr>
-                    <td colspan="7" style="text-align: center; padding: 20px; color: #666;">
+                    <td colspan="8" style="text-align: center; padding: 20px; color: #666;">
                         Tidak ada data jamaah.
                     </td>
                 </tr>

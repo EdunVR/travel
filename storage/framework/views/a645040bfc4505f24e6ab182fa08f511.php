@@ -194,36 +194,65 @@
         $madinahNights = ($madinahCheckIn && $madinahCheckOut) ? $madinahCheckIn->diffInDays($madinahCheckOut) : 0;
         $makkahNights = ($makkahCheckIn && $makkahCheckOut) ? $makkahCheckIn->diffInDays($makkahCheckOut) : 0;
         
-        // Room count calculation from jamaah bookings (price_variant = quad/triple/double)
-        // Each booking = 1 room of that type (shared by the group in that room)
-        // We count how many rooms of each type are needed
-        $roomCounts = ['sgl' => 0, 'dbl' => 0, 'trpl' => 0, 'quad' => 0, 'quint' => 0, 'total' => 0];
-        $bookingsForRooms = $keberangkatan->jamaahBookings ?? collect();
+        // Room count calculation from jamaah_hotel_bookings table
+        $allJamaahHotelBookings = \App\Models\JamaahHotelBooking::whereIn('id_jamaah_booking', 
+            ($keberangkatan->jamaahBookings ?? collect())->pluck('id')->toArray()
+        )->get();
         
-        foreach ($bookingsForRooms as $booking) {
-            $variant = strtolower($booking->price_variant ?? $booking->room_type ?? 'double');
-            if (str_contains($variant, 'single') || str_contains($variant, 'sgl')) $roomCounts['sgl']++;
-            elseif (str_contains($variant, 'double') || str_contains($variant, 'dbl')) $roomCounts['dbl']++;
-            elseif (str_contains($variant, 'triple') || str_contains($variant, 'trpl')) $roomCounts['trpl']++;
-            elseif (str_contains($variant, 'quad')) $roomCounts['quad']++;
-            elseif (str_contains($variant, 'quint')) $roomCounts['quint']++;
-            else $roomCounts['dbl']++; // default to double
+        // Helper function to count rooms by filter
+        $countRoomsFiltered = function($filtered) {
+            $counts = ['sgl' => 0, 'dbl' => 0, 'trpl' => 0, 'quad' => 0, 'quint' => 0, 'total' => 0];
+            foreach ($filtered as $hb) {
+                $type = strtolower($hb->room_type ?? 'double');
+                if (str_contains($type, 'single') || str_contains($type, 'sgl')) $counts['sgl']++;
+                elseif (str_contains($type, 'double') || str_contains($type, 'dbl')) $counts['dbl']++;
+                elseif (str_contains($type, 'triple') || str_contains($type, 'trpl')) $counts['trpl']++;
+                elseif (str_contains($type, 'quad')) $counts['quad']++;
+                elseif (str_contains($type, 'quint')) $counts['quint']++;
+                else $counts['dbl']++;
+            }
+            $rooms = [
+                'sgl' => $counts['sgl'],
+                'dbl' => (int) ceil($counts['dbl'] / 2),
+                'trpl' => (int) ceil($counts['trpl'] / 3),
+                'quad' => (int) ceil($counts['quad'] / 4),
+                'quint' => (int) ceil($counts['quint'] / 5),
+                'total' => 0
+            ];
+            $rooms['total'] = $rooms['sgl'] + $rooms['dbl'] + $rooms['trpl'] + $rooms['quad'] + $rooms['quint'];
+            return $rooms;
+        };
+        
+        // Madinah: filter by city_type = madinah
+        $madinahRoomCounts = $countRoomsFiltered($allJamaahHotelBookings->filter(fn($hb) => strtolower($hb->city_type) === 'madinah'));
+        // Makkah: filter by city_type = makkah
+        $makkahRoomCounts = $countRoomsFiltered($allJamaahHotelBookings->filter(fn($hb) => strtolower($hb->city_type) === 'makkah'));
+        
+        // Other hotels: filter by id_hotel match OR city_type match (excluding madinah/makkah)
+        $otherHotelRoomCounts = [];
+        foreach ($otherHotels as $idx => $oh) {
+            $hotelId = $oh['id_hotel'] ?? $oh['id'] ?? null;
+            $cityType = strtolower($oh['city'] ?? $oh['city_type'] ?? '');
+            
+            // Try matching by id_hotel first, then by city_type
+            $filtered = $allJamaahHotelBookings->filter(function($hb) use ($hotelId, $cityType) {
+                if ($hotelId && $hb->id_hotel == $hotelId) return true;
+                if ($cityType && strtolower($hb->city_type) === $cityType && !in_array(strtolower($hb->city_type), ['madinah', 'makkah'])) return true;
+                return false;
+            });
+            $otherHotelRoomCounts[$idx] = $countRoomsFiltered($filtered);
         }
         
-        // Calculate actual room count (group jamaah by room type capacity)
-        // quad = 4 per room, triple = 3 per room, double = 2 per room, single = 1 per room
-        $madinahRoomCounts = [
-            'sgl' => $roomCounts['sgl'],
-            'dbl' => (int) ceil($roomCounts['dbl'] / 2),
-            'trpl' => (int) ceil($roomCounts['trpl'] / 3),
-            'quad' => (int) ceil($roomCounts['quad'] / 4),
-            'quint' => (int) ceil($roomCounts['quint'] / 5),
-            'total' => 0
+        // City abbreviation mapping (consistent)
+        $cityAbbrevMap = [
+            'madinah' => 'MED', 'medina' => 'MED', 'medinah' => 'MED',
+            'makkah' => 'MEK', 'mecca' => 'MEK', 'mekkah' => 'MEK', 'mekah' => 'MEK',
+            'jeddah' => 'JED', 'jedda' => 'JED',
         ];
-        $madinahRoomCounts['total'] = $madinahRoomCounts['sgl'] + $madinahRoomCounts['dbl'] + $madinahRoomCounts['trpl'] + $madinahRoomCounts['quad'] + $madinahRoomCounts['quint'];
-        
-        // Same room allocation applies to Makkah (same jamaah, same room types)
-        $makkahRoomCounts = $madinahRoomCounts;
+        $getCityAbbrev = function($city) use ($cityAbbrevMap) {
+            $lower = strtolower(trim($city ?? ''));
+            return $cityAbbrevMap[$lower] ?? strtoupper(substr($city ?? '-', 0, 3));
+        };
     ?>
 
     <!-- TITLE -->
@@ -404,9 +433,10 @@
                 <td class="text-center"><?php echo e($makkahRoomCounts['total'] ?: ''); ?></td>
             </tr>
             <?php endif; ?>
-            <?php $__currentLoopData = $otherHotels; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $otherHotel): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <?php $__currentLoopData = $otherHotels; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $idx => $otherHotel): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <?php $ohRooms = $otherHotelRoomCounts[$idx] ?? ['sgl'=>0,'dbl'=>0,'trpl'=>0,'quad'=>0,'quint'=>0,'total'=>0]; ?>
             <tr>
-                <td class="text-center"><?php echo e(strtoupper(substr($otherHotel['city'] ?? '-', 0, 3))); ?></td>
+                <td class="text-center"><?php echo e($getCityAbbrev($otherHotel['city'] ?? '')); ?></td>
                 <td><?php echo e(strtoupper($otherHotel['hotel_name'] ?? '-')); ?></td>
                 <td class="text-center"><?php echo e(isset($otherHotel['check_in']) ? \Carbon\Carbon::parse($otherHotel['check_in'])->format('d M') : '-'); ?></td>
                 <td class="text-center"><?php echo e(isset($otherHotel['check_out']) ? \Carbon\Carbon::parse($otherHotel['check_out'])->format('d M') : '-'); ?></td>
@@ -416,12 +446,12 @@
 
                     <?php endif; ?>
                 </td>
-                <td class="text-center"></td>
-                <td class="text-center"><?php echo e($otherHotel['dbl'] ?? ''); ?></td>
-                <td class="text-center"><?php echo e($otherHotel['trpl'] ?? ''); ?></td>
-                <td class="text-center"><?php echo e($otherHotel['quad'] ?? ''); ?></td>
-                <td class="text-center"><?php echo e($otherHotel['quint'] ?? ''); ?></td>
-                <td class="text-center"><?php echo e($otherHotel['total_rooms'] ?? ''); ?></td>
+                <td class="text-center"><?php echo e($ohRooms['sgl'] ?: ''); ?></td>
+                <td class="text-center"><?php echo e($ohRooms['dbl'] ?: ''); ?></td>
+                <td class="text-center"><?php echo e($ohRooms['trpl'] ?: ''); ?></td>
+                <td class="text-center"><?php echo e($ohRooms['quad'] ?: ''); ?></td>
+                <td class="text-center"><?php echo e($ohRooms['quint'] ?: ''); ?></td>
+                <td class="text-center"><?php echo e($ohRooms['total'] ?: ''); ?></td>
             </tr>
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             <?php if(!$hotelMadinah && !$hotelMakkah && count($otherHotels) == 0): ?>

@@ -14,11 +14,16 @@ class TourPlanActivity extends Model
         'activity_time',
         'activity_title',
         'activity_description',
-        'order'
+        'order',
+        'is_transport_info',
+        'transport_from',
+        'transport_to',
+        'transport_remark',
     ];
 
     protected $casts = [
-        'order' => 'integer'
+        'order' => 'integer',
+        'is_transport_info' => 'boolean',
     ];
 
     public function tourPlan()
