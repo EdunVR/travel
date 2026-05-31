@@ -45,6 +45,7 @@ return [
             // Communication & Reporting
             ['name' => 'Komunikasi', 'route' => 'admin.inventaris.travel.communication.index', 'permissions' => ['travel.communication.view']],
             ['name' => 'Laporan', 'route' => 'admin.inventaris.travel.report.index', 'permissions' => ['travel.report.view']],
+            ['name' => 'Pengingat Pembayaran', 'route' => 'admin.inventaris.travel.payment-reminder.index', 'permissions' => ['travel.booking.view']],
 
             // Affiliate
             ['name' => 'Mitra', 'route' => 'admin.inventaris.affiliate.index', 'permissions' => ['travel.affiliate.view']],

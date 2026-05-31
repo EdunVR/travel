@@ -16,6 +16,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('affiliate:release-termin2')
                  ->dailyAt('00:01')
                  ->withoutOverlapping();
+
+        // Payment reminders - check every minute
+        $schedule->command('payment:send-reminders')->everyMinute();
     }
 
     /**

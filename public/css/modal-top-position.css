@@ -1,0 +1,53 @@
+/* ===== FORCE ALL MODALS TO TOP POSITION ===== */
+/* This file must be loaded AFTER Tailwind CSS */
+/* Uses double-class specificity to override Tailwind utilities */
+
+/* Alpine.js modals - the most common pattern in this app */
+/* Pattern: <div class="fixed inset-0 ... flex items-center justify-center ..."> */
+.fixed.inset-0.items-center {
+    align-items: flex-start !important;
+    padding-top: 2rem !important;
+}
+
+.fixed.inset-0.items-center.justify-center {
+    align-items: flex-start !important;
+    padding-top: 2rem !important;
+}
+
+/* z-index variants */
+.fixed.inset-0.z-40.flex.items-center,
+.fixed.inset-0.z-50.flex.items-center,
+.fixed.inset-0.z-40.flex.items-center.justify-center,
+.fixed.inset-0.z-50.flex.items-center.justify-center {
+    align-items: flex-start !important;
+    padding-top: 2rem !important;
+}
+
+/* Generic fixed overlay flex containers */
+.fixed.inset-0.flex {
+    align-items: flex-start !important;
+    padding-top: 2rem !important;
+}
+
+/* Bootstrap modal dialog */
+.modal-dialog {
+    margin-top: 1.75rem !important;
+    vertical-align: top !important;
+}
+.modal.fade .modal-dialog,
+.modal.show .modal-dialog {
+    transform: translate(0, 0) !important;
+}
+
+/* SweetAlert2 */
+.swal2-container {
+    align-items: flex-start !important;
+    padding-top: 2rem !important;
+}
+.swal2-popup {
+    margin-top: 2rem !important;
+}
+div.swal2-container.swal2-center {
+    align-items: flex-start !important;
+    padding-top: 2rem !important;
+}

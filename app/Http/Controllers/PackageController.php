@@ -1755,6 +1755,276 @@ class PackageController extends Controller
     }
 
     /**
+     * Update package dates with cascade to all related data
+     */
+    public function updatePackageDates(Request $request, $id, $keberangkatanId)
+    {
+        try {
+            $package = TravelPackage::findOrFail($id);
+            $keberangkatan = \App\Models\Keberangkatan::where('id', $keberangkatanId)
+                ->where('id_travel_package', $id)->firstOrFail();
+
+            $newDepartureDatetime = $request->input('departure_datetime'); // format: d/m/Y H:i
+            $newReturnDatetime = $request->input('return_datetime'); // format: d/m/Y H:i
+
+            if (!$newDepartureDatetime || !$newReturnDatetime) {
+                return response()->json(['success' => false, 'message' => 'Tanggal keberangkatan dan kepulangan harus diisi'], 422);
+            }
+
+            // Parse new dates
+            $newDeparture = \Carbon\Carbon::createFromFormat('d/m/Y H:i', $newDepartureDatetime);
+            $newReturn = \Carbon\Carbon::createFromFormat('d/m/Y H:i', $newReturnDatetime);
+
+            if (!$newDeparture || !$newReturn) {
+                return response()->json(['success' => false, 'message' => 'Format tanggal tidak valid (DD/MM/YYYY HH:MM)'], 422);
+            }
+
+            if ($newReturn->lt($newDeparture)) {
+                return response()->json(['success' => false, 'message' => 'Tanggal kepulangan harus setelah tanggal keberangkatan'], 422);
+            }
+
+            // Calculate day delta from old departure date
+            $oldDepartureDate = $package->departure_date ? \Carbon\Carbon::parse($package->departure_date) : null;
+            if (!$oldDepartureDate) {
+                return response()->json(['success' => false, 'message' => 'Paket belum memiliki tanggal keberangkatan awal'], 422);
+            }
+
+            $dayDelta = $oldDepartureDate->startOfDay()->diffInDays($newDeparture->copy()->startOfDay(), false);
+
+            Log::info('Updating package dates', [
+                'package_id' => $id,
+                'keberangkatan_id' => $keberangkatanId,
+                'old_departure' => $oldDepartureDate->toDateString(),
+                'new_departure' => $newDeparture->toDateTimeString(),
+                'new_return' => $newReturn->toDateTimeString(),
+                'day_delta' => $dayDelta,
+            ]);
+
+            \DB::beginTransaction();
+
+            // 1. Update travel_packages
+            $packageUpdate = [
+                'departure_date' => $newDeparture->toDateString(),
+                'return_date' => $newReturn->toDateString(),
+                'departure_datetime' => $newDeparture->toDateTimeString(),
+                'return_datetime' => $newReturn->toDateTimeString(),
+            ];
+
+            // Shift hotel check-in/check-out dates
+            if ($package->madinah_check_in) {
+                $packageUpdate['madinah_check_in'] = \Carbon\Carbon::parse($package->madinah_check_in)->addDays($dayDelta)->toDateString();
+            }
+            if ($package->madinah_check_out) {
+                $packageUpdate['madinah_check_out'] = \Carbon\Carbon::parse($package->madinah_check_out)->addDays($dayDelta)->toDateString();
+            }
+            if ($package->makkah_check_in) {
+                $packageUpdate['makkah_check_in'] = \Carbon\Carbon::parse($package->makkah_check_in)->addDays($dayDelta)->toDateString();
+            }
+            if ($package->makkah_check_out) {
+                $packageUpdate['makkah_check_out'] = \Carbon\Carbon::parse($package->makkah_check_out)->addDays($dayDelta)->toDateString();
+            }
+
+            // Shift hotels JSON (additional hotels) dates
+            if ($package->hotels && is_array($package->hotels)) {
+                $updatedHotels = [];
+                foreach ($package->hotels as $hotel) {
+                    if (!empty($hotel['check_in'])) {
+                        $hotel['check_in'] = \Carbon\Carbon::parse($hotel['check_in'])->addDays($dayDelta)->toDateString();
+                    }
+                    if (!empty($hotel['check_out'])) {
+                        $hotel['check_out'] = \Carbon\Carbon::parse($hotel['check_out'])->addDays($dayDelta)->toDateString();
+                    }
+                    $updatedHotels[] = $hotel;
+                }
+                $packageUpdate['hotels'] = $updatedHotels;
+            }
+
+            $package->update($packageUpdate);
+
+            // 2. Update keberangkatan
+            $keberangkatan->update([
+                'departure_date' => $newDeparture->toDateString(),
+                'return_date' => $newReturn->toDateString(),
+            ]);
+
+            // 3. Update all jamaah_hotel_bookings for bookings in this keberangkatan
+            $bookingIds = \App\Models\JamaahBooking::where('id_keberangkatan', $keberangkatanId)
+                ->pluck('id');
+
+            if ($bookingIds->isNotEmpty()) {
+                $hotelBookings = \App\Models\JamaahHotelBooking::whereIn('id_jamaah_booking', $bookingIds)->get();
+                foreach ($hotelBookings as $hb) {
+                    $updateData = [];
+                    if ($hb->check_in_date) {
+                        $updateData['check_in_date'] = \Carbon\Carbon::parse($hb->check_in_date)->addDays($dayDelta)->toDateString();
+                    }
+                    if ($hb->check_out_date) {
+                        $updateData['check_out_date'] = \Carbon\Carbon::parse($hb->check_out_date)->addDays($dayDelta)->toDateString();
+                    }
+                    if (!empty($updateData)) {
+                        $hb->update($updateData);
+                    }
+                }
+            }
+
+            // 4. Update tour_plans day_date for this package
+            $tourPlans = \App\Models\TourPlan::where('travel_package_id', $id)->get();
+            foreach ($tourPlans as $tp) {
+                if ($tp->day_date) {
+                    $tp->update([
+                        'day_date' => \Carbon\Carbon::parse($tp->day_date)->addDays($dayDelta)->toDateString()
+                    ]);
+                }
+            }
+
+            // 5. Update saved info_paket_data (group_name, rawdah dates, itinerary dates)
+            $infoPaketData = \App\Models\InfoPaketData::where('id_travel_package', $id)
+                ->where('id_keberangkatan', $keberangkatanId)->first();
+
+            if ($infoPaketData) {
+                $updateInfoPaket = [];
+
+                // Update group_name (contains departure date like "29 MARET 2026")
+                $newGroupName = $newDeparture->format('d') . ' ' . strtoupper($newDeparture->translatedFormat('F')) . ' ' . $newDeparture->format('Y');
+                $updateInfoPaket['group_name'] = $newGroupName;
+
+                // Update rawdah_rows dates
+                if ($infoPaketData->rawdah_rows && is_array($infoPaketData->rawdah_rows)) {
+                    $updatedRawdah = [];
+                    foreach ($infoPaketData->rawdah_rows as $row) {
+                        if (!empty($row['date'])) {
+                            $row['date'] = $this->shiftDateString($row['date'], $dayDelta);
+                        }
+                        $updatedRawdah[] = $row;
+                    }
+                    $updateInfoPaket['rawdah_rows'] = $updatedRawdah;
+                }
+
+                // Update itinerary_rows dates
+                if ($infoPaketData->itinerary_rows && is_array($infoPaketData->itinerary_rows)) {
+                    $updatedItinerary = [];
+                    foreach ($infoPaketData->itinerary_rows as $row) {
+                        if (!empty($row['date'])) {
+                            $row['date'] = $this->shiftDateString($row['date'], $dayDelta);
+                        }
+                        $updatedItinerary[] = $row;
+                    }
+                    $updateInfoPaket['itinerary_rows'] = $updatedItinerary;
+                }
+
+                $infoPaketData->update($updateInfoPaket);
+            }
+
+            // 6. Update keberangkatan_name if it contains date pattern
+            $kbName = $keberangkatan->keberangkatan_name;
+            $newKbName = $this->updateNameWithDate($kbName, $oldDepartureDate, $newDeparture);
+            if ($newKbName !== $kbName) {
+                $keberangkatan->update(['keberangkatan_name' => $newKbName]);
+            }
+
+            // 7. Update package_name if it contains date pattern
+            $pkgName = $package->package_name;
+            $newPkgName = $this->updateNameWithDate($pkgName, $oldDepartureDate, $newDeparture);
+            if ($newPkgName !== $pkgName) {
+                $package->update(['package_name' => $newPkgName]);
+            }
+
+            \DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tanggal berhasil diperbarui. Semua data terkait (hotel, keberangkatan, tour plan) telah disesuaikan.',
+                'data' => [
+                    'departure_date' => $newDeparture->format('d/m/Y H:i'),
+                    'return_date' => $newReturn->format('d/m/Y H:i'),
+                    'day_delta' => $dayDelta,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            Log::error('Error updating package dates: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['success' => false, 'message' => 'Gagal memperbarui tanggal: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Helper: Shift a date string like "29 MARET 2026" by N days
+     */
+    private function shiftDateString($dateStr, $dayDelta)
+    {
+        if (empty($dateStr) || $dayDelta == 0) return $dateStr;
+
+        // Indonesian month names mapping
+        $months = [
+            'JANUARI' => 1, 'FEBRUARI' => 2, 'MARET' => 3, 'APRIL' => 4,
+            'MEI' => 5, 'JUNI' => 6, 'JULI' => 7, 'AGUSTUS' => 8,
+            'SEPTEMBER' => 9, 'OKTOBER' => 10, 'NOVEMBER' => 11, 'DESEMBER' => 12,
+        ];
+
+        // Try to parse "DD MONTH YYYY" format
+        $parts = preg_split('/\s+/', trim($dateStr));
+        if (count($parts) >= 3) {
+            $day = (int)$parts[0];
+            $monthName = strtoupper($parts[1]);
+            $year = (int)$parts[2];
+
+            if (isset($months[$monthName]) && $day > 0 && $year > 0) {
+                try {
+                    $date = \Carbon\Carbon::createFromDate($year, $months[$monthName], $day);
+                    $newDate = $date->addDays($dayDelta);
+                    return $newDate->format('d') . ' ' . strtoupper($newDate->translatedFormat('F')) . ' ' . $newDate->format('Y');
+                } catch (\Exception $e) {
+                    // If parsing fails, return original
+                    return $dateStr;
+                }
+            }
+        }
+
+        return $dateStr;
+    }
+
+    /**
+     * Helper: Update a name string if it contains a date matching the old departure date
+     * Replaces date patterns like "29 Maret 2026" or "29 MARET 2026" or "29-03-2026" etc.
+     */
+    private function updateNameWithDate($name, $oldDate, $newDate)
+    {
+        if (empty($name)) return $name;
+
+        // Format variations of old date to search for
+        $oldFormats = [
+            $oldDate->format('d') . ' ' . strtoupper($oldDate->translatedFormat('F')) . ' ' . $oldDate->format('Y'),
+            $oldDate->format('d') . ' ' . $oldDate->translatedFormat('F') . ' ' . $oldDate->format('Y'),
+            $oldDate->format('d-m-Y'),
+            $oldDate->format('d/m/Y'),
+            $oldDate->format('d M Y'),
+            $oldDate->format('d') . ' ' . strtoupper($oldDate->translatedFormat('M')) . ' ' . $oldDate->format('Y'),
+        ];
+
+        $newFormats = [
+            $newDate->format('d') . ' ' . strtoupper($newDate->translatedFormat('F')) . ' ' . $newDate->format('Y'),
+            $newDate->format('d') . ' ' . $newDate->translatedFormat('F') . ' ' . $newDate->format('Y'),
+            $newDate->format('d-m-Y'),
+            $newDate->format('d/m/Y'),
+            $newDate->format('d M Y'),
+            $newDate->format('d') . ' ' . strtoupper($newDate->translatedFormat('M')) . ' ' . $newDate->format('Y'),
+        ];
+
+        $result = $name;
+        foreach ($oldFormats as $idx => $oldFmt) {
+            if (stripos($result, $oldFmt) !== false) {
+                $result = str_ireplace($oldFmt, $newFormats[$idx], $result);
+                break; // Only replace first match
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Get tour plans for a package
      */
     public function getTourPlans($id)

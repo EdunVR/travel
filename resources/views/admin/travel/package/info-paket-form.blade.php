@@ -1,4 +1,8 @@
 <x-layouts.admin :title="'Penyesuaian Info Paket'">
+    <!-- Flatpickr CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
     <div x-data="infoPaketForm()" x-init="init()" class="space-y-6">
         <!-- Header -->
         <div class="flex items-center justify-between">
@@ -19,6 +23,39 @@
                         class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
                     <i class="bx bx-download"></i> Simpan & Download PDF
                 </button>
+            </div>
+        </div>
+
+        <!-- Date Adjustment Section -->
+        <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-orange-400">
+            <div class="flex items-center gap-2 mb-4">
+                <i class="bx bx-calendar text-orange-500 text-xl"></i>
+                <h3 class="text-lg font-semibold">Penyesuaian Tanggal & Jam</h3>
+            </div>
+            <p class="text-xs text-gray-500 mb-4">
+                <i class="bx bx-info-circle"></i> Mengubah tanggal keberangkatan akan otomatis menyesuaikan seluruh data terkait: tanggal paket, hotel check-in/out, keberangkatan, booking hotel jamaah, dan tour plan.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal & Jam Keberangkatan</label>
+                    <input type="text" id="fp_departure" x-ref="fpDeparture" x-model="dateForm.departure_datetime"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                           placeholder="DD/MM/YYYY HH:MM">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal & Jam Kepulangan</label>
+                    <input type="text" id="fp_return" x-ref="fpReturn" x-model="dateForm.return_datetime"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                           placeholder="DD/MM/YYYY HH:MM">
+                </div>
+            </div>
+            <div class="mt-4 flex items-center gap-3">
+                <button @click="saveDates()" type="button" :disabled="savingDates"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50">
+                    <i class="bx" :class="savingDates ? 'bx-loader-alt bx-spin' : 'bx-calendar-check'"></i>
+                    <span x-text="savingDates ? 'Memproses...' : 'Simpan Perubahan Tanggal'"></span>
+                </button>
+                <span class="text-xs text-gray-400">Perubahan ini bersifat permanen dan akan mengubah data master paket.</span>
             </div>
         </div>
 
@@ -153,6 +190,7 @@
     function infoPaketForm() {
         return {
             saving: false,
+            savingDates: false,
             form: {
                 group_name: '',
                 tour_leader_name: '',
@@ -162,8 +200,34 @@
                 rawdah_rows: [],
                 itinerary_rows: []
             },
+            dateForm: {
+                departure_datetime: '{{ $package->departure_datetime ? $package->departure_datetime->format("d/m/Y H:i") : ($package->departure_date ? \Carbon\Carbon::parse($package->departure_date)->format("d/m/Y") . " 00:00" : "") }}',
+                return_datetime: '{{ $package->return_datetime ? $package->return_datetime->format("d/m/Y H:i") : ($package->return_date ? \Carbon\Carbon::parse($package->return_date)->format("d/m/Y") . " 00:00" : "") }}'
+            },
 
             async init() {
+                // Initialize Flatpickr
+                this.$nextTick(() => {
+                    flatpickr(this.$refs.fpDeparture, {
+                        enableTime: true,
+                        time_24hr: true,
+                        dateFormat: 'd/m/Y H:i',
+                        defaultDate: this.dateForm.departure_datetime || null,
+                        onChange: (selectedDates, dateStr) => {
+                            this.dateForm.departure_datetime = dateStr;
+                        }
+                    });
+                    flatpickr(this.$refs.fpReturn, {
+                        enableTime: true,
+                        time_24hr: true,
+                        dateFormat: 'd/m/Y H:i',
+                        defaultDate: this.dateForm.return_datetime || null,
+                        onChange: (selectedDates, dateStr) => {
+                            this.dateForm.return_datetime = dateStr;
+                        }
+                    });
+                });
+
                 // Load existing data or auto-fill
                 try {
                     const res = await fetch(`{{ route('admin.inventaris.travel.package.info-paket.data', ['id' => $package->id, 'keberangkatanId' => $keberangkatan->id]) }}`);
@@ -182,6 +246,66 @@
 
             addItineraryRow() {
                 this.form.itinerary_rows.push({ from: '', to: '', date: '', time: '', remark: '' });
+            },
+
+            async saveDates() {
+                if (!this.dateForm.departure_datetime || !this.dateForm.return_datetime) {
+                    Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Tanggal keberangkatan dan kepulangan harus diisi.' });
+                    return;
+                }
+
+                const result = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Konfirmasi Perubahan Tanggal',
+                    html: `<div class="text-left text-sm">
+                        <p class="mb-2"><strong>Perubahan ini akan mempengaruhi:</strong></p>
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li>Tanggal keberangkatan & kepulangan paket</li>
+                            <li>Tanggal check-in/out hotel (Madinah, Makkah, tambahan)</li>
+                            <li>Tanggal keberangkatan</li>
+                            <li>Tanggal booking hotel jamaah</li>
+                            <li>Tanggal tour plan</li>
+                        </ul>
+                        <p class="mt-3 text-red-600 font-medium">Perubahan ini bersifat permanen!</p>
+                    </div>`,
+                    showCancelButton: true,
+                    confirmButtonColor: '#ea580c',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Ubah Tanggal',
+                    cancelButtonText: 'Batal'
+                });
+
+                if (!result.isConfirmed) return;
+
+                this.savingDates = true;
+                try {
+                    const res = await fetch(`{{ route('admin.inventaris.travel.package.update-dates', ['id' => $package->id, 'keberangkatanId' => $keberangkatan->id]) }}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify(this.dateForm)
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: data.message,
+                            timer: 2500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            // Reload page to reflect updated data
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Gagal', text: data.message || 'Gagal memperbarui tanggal' });
+                    }
+                } catch (e) {
+                    Swal.fire({ icon: 'error', title: 'Error', text: e.message });
+                }
+                this.savingDates = false;
             },
 
             async saveData() {

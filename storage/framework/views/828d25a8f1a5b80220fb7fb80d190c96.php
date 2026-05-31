@@ -77,6 +77,18 @@
     <!-- SweetAlert2 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    // Force SweetAlert2 to show at top
+    if (typeof Swal !== 'undefined') {
+        const originalFire = Swal.fire.bind(Swal);
+        Swal.fire = function(args) {
+            if (typeof args === 'object' && args !== null) {
+                args.position = args.position || 'top';
+            }
+            return originalFire(args);
+        };
+    }
+    </script>
     
     <!-- Force 24-hour format CSS -->
     <link rel="stylesheet" href="<?php echo e(asset('css/force-24hour-format.css')); ?>">
@@ -156,7 +168,85 @@
             display: none !important;
             visibility: hidden !important;
         }
+
+        /* ===== MODAL TOP POSITION - Travel & Jemaah ===== */
+        /* All custom modals (Alpine.js based) - position at top */
+        [x-show][x-transition] > div[class*="bg-white"][class*="rounded"],
+        [x-show] > div[class*="max-w-"] {
+            margin-top: 2rem !important;
+            margin-bottom: auto !important;
+        }
+
+        /* Fixed overlay modals - align items to start (top) */
+        .fixed.inset-0[class*="flex"][class*="items-center"],
+        .fixed.inset-0[class*="flex"][class*="justify-center"],
+        div[class*="fixed"][class*="inset-0"][class*="flex"] {
+            align-items: flex-start !important;
+            padding-top: 2rem !important;
+        }
+
+        /* Bootstrap modals - position at top */
+        .modal-dialog {
+            margin-top: 1.75rem !important;
+            vertical-align: top !important;
+        }
+        .modal.fade .modal-dialog {
+            transform: translate(0, 0) !important;
+        }
+        .modal.show .modal-dialog {
+            transform: translate(0, 0) !important;
+        }
+
+        /* SweetAlert2 - position at top */
+        .swal2-popup {
+            margin-top: 2rem !important;
+        }
+        .swal2-container {
+            align-items: flex-start !important;
+            padding-top: 2rem !important;
+        }
     </style>
+
+    <!-- Modal Top Position - MUST be after Tailwind -->
+    <link rel="stylesheet" href="<?php echo e(asset('css/modal-top-position.css')); ?>?v=<?php echo e(time()); ?>">
+
+<script>
+// Force modal top position - MutationObserver fallback
+(function() {
+    function forceModalTop(el) {
+        if (el.classList && el.classList.contains('fixed') && el.classList.contains('inset-0') && el.classList.contains('flex')) {
+            el.style.setProperty('align-items', 'flex-start', 'important');
+            el.style.setProperty('padding-top', '2rem', 'important');
+        }
+        // SweetAlert2
+        if (el.classList && el.classList.contains('swal2-container')) {
+            el.style.setProperty('align-items', 'flex-start', 'important');
+            el.style.setProperty('padding-top', '2rem', 'important');
+        }
+    }
+    var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+            m.addedNodes.forEach(function(node) {
+                if (node.nodeType === 1) {
+                    forceModalTop(node);
+                    if (node.querySelectorAll) {
+                        node.querySelectorAll('.fixed.inset-0.flex, .swal2-container').forEach(forceModalTop);
+                    }
+                }
+            });
+            // Also check attribute changes (x-show toggling display)
+            if (m.type === 'attributes' && m.target.nodeType === 1) {
+                forceModalTop(m.target);
+            }
+        });
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+        observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+        // Force on existing elements
+        document.querySelectorAll('.fixed.inset-0.flex, .swal2-container').forEach(forceModalTop);
+    });
+})();
+</script>
 
 <script>
 // Ensure Alpine.js is properly initialized before POS app

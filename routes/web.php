@@ -687,6 +687,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('travel/package/{id}/keberangkatan/{keberangkatanId}/info-paket-data', [PackageController::class, 'getInfoPaketData'])->name('travel.package.info-paket.data');
         Route::post('travel/package/{id}/keberangkatan/{keberangkatanId}/info-paket-save', [PackageController::class, 'saveInfoPaketData'])->name('travel.package.info-paket.save');
         Route::get('travel/package/{id}/keberangkatan/{keberangkatanId}/info-paket-pdf', [PackageController::class, 'streamInfoPaket'])->name('travel.package.info-paket.pdf');
+        Route::post('travel/package/{id}/keberangkatan/{keberangkatanId}/update-dates', [PackageController::class, 'updatePackageDates'])->name('travel.package.update-dates');
         Route::get('travel/package/{id}/hpp', [PackageController::class, 'getHpp'])->name('travel.package.hpp');
         Route::put('travel/package/{id}/hpp', [PackageController::class, 'updateHpp'])->name('travel.package.hpp.update');
         Route::post('travel/package/{id}/hpp/lock', [PackageController::class, 'lockHpp'])->name('travel.package.hpp.lock');
@@ -715,6 +716,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('travel/catalog', [PackageCatalogController::class, 'index'])->name('travel.catalog.index');
         Route::get('travel/catalog/{id}', [PackageCatalogController::class, 'show'])->name('travel.catalog.show');
         Route::get('travel/catalog/data/packages', [PackageCatalogController::class, 'getData'])->name('travel.catalog.data');
+
+        // Payment Reminder (Cron Job Monitoring)
+        Route::get('travel/payment-reminder', [\App\Http\Controllers\PaymentReminderController::class, 'index'])->name('travel.payment-reminder.index');
+        Route::get('travel/payment-reminder/data', [\App\Http\Controllers\PaymentReminderController::class, 'getData'])->name('travel.payment-reminder.data');
+        Route::post('travel/payment-reminder/settings', [\App\Http\Controllers\PaymentReminderController::class, 'updateSettings'])->name('travel.payment-reminder.settings');
+        Route::post('travel/payment-reminder/trigger', [\App\Http\Controllers\PaymentReminderController::class, 'triggerManual'])->name('travel.payment-reminder.trigger');
         
         // Design Materials
         Route::get('travel/package/{packageId}/materials', [DesignMaterialController::class, 'index'])->name('travel.design-materials.index');

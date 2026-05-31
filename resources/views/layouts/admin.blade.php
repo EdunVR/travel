@@ -86,6 +86,24 @@
         .autocomplete-item:last-child {
             border-bottom: none;
         }
+
+        /* ===== MODAL TOP POSITION - Travel & Jemaah ===== */
+        .fixed.inset-0[class*="flex"][class*="items-center"],
+        .fixed.inset-0[class*="flex"][class*="justify-center"],
+        div[class*="fixed"][class*="inset-0"][class*="flex"] {
+            align-items: flex-start !important;
+            padding-top: 2rem !important;
+        }
+        .modal-dialog {
+            margin-top: 1.75rem !important;
+        }
+        .swal2-popup {
+            margin-top: 2rem !important;
+        }
+        .swal2-container {
+            align-items: flex-start !important;
+            padding-top: 2rem !important;
+        }
     </style>
     
     @stack('styles')
