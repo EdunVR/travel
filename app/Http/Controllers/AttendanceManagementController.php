@@ -1015,6 +1015,21 @@ class AttendanceManagementController extends Controller
             $employee->rfid_uid = strtoupper($request->rfid_uid); // Normalize ke uppercase
             $employee->save();
 
+            // Reset mode ke attendance setelah UID berhasil di-assign ke karyawan
+            \DB::table('rfid_settings')->updateOrInsert(
+                ['key' => 'mode'],
+                ['value' => 'attendance', 'updated_at' => now()]
+            );
+            // Clear detected_uid karena sudah selesai digunakan
+            \DB::table('rfid_settings')->updateOrInsert(
+                ['key' => 'detected_uid'],
+                ['value' => null, 'updated_at' => now()]
+            );
+            \Log::info('RFID registered and mode reset to attendance', [
+                'employee_id' => $employee->id,
+                'rfid_uid' => $employee->rfid_uid
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'RFID card registered successfully',

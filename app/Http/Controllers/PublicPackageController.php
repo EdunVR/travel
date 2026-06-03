@@ -319,15 +319,15 @@ class PublicPackageController extends Controller
                     'bookingId' => $booking->id
                 ])->with('success', 'Pemesanan berhasil! Notifikasi WhatsApp telah dikirim ke ' . $jamaahPhone);
             } else {
-                // OpenWA failed, use fallback wa.me link
-                \Log::warning('OpenWA failed for order, using fallback wa.me link', [
+                // Fonnte failed, fallback: redirect customer to wa.me company phone with autotext
+                \Log::warning('Fonnte failed for order, redirecting to company WhatsApp', [
                     'booking_code' => $booking->booking_code,
                     'jamaah_phone' => $jamaahPhone,
                     'error' => $result['error'] ?? 'Unknown error'
                 ]);
                 
-                // Use fallback URL from service or generate manually
-                $waUrl = $result['fallback_url'] ?? 'https://wa.me/' . $whatsappService->formatPhone($jamaahPhone) . '?text=' . urlencode($msg);
+                $companyPhone = $whatsappService->formatPhone(env('COMPANY_PHONE', '08976688800'));
+                $waUrl = 'https://wa.me/' . $companyPhone . '?text=' . urlencode($msg);
                 
                 return redirect($waUrl);
             }
@@ -339,8 +339,9 @@ class PublicPackageController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            // Fallback to wa.me
-            $waUrl = 'https://wa.me/' . $whatsappService->formatPhone($jamaahPhone) . '?text=' . urlencode($msg);
+            // Fallback to wa.me company phone
+            $companyPhone = $whatsappService->formatPhone(env('COMPANY_PHONE', '08976688800'));
+            $waUrl = 'https://wa.me/' . $companyPhone . '?text=' . urlencode($msg);
             return redirect($waUrl);
         }
     }
@@ -1231,12 +1232,15 @@ class PublicPackageController extends Controller
                         'redirect_url' => $invoiceUrl
                     ]);
                 } else {
-                    // OpenWA failed, return fallback info
-                    \Log::warning('OpenWA failed for booking, will use fallback', [
+                    // Fonnte failed, return fallback to company phone
+                    \Log::warning('Fonnte failed for booking, will use company fallback', [
                         'booking_code' => $booking->booking_code,
                         'jamaah_phone' => $jamaahPhone,
                         'error' => $result['error'] ?? 'Unknown error'
                     ]);
+                    
+                    $companyPhone = $whatsappService->formatPhone(env('COMPANY_PHONE', '08976688800'));
+                    $fallbackUrl = 'https://wa.me/' . $companyPhone . '?text=' . urlencode($msg);
                     
                     return response()->json([
                         'success' => true,
@@ -1244,7 +1248,7 @@ class PublicPackageController extends Controller
                         'booking_code' => $booking->booking_code,
                         'message' => 'Pemesanan berhasil disimpan',
                         'whatsapp_sent' => false,
-                        'fallback_url' => $result['fallback_url'] ?? null,
+                        'fallback_url' => $fallbackUrl,
                         'fallback_message' => $msg
                     ]);
                 }
@@ -1255,9 +1259,10 @@ class PublicPackageController extends Controller
                     'exception' => $e->getMessage()
                 ]);
                 
-                // Return success with fallback
+                // Return success with fallback to company phone
                 $whatsappService = new \App\Services\WhatsAppService();
-                $fallbackUrl = 'https://wa.me/' . $whatsappService->formatPhone($jamaahPhone) . '?text=' . urlencode($msg);
+                $companyPhone = $whatsappService->formatPhone(env('COMPANY_PHONE', '08976688800'));
+                $fallbackUrl = 'https://wa.me/' . $companyPhone . '?text=' . urlencode($msg);
                 
                 return response()->json([
                     'success' => true,

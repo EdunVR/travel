@@ -431,10 +431,17 @@
                                     <span class="font-semibold" x-text="formatCurrency(package.hpp_calculation?.flight_cost || 0)"></span>
                                 </div>
                                 <div class="px-4 py-2 text-xs text-slate-400 italic">Hotel tidak masuk HPP Dasar — dihitung per booking jamaah</div>
-                                <template x-for="[key, label] in [['transportation_cost','Transportasi'],['meal_cost','Makan'],['visa_cost','Visa'],['guide_cost','Pembimbing'],['insurance_cost','Asuransi'],['operational_overhead','Operasional'],['contingency','Kontingensi']]" :key="key">
+                                <template x-for="[key, label] in [['transportation_cost','Transportasi'],['meal_cost','Makan'],['visa_cost','Visa'],['guide_cost','Pembimbing'],['insurance_cost','Asuransi'],['contingency','Kontingensi']]" :key="key">
                                     <div class="flex justify-between px-4 py-2.5 text-sm" x-show="(package.hpp_calculation?.[key]||0) > 0">
                                         <span class="text-slate-600" x-text="label"></span>
                                         <span class="font-semibold" x-text="formatCurrency(package.hpp_calculation?.[key] || 0)"></span>
+                                    </div>
+                                </template>
+                                <!-- Custom components -->
+                                <template x-for="cc in (package.hpp_calculation?.custom_components || [])" :key="cc.id">
+                                    <div class="flex justify-between px-4 py-2.5 text-sm" x-show="(cc.value||0) > 0">
+                                        <span class="text-slate-600" x-text="cc.label || 'Biaya Lainnya'"></span>
+                                        <span class="font-semibold" x-text="formatCurrency(cc.value || 0)"></span>
                                     </div>
                                 </template>
                                 <div class="flex justify-between px-4 py-3 bg-primary-50 font-semibold text-sm">
@@ -565,9 +572,14 @@
             selectedHotelPrice: 0,
             // Dynamic extra components (beyond flight & hotel)
             hppExtraComponents: [],
+            // Exchange rates (editable in modal header)
+            hppKurs: { IDR: 1, SAR: 4350, USD: 16500, AED: 4500, TL: 500 },
+            // Booked jamaah count for default qty
+            hppBookedCount: 0,
+            hppFlightQty: 0,
             // Split flight/hotel/transport state
-            flightDeparture: { id: '', price: 0, manual: 0 },
-            flightReturn:    { id: '', price: 0, manual: 0 },
+            flightDeparture: { id: '', price: 0, manual: 0, currency: 'IDR' },
+            flightReturn:    { id: '', price: 0, manual: 0, currency: 'IDR' },
             hotelMakkah:     { id: '', price_per_night: 0, manual: 0, nights: 0 },
             hotelMadinah:    { id: '', price_per_night: 0, manual: 0, nights: 0 },
             saudiTransportSelected: { id: '', price: 0, manual: 0 },
@@ -596,7 +608,12 @@
                             operational_overhead: parseFloat(data.hpp_calculation.operational_overhead) || 0,
                             contingency: parseFloat(data.hpp_calculation.contingency) || 0,
                             total_hpp: parseFloat(data.hpp_calculation.total_hpp) || 0,
-                            is_locked: data.hpp_calculation.is_locked || false
+                            is_locked: data.hpp_calculation.is_locked || false,
+                            custom_components: Array.isArray(data.hpp_calculation.custom_components)
+                                ? data.hpp_calculation.custom_components
+                                : (typeof data.hpp_calculation.custom_components === 'string'
+                                    ? JSON.parse(data.hpp_calculation.custom_components || '[]')
+                                    : []),
                         };
                     }
                     
@@ -650,9 +667,13 @@
                         : 0,
                 };
 
-                // Reset split state
-                this.flightDeparture = { id: '', price: 0, manual: 0 };
-                this.flightReturn    = { id: '', price: 0, manual: 0 };
+                // Set booked count for default qty in components
+                this.hppBookedCount = parseInt(this.package.booked_count) || parseInt(this.package.capacity) || 0;
+                this.hppFlightQty   = this.hppBookedCount || parseInt(this.package.capacity) || 0;
+
+                // Reset split state with currency fields
+                this.flightDeparture = { id: '', price: 0, manual: 0, currency: 'IDR' };
+                this.flightReturn    = { id: '', price: 0, manual: 0, currency: 'IDR' };
                 this.hotelMakkah     = { id: '', price_per_night: 0, manual: 0, nights: 0 };
                 this.hotelMadinah    = { id: '', price_per_night: 0, manual: 0, nights: 0 };
                 
@@ -736,14 +757,21 @@
                 }
                 this.hotelMadinah.nights = duration;
 
-                if (this.hppForm.flight_cost === 0) this.hppForm.flight_cost = this.calcFlightTotal();
-                if (this.hppForm.hotel_cost  === 0) this.hppForm.hotel_cost  = this.calcHotelTotal();
+                // ALWAYS recalculate flight/hotel cost from dropdowns after they are populated
+                // This fixes the bug where DB has flight_cost=0 because it was saved without recalculation
+                const recalcFlight = this.calcFlightTotal();
+                const recalcHotel  = this.calcHotelTotal();
+                if (recalcFlight > 0) this.hppForm.flight_cost = recalcFlight;
+                if (recalcHotel  > 0) this.hppForm.hotel_cost  = recalcHotel;
             },
 
             calcFlightTotal() {
                 const fd = this.flightDeparture, fr = this.flightReturn;
-                return (fd.id ? fd.price : (parseFloat(fd.manual)||0))
-                     + (fr.id ? fr.price : (parseFloat(fr.manual)||0));
+                const depVal = fd.id ? fd.price : (parseFloat(fd.manual)||0);
+                const retVal = fr.id ? fr.price : (parseFloat(fr.manual)||0);
+                // Convert each leg to IDR using respective currency
+                return this.convertToIDR(depVal, fd.currency||'IDR')
+                     + this.convertToIDR(retVal, fr.currency||'IDR');
             },
             calcHotelTotal() {
                 const hm = this.hotelMakkah, hd = this.hotelMadinah;
@@ -774,16 +802,26 @@
             
             calculateHppPerPerson() {
                 // HPP Dasar = tanpa hotel (hotel dihitung per booking jamaah)
+                // operational_overhead excluded - now only custom_components matter
                 if (this.package.hpp_calculation) {
-                    return (this.package.hpp_calculation.flight_cost || 0) +
+                    let total = (this.package.hpp_calculation.flight_cost || 0) +
                            (this.package.hpp_calculation.transportation_cost || 0) +
                            (this.package.hpp_calculation.meal_cost || 0) +
                            (this.package.hpp_calculation.visa_cost || 0) +
                            (this.package.hpp_calculation.guide_cost || 0) +
                            (this.package.hpp_calculation.insurance_cost || 0) +
-                           (this.package.hpp_calculation.operational_overhead || 0) +
                            (this.package.hpp_calculation.contingency || 0);
+                    // Add custom components values
+                    (this.package.hpp_calculation.custom_components || []).forEach(c => {
+                        total += parseFloat(c.value) || 0;
+                    });
+                    return total;
                 }
+                return 0;
+            },
+
+            getOperasionalOnly() {
+                // Deprecated - operational_overhead no longer displayed separately
                 return 0;
             },
             
@@ -819,28 +857,61 @@
                         };
                         this.hppLocked = data.is_locked || false;
 
+                        // Sync package flight/hotel IDs from API response so autoFillFlightHotel works correctly
+                        if (data.id_flight_departure)        this.selectedPackage.id_flight_departure        = data.id_flight_departure;
+                        if (data.id_flight_return)           this.selectedPackage.id_flight_return           = data.id_flight_return;
+                        if (data.id_hotel_room_type_makkah)  this.selectedPackage.id_hotel_room_type_makkah  = data.id_hotel_room_type_makkah;
+                        if (data.id_hotel_room_type_madinah) this.selectedPackage.id_hotel_room_type_madinah = data.id_hotel_room_type_madinah;
+                        if (data.duration_days)              this.selectedPackage.duration_days              = data.duration_days;
+
                         // Build extra components from existing HPP data
                         this.hppExtraComponents = [];
+                        const defaultQty = this.hppBookedCount || this.selectedPackage?.capacity || 1;
                         const extras = [
-                            { key: 'transportation_cost', label: 'Biaya Transportasi', hint: 'Transportasi lokal per orang' },
                             { key: 'meal_cost', label: 'Biaya Makan', hint: 'Biaya makan selama perjalanan' },
                             { key: 'visa_cost', label: 'Biaya Visa', hint: 'Pengurusan visa per orang' },
                             { key: 'guide_cost', label: 'Biaya Pembimbing', hint: 'Pembimbing/muthawif per orang' },
                             { key: 'insurance_cost', label: 'Biaya Asuransi', hint: 'Asuransi perjalanan per orang' },
-                            { key: 'operational_overhead', label: 'Biaya Operasional', hint: 'Operasional & administrasi' },
                             { key: 'contingency', label: 'Biaya Kontingensi', hint: 'Cadangan darurat per orang' },
                         ];
+
+                        // Calculate custom components total to subtract from operational_overhead
+                        const savedCustom = data.custom_components || [];
+
                         extras.forEach(e => {
+                            let val = parseFloat(data[e.key]) || 0;
+                            if (val <= 0) return; // Skip zero-value components
                             this.hppExtraComponents.push({
                                 id: e.key,
                                 label: e.label,
                                 hint: e.hint,
-                                value: parseFloat(data[e.key]) || 0,
+                                value: val,
                                 isDefault: true,
-                                payment_status: (data.component_payment_status || {})[e.key] || 'lunas',
+                                payment_status: (data.component_payment_status || {})[e.key] || 'hutang',
                                 hutang_amount: parseFloat((data.component_hutang_amount || {})[e.key]) || 0,
+                                currency: 'IDR',
+                                qty: defaultQty,
+                                satuan: 'pax',
                             });
                         });
+
+                        // Restore saved custom components
+                        if (Array.isArray(savedCustom) && savedCustom.length > 0) {
+                            savedCustom.forEach(c => {
+                                this.hppExtraComponents.push({
+                                    id: c.id || ('custom_' + Date.now() + Math.random()),
+                                    label: c.label || 'Komponen Lainnya',
+                                    hint: '',
+                                    value: parseFloat(c.value) || 0,
+                                    isDefault: false,
+                                    payment_status: c.payment_status || 'hutang',
+                                    hutang_amount: parseFloat(c.hutang_amount) || 0,
+                                    currency: c.currency || 'IDR',
+                                    qty: parseInt(c.qty) || defaultQty,
+                                    satuan: c.satuan || 'pax',
+                                });
+                            });
+                        }
                     } else {
                         // No HPP yet — init default extra components
                         this.initDefaultExtraComponents();
@@ -854,22 +925,30 @@
             },
 
             initDefaultExtraComponents() {
+                const defaultQty = this.hppBookedCount || this.selectedPackage?.capacity || 1;
+                const makeComp = (id, label, hint) => ({
+                    id, label, hint, value: 0, isDefault: true,
+                    payment_status: 'hutang', hutang_amount: 0,
+                    currency: 'IDR', qty: defaultQty, satuan: 'pax',
+                });
                 this.hppExtraComponents = [
-                    { id: 'transportation_cost', label: 'Biaya Transportasi', hint: 'Transportasi lokal per orang', value: 0, isDefault: true, payment_status: 'lunas', hutang_amount: 0 },
-                    { id: 'meal_cost', label: 'Biaya Makan', hint: 'Biaya makan selama perjalanan', value: 0, isDefault: true, payment_status: 'lunas', hutang_amount: 0 },
-                    { id: 'visa_cost', label: 'Biaya Visa', hint: 'Pengurusan visa per orang', value: 0, isDefault: true, payment_status: 'lunas', hutang_amount: 0 },
-                    { id: 'guide_cost', label: 'Biaya Pembimbing', hint: 'Pembimbing/muthawif per orang', value: 0, isDefault: true, payment_status: 'lunas', hutang_amount: 0 },
-                    { id: 'insurance_cost', label: 'Biaya Asuransi', hint: 'Asuransi perjalanan per orang', value: 0, isDefault: true, payment_status: 'lunas', hutang_amount: 0 },
-                    { id: 'operational_overhead', label: 'Biaya Operasional', hint: 'Operasional & administrasi', value: 0, isDefault: true, payment_status: 'lunas', hutang_amount: 0 },
-                    { id: 'contingency', label: 'Biaya Kontingensi', hint: 'Cadangan darurat per orang', value: 0, isDefault: true, payment_status: 'lunas', hutang_amount: 0 },
+                    makeComp('meal_cost',       'Biaya Makan',       'Biaya makan selama perjalanan'),
+                    makeComp('visa_cost',        'Biaya Visa',        'Pengurusan visa per orang'),
+                    makeComp('guide_cost',       'Biaya Pembimbing',  'Pembimbing/muthawif per orang'),
+                    makeComp('insurance_cost',   'Biaya Asuransi',    'Asuransi perjalanan per orang'),
+                    makeComp('contingency',      'Biaya Kontingensi', 'Cadangan darurat per orang'),
                 ];
             },
 
             addExtraComponent() {
+                const defaultQty = this.hppBookedCount || this.selectedPackage?.capacity || 1;
                 this.hppExtraComponents.push({
                     id: 'custom_' + Date.now(),
                     label: '', hint: '', value: 0, isDefault: false,
-                    payment_status: 'lunas', hutang_amount: 0,
+                    payment_status: 'hutang', hutang_amount: 0,
+                    currency: 'IDR',
+                    qty: defaultQty,
+                    satuan: 'pax',
                 });
             },
 
@@ -877,8 +956,36 @@
                 this.hppExtraComponents.splice(index, 1);
             },
 
+            // Convert a value in given currency to IDR using hppKurs
+            convertToIDR(value, currency) {
+                const rate = (this.hppKurs && this.hppKurs[currency]) ? this.hppKurs[currency] : 1;
+                return (parseFloat(value) || 0) * rate;
+            },
+
+            // Total extra components in IDR (each item: value × qty × kurs)
+            getTotalExtraIDR() {
+                return this.hppExtraComponents.reduce((sum, c) => {
+                    return sum + this.convertToIDR((c.value || 0) * (c.qty || 1), c.currency || 'IDR');
+                }, 0);
+            },
+
+            // Legacy: total per unit (for backward compat)
             getTotalExtraComponents() {
-                return this.hppExtraComponents.reduce((sum, c) => sum + (parseFloat(c.value) || 0), 0);
+                return this.getTotalExtraIDR();
+            },
+
+            // HPP per unit (flight/pax + total components ÷ qty)
+            getTotalHppPerUnit() {
+                const flightPerUnit = this.hppForm.flight_cost || 0; // already per orang
+                // Extra: sum(convert(value, cur) per item's own qty — not divided, just per-item total ÷ pax)
+                // For per-unit: each item already has its own qty. We show total components / booked count as per-person equiv
+                return flightPerUnit + this.getTotalExtraComponents() / Math.max(1, this.hppFlightQty || this.selectedPackage?.capacity || 1);
+            },
+
+            // Total HPP = flight × pax + sum(each comp in IDR)
+            getTotalHppForSummary() {
+                const flightTotal = (this.hppForm.flight_cost || 0) * (this.hppFlightQty || this.selectedPackage?.capacity || 1);
+                return flightTotal + this.getTotalExtraIDR();
             },
             
             async loadFlights() {
@@ -947,8 +1054,8 @@
                 };
                 this.hppErrors = {};
                 this.hppExtraComponents = [];
-                this.flightDeparture = { id: '', price: 0, manual: 0 };
-                this.flightReturn    = { id: '', price: 0, manual: 0 };
+                this.flightDeparture = { id: '', price: 0, manual: 0, currency: 'IDR' };
+                this.flightReturn    = { id: '', price: 0, manual: 0, currency: 'IDR' };
                 this.hotelMakkah     = { id: '', price_per_night: 0, manual: 0, nights: 0 };
                 this.hotelMadinah    = { id: '', price_per_night: 0, manual: 0, nights: 0 };
                 this.saudiTransportSelected = { id: '', price: 0, manual: 0 };
@@ -967,22 +1074,39 @@
                 const extraMap = {};
                 const payStatusMap = {};
                 const hutangMap = {};
-                const knownKeys = ['transportation_cost','meal_cost','visa_cost','guide_cost','insurance_cost','operational_overhead','contingency'];
+                const knownKeys = ['transportation_cost','meal_cost','visa_cost','guide_cost','insurance_cost','contingency'];
+                const customComponents = [];
                 knownKeys.forEach(k => extraMap[k] = 0);
+                extraMap['operational_overhead'] = 0; // No longer used as standalone
                 this.hppExtraComponents.forEach(c => {
                     if (knownKeys.includes(c.id)) {
                         extraMap[c.id] = (extraMap[c.id] || 0) + (parseFloat(c.value) || 0);
-                        payStatusMap[c.id] = c.payment_status || 'lunas';
+                        payStatusMap[c.id] = c.payment_status || 'hutang';
                         if (c.payment_status === 'hutang') hutangMap[c.id] = parseFloat(c.hutang_amount) || 0;
-                    } else if (c.id.startsWith('custom_')) {
-                        extraMap['operational_overhead'] = (extraMap['operational_overhead'] || 0) + (parseFloat(c.value) || 0);
+                    } else {
+                        // All non-standard components go to custom_components
+                        customComponents.push({
+                            id: c.id,
+                            label: c.label || 'Komponen Lainnya',
+                            value: parseFloat(c.value) || 0,
+                            payment_status: c.payment_status || 'hutang',
+                            hutang_amount: parseFloat(c.hutang_amount) || 0,
+                            currency: c.currency || 'IDR',
+                            qty: parseInt(c.qty) || 1,
+                            satuan: c.satuan || 'pax',
+                        });
                     }
                 });
+
+                // Store custom total in operational_overhead for backward compat with total calculation
+                const customTotal = customComponents.reduce((s, c) => s + c.value, 0);
+                extraMap['operational_overhead'] = customTotal;
 
                 const payload = {
                     flight_cost: this.hppForm.flight_cost || 0,
                     hotel_cost: this.hppForm.hotel_cost || 0,
                     ...extraMap,
+                    custom_components: customComponents,
                     component_payment_status: payStatusMap,
                     component_hutang_amount: hutangMap,
                 };
@@ -1074,10 +1198,10 @@
             },
             
             calculateTotalHpp() {
-                const capacity = this.selectedPackage?.capacity || 1;
-                const flightOnly = (this.hppForm.flight_cost || 0);
-                const extras = this.getTotalExtraComponents();
-                return (flightOnly + extras) * capacity;
+                // Total HPP = flight × pax + all components in IDR (each with own qty)
+                const pax   = this.hppFlightQty || this.selectedPackage?.capacity || 1;
+                const flightTotal = (this.hppForm.flight_cost || 0) * pax;
+                return flightTotal + this.getTotalExtraIDR();
             },
             
             calculateProfitMargin() {
@@ -1196,32 +1320,40 @@
                     });
                     const data = await res.json();
                     const rows = data.data || [];
-                    // Enrich with hpp calculation — hpp_dasar sudah ada dari API
+                    // Enrich with hpp calculation
+                    // hpp_dasar dari API sudah dikalikan total_pax (jamaah + keluarga)
                     return rows.map(b => {
-                        const hppDasar = b.hpp_dasar || 0;
-                        const addons = b.addons || [];
+                        const totalPax  = b.total_pax || (1 + (b.family_members_count || 0));
+                        const hppDasar  = b.hpp_dasar || 0; // already × pax from server
+                        const addons    = b.addons || [];
 
-                        // Add-ons: masuk_hpp → tambah ke HPP, semua add-ons → tambah ke harga jual
-                        const hppAddons = addons.filter(a => a.masuk_hpp).reduce((s,a) => s + (parseFloat(a.harga)||0)*(parseInt(a.qty)||1), 0);
-                        const allAddons = addons.reduce((s,a) => s + (parseFloat(a.harga)||0)*(parseInt(a.qty)||1), 0);
+                        // Add-ons per booking (tidak dikali pax — 1 set per keluarga):
+                        // SEMUA add-ons masuk HPP aktual dan harga jual
+                        const hppAddons = addons
+                            .reduce((s, a) => s + (parseFloat(a.harga) || 0) * (parseInt(a.qty) || 1), 0);
+                        const allAddons = hppAddons; // sama — semua addons masuk harga jual
 
                         // Hotel booking: charge → masuk HPP + harga jual, include → masuk HPP saja
-                        const hotelBookings = b.hotel_bookings || [];
-                        const hppHotelCharge = hotelBookings.filter(h => h.is_charged).reduce((s,h) => s + (parseFloat(h.total_cost)||0), 0);
-                        const hppHotelInclude = hotelBookings.filter(h => !h.is_charged).reduce((s,h) => s + (parseFloat(h.total_cost)||0), 0);
-                        const hppHotelTotal = hppHotelCharge + hppHotelInclude;
+                        const hotelBookings    = b.hotel_bookings || [];
+                        const hppHotelCharge   = hotelBookings.filter(h => h.is_charged).reduce((s, h) => s + (parseFloat(h.total_cost) || 0), 0);
+                        const hppHotelInclude  = hotelBookings.filter(h => !h.is_charged).reduce((s, h) => s + (parseFloat(h.total_cost) || 0), 0);
+                        const hppHotelTotal    = hppHotelCharge + hppHotelInclude;
 
-                        const hppAktual = hppDasar + hppAddons + hppHotelTotal;
-                        const hargaJual = (parseFloat(b.total_price)||0) + allAddons + hppHotelCharge;
+                        // HPP Aktual = hpp_dasar (sudah × pax) + addons masuk_hpp + hotel
+                        const hppAktual  = hppDasar + hppAddons + hppHotelTotal;
+                        // Harga jual = harga booking + semua addons + hotel charge
+                        const hargaJual  = (parseFloat(b.total_price) || 0) + allAddons + hppHotelCharge;
 
                         return {
                             ...b,
-                            hpp_dasar: hppDasar,
-                            hpp_hotel: hppHotelTotal,
-                            hpp_addons: hppAddons,
-                            hpp_aktual: hppAktual,
-                            harga_jual_aktual: hargaJual,
-                            family_count: b.family_members_count || 0,
+                            total_pax:          totalPax,
+                            hpp_dasar:          hppDasar,
+                            hpp_dasar_per_orang: b.hpp_dasar_per_orang || 0,
+                            hpp_hotel:          hppHotelTotal,
+                            hpp_addons:         hppAddons,
+                            hpp_aktual:         hppAktual,
+                            harga_jual_aktual:  hargaJual,
+                            family_count:       b.family_members_count || 0,
                             family_members_list: b.family_members_list || []
                         };
                     });
@@ -1360,6 +1492,39 @@
                 }
             },
 
+            async regenerateRab() {
+                if (!this.rabKb) return;
+                const confirm = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Regenerate RAB?',
+                    html: 'RAB lama akan dihapus dan dibuat ulang dari data HPP terbaru.<br><strong>Data realisasi yang sudah diinput akan hilang.</strong>',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ea580c',
+                    confirmButtonText: 'Ya, Regenerate',
+                    cancelButtonText: 'Batal'
+                });
+                if (!confirm.isConfirmed) return;
+
+                this.updatingRab = true;
+                try {
+                    const url = `{{ url('') }}/admin/inventaris/travel/keberangkatan/${this.rabKb.id}/regenerate-rab`;
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        Swal.fire({ icon: 'success', title: 'Berhasil', text: data.message, timer: 2000, showConfirmButton: false });
+                        await this.openRabModal(this.rabKb);
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Gagal', text: data.message });
+                    }
+                } catch (e) {
+                    Swal.fire({ icon: 'error', title: 'Error', text: e.message });
+                }
+                this.updatingRab = false;
+            },
+
             async sesuaikanLaporan() {
                 if (!this.rabKb) return;
                 const surplusDefisit = (this.rabData?.total_budget||0) - (this.rabData?.total_realisasi||0);
@@ -1472,6 +1637,39 @@
                     }
                 } catch(e) {
                     console.error('Error updating RAB item:', e);
+                } finally {
+                    this.updatingRab = false;
+                }
+            },
+
+            async updateRabDetailItem(item, realisasi) {
+                if (!this.rabKb || !item.rab_detail_id) return;
+                this.updatingRab = true;
+                try {
+                    const url = `{{ url('') }}/admin/inventaris/travel/keberangkatan/${this.rabKb.id}/rab-detail-update`;
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            rab_detail_id: item.rab_detail_id,
+                            payment_status: item.payment_status || 'hutang',
+                            realisasi: realisasi || 0,
+                        }),
+                    });
+                    if (res.ok) {
+                        await this.openRabModal(this.rabKb);
+                    } else {
+                        const data = await res.json();
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({ icon: 'error', title: 'Gagal', text: data.error || data.message || 'Gagal menyimpan' });
+                        }
+                    }
+                } catch(e) {
+                    console.error('Error updating RAB detail:', e);
                 } finally {
                     this.updatingRab = false;
                 }

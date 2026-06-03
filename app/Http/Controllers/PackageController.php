@@ -327,6 +327,13 @@ class PackageController extends Controller
             ->addColumn('price_packages', function ($package) {
                 return $package->price_packages ?? [];
             })
+            ->addColumn('has_recent_booking', function ($package) {
+                // True if there's a non-cancelled booking created in the last 7 days
+                return $package->jamaahBookings()
+                    ->whereNotIn('status', ['cancelled'])
+                    ->where('created_at', '>=', now()->subDays(7))
+                    ->exists();
+            })
             ->addColumn('aksi', function ($package) {
                 return '
                     <div class="flex justify-end gap-2">
@@ -954,7 +961,13 @@ class PackageController extends Controller
             'profit_margin' => $package->profit_margin,
             'component_payment_status' => $hpp->component_payment_status ?? [],
             'component_hutang_amount' => $hpp->component_hutang_amount ?? [],
-            'custom_components' => $hpp->custom_components ?? [], // IMPORTANT: Send custom components to frontend
+            'custom_components' => $hpp->custom_components ?? [],
+            // Package flight/hotel IDs so frontend can restore dropdowns
+            'id_flight_departure' => $package->id_flight_departure,
+            'id_flight_return' => $package->id_flight_return,
+            'id_hotel_room_type_makkah' => $package->id_hotel_room_type_makkah,
+            'id_hotel_room_type_madinah' => $package->id_hotel_room_type_madinah,
+            'duration_days' => $package->duration_days,
         ]);
     }
 

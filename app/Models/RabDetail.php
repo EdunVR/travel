@@ -23,6 +23,7 @@ class RabDetail extends Model
         'biaya' => 'decimal:2',
         'nilai_disetujui' => 'decimal:2',
         'realisasi_pemakaian' => 'decimal:2',
+        'hutang_amount' => 'decimal:2',
         'disetujui' => 'boolean',
     ];
 

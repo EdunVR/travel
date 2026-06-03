@@ -282,6 +282,23 @@ class RecruitmentManagementController extends Controller
 
             $employee->update($data);
 
+            // Jika rfid_uid diupdate, reset mode RFID ke attendance
+            // agar mesin absensi kembali ke mode deteksi setelah register
+            if (!empty($data['rfid_uid'])) {
+                \DB::table('rfid_settings')->updateOrInsert(
+                    ['key' => 'mode'],
+                    ['value' => 'attendance', 'updated_at' => now()]
+                );
+                \DB::table('rfid_settings')->updateOrInsert(
+                    ['key' => 'detected_uid'],
+                    ['value' => null, 'updated_at' => now()]
+                );
+                \Log::info('RFID UID assigned to employee, mode reset to attendance', [
+                    'employee_id' => $employee->id,
+                    'rfid_uid' => $data['rfid_uid']
+                ]);
+            }
+
             DB::commit();
 
             return response()->json([

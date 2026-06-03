@@ -37,6 +37,9 @@
     {{-- Desktop Responsive Scaling CSS --}}
     <link rel="stylesheet" href="{{ asset('css/desktop-responsive-scaling.css') }}">
     
+    {{-- x-cloak: hide elements managed by Alpine until Alpine is initialized to prevent flicker --}}
+    <style>[x-cloak] { display: none !important; }</style>
+    
     {{-- Dropdown Text Fix CSS --}}
     <link rel="stylesheet" href="{{ asset('css/dropdown-fix.css') }}?v={{ time() }}">
     

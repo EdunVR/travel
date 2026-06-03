@@ -5,7 +5,6 @@
 #include <Adafruit_PN532.h>
 #include <Keypad_I2C.h>
 #include <Keypad.h>
-#include <driver/i2s.h>
 #include <math.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -13,7 +12,15 @@
 #include <Preferences.h>
 #include <WiFiClientSecure.h>
 #include <vector>
-#include <esp_task_wdt.h>  // Hardware watchdog timer
+#include <esp_task_wdt.h>
+
+// ESP8266Audio - satu-satunya library audio, kelola I2S sepenuhnya
+// INSTALL: Library Manager → "ESP8266Audio" by Earle F. Philhower, III
+#include <AudioFileSourceHTTPStream.h>
+#include <AudioFileSourceBuffer.h>
+#include <AudioGeneratorMP3.h>
+#include <AudioGeneratorWAV.h>
+#include <AudioOutputI2S.h>
 
 /* =========================
    PIN CONFIG
@@ -28,13 +35,12 @@
 #define TFT_DC    9
 #define TFT_RST  14
 
-// I2S Audio
+// I2S Audio pins (shared untuk beep dan MP3, pin fisik sama)
 #define I2S_BCLK 41
 #define I2S_LRC  42
 #define I2S_DOUT 40
 #define SAMPLE_RATE 22050
-#define I2S_PORT I2S_NUM_0
-#define MAX_VOLUME 32767  // Volume maksimal (16-bit signed max)
+#define MAX_VOLUME 32767
 
 /* =========================
    OBJECTS
@@ -64,7 +70,7 @@ Keypad_I2C keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS, KEYPAD_ADDR);
 /* =========================
    LARAVEL API
 ========================= */
-const char* serverURL = "https://hmtourtravel.com";
+const char* serverURL = "https://poshan.my.id/hm";
 String apiEndpoint = "/api/morra/api/rfid";
 
 // Untuk mengabaikan verifikasi sertifikat SSL
@@ -94,13 +100,13 @@ Mode lastMode = MODE_MAIN_MENU;
 // Mode dari server
 String serverMode = "attendance"; // "attendance" atau "register"
 unsigned long lastModeCheck = 0;
-const unsigned long MODE_CHECK_INTERVAL = 2000; // Cek mode setiap 2 detik (lebih responsif!)
+const unsigned long MODE_CHECK_INTERVAL = 5000; // Cek mode setiap 5 detik (kurangi blocking HTTP)
 
 // Data karyawan terakhir yang tap
 String lastEmployeeName = "";
 String lastTapTime = "";
 unsigned long lastTapDisplay = 0;
-const unsigned long TAP_DISPLAY_DURATION = 2000; // Tampilkan 2 detik
+const unsigned long TAP_DISPLAY_DURATION = 4000; // Tampilkan 4 detik
 
 // Real-time clock untuk attendance mode
 unsigned long lastClockUpdate = 0;
@@ -243,6 +249,12 @@ int currentSendingIndex = -1;
 // Timing
 unsigned long lastRFIDCheck = 0;
 const unsigned long RFID_CHECK_INTERVAL = 150; // Optimal untuk RFID
+
+// Announcement / TTS
+unsigned long lastAnnouncementCheck = 0;
+const unsigned long ANNOUNCEMENT_CHECK_INTERVAL = 10000; // Cek setiap 10 detik
+bool isPlayingAnnouncement = false;
+// mp3, audioSource, audioBuffer dideklarasikan di AUDIO FUNCTIONS
 unsigned long lastDisplayUpdate = 0;
 const unsigned long DISPLAY_UPDATE_INTERVAL = 50; // Super cepat untuk UI responsiveness (20 FPS)
 unsigned long lastBlinkTime = 0;
@@ -279,7 +291,6 @@ void saveToOfflineQueue(String uid, String name, String type);
 void processOfflineQueue();
 void sendNextOfflineData();
 void checkModeFromServer();
-void forceAttendanceModeOnServer();
 void checkRFID();
 void checkKeypad();
 void resetKeypad();
@@ -289,111 +300,134 @@ void loadAlarmSettings();
 void feedWatchdog();
 void checkMemory();
 void cleanupStrings();
+void checkAnnouncement();
+void playAnnouncementMP3(String url);
+void stopAnnouncement();
 
 /* =========================
    AUDIO FUNCTIONS
+   Semua audio pakai ESP8266Audio dengan AudioOutputI2S tunggal.
+   Satu instance output dibuat di setup(), tidak pernah dihapus.
+   Beep → generate PCM sine wave sebagai WAV di RAM
+   MP3  → stream dari HTTP
 ========================= */
 
+// Satu-satunya I2S output, dibuat sekali di setup()
+static AudioOutputI2S *audioI2S = nullptr;
+
+// Untuk MP3 announcement
+AudioGeneratorMP3         *mp3        = nullptr;
+AudioFileSourceHTTPStream *audioSource = nullptr;
+AudioFileSourceBuffer     *audioBuffer = nullptr;
+
+// Custom AudioFileSource yang baca dari RAM buffer
+class AudioFileSourceRAM : public AudioFileSource {
+public:
+  AudioFileSourceRAM(const uint8_t *data, uint32_t size)
+    : _data(data), _size(size), _pos(0) {}
+  virtual bool open(const char *) override { _pos = 0; return true; }
+  virtual uint32_t read(void *data, uint32_t len) override {
+    uint32_t avail = _size - _pos;
+    if (len > avail) len = avail;
+    memcpy(data, _data + _pos, len);
+    _pos += len;
+    return len;
+  }
+  virtual bool seek(int32_t pos, int whence) override {
+    if (whence == SEEK_SET) _pos = pos;
+    else if (whence == SEEK_CUR) _pos += pos;
+    else if (whence == SEEK_END) _pos = _size + pos;
+    if (_pos > _size) _pos = _size;
+    return true;
+  }
+  virtual bool close() override { return true; }
+  virtual bool isOpen() override { return true; }
+  virtual uint32_t getSize() override { return _size; }
+  virtual uint32_t getPos() override { return _pos; }
+private:
+  const uint8_t *_data;
+  uint32_t _size, _pos;
+};
+
+// Generate WAV 16-bit mono di heap, return pointer (caller harus free())
+static uint8_t* makeBeepWAV(uint16_t freq, uint16_t duration_ms, size_t &outSize) {
+  const uint32_t sr         = SAMPLE_RATE;
+  const uint32_t numSamples = (sr * duration_ms) / 1000;
+  const uint32_t dataBytes  = numSamples * 2;
+  const uint32_t fileSize   = 44 + dataBytes;
+
+  uint8_t *buf = (uint8_t*)malloc(fileSize);
+  if (!buf) { outSize = 0; return nullptr; }
+
+  // WAV RIFF header
+  auto w4 = [&](int off, uint32_t v){ memcpy(buf+off, &v, 4); };
+  auto w2 = [&](int off, uint16_t v){ memcpy(buf+off, &v, 2); };
+  memcpy(buf,    "RIFF", 4); w4(4, fileSize-8);
+  memcpy(buf+8,  "WAVE", 4);
+  memcpy(buf+12, "fmt ", 4); w4(16, 16);
+  w2(20, 1); w2(22, 1);          // PCM, mono
+  w4(24, sr); w4(28, sr*2);      // sample rate, byte rate
+  w2(32, 2); w2(34, 16);        // block align, bits per sample
+  memcpy(buf+36, "data", 4); w4(40, dataBytes);
+
+  // Generate sine wave
+  int16_t *samples = (int16_t*)(buf + 44);
+  for (uint32_t i = 0; i < numSamples; i++) {
+    float t = i / (float)sr;
+    samples[i] = (int16_t)(MAX_VOLUME * sinf(2.0f * PI * freq * t));
+  }
+  outSize = fileSize;
+  return buf;
+}
+
 void setupI2S() {
-  i2s_config_t i2s_config = {
-    .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
-    .sample_rate = SAMPLE_RATE,
-    .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
-    .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
-    .communication_format = I2S_COMM_FORMAT_STAND_I2S,
-    .intr_alloc_flags = 0,
-    .dma_buf_count = 8,
-    .dma_buf_len = 64,
-    .use_apll = false,
-    .tx_desc_auto_clear = true
-  };
-
-  i2s_pin_config_t pin_config = {
-    .bck_io_num = I2S_BCLK,
-    .ws_io_num = I2S_LRC,
-    .data_out_num = I2S_DOUT,
-    .data_in_num = I2S_PIN_NO_CHANGE
-  };
-
-  i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
-  i2s_set_pin(I2S_PORT, &pin_config);
-  i2s_zero_dma_buffer(I2S_PORT);
+  if (!audioI2S) {
+    audioI2S = new AudioOutputI2S();
+    audioI2S->SetPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
+    audioI2S->SetOutputModeMono(true);
+    audioI2S->SetGain(1.0f);
+    Serial.println("✅ AudioOutputI2S initialized");
+  }
 }
 
 void playBeep(uint16_t freq, uint16_t duration_ms) {
   static unsigned long lastBeep = 0;
   if (millis() - lastBeep < 50) return;
   lastBeep = millis();
-  
-  const int bufferSize = 64;
-  int16_t buffer[bufferSize];
+  if (isPlayingAnnouncement || !audioI2S) return;
 
-  int totalSamples = (SAMPLE_RATE * duration_ms) / 1000;
-  int generated = 0;
+  size_t wavSize = 0;
+  uint8_t *wavBuf = makeBeepWAV(freq, duration_ms, wavSize);
+  if (!wavBuf) { Serial.println("⚠️ Beep: malloc failed"); return; }
 
-  // Start I2S
-  i2s_start(I2S_PORT);
-
-  while (generated < totalSamples) {
-    // Feed watchdog during long beep
-    if (generated % 512 == 0) {
-      yield();
-    }
-    
-    for (int i = 0; i < bufferSize && generated < totalSamples; i++) {
-      float t = (generated + i) / (float)SAMPLE_RATE;
-      buffer[i] = MAX_VOLUME * sin(2 * PI * freq * t);  // Volume maksimal
-    }
-
-    size_t bytes_written;
-    i2s_write(I2S_PORT, buffer, bufferSize * sizeof(int16_t),
-              &bytes_written, 100);
-
-    generated += bufferSize;
-    
-    // Prevent infinite loop
-    if (generated > totalSamples * 2) {
-      Serial.println("⚠️ Beep timeout, breaking");
-      break;
-    }
+  AudioFileSourceRAM *src = new AudioFileSourceRAM(wavBuf, wavSize);
+  AudioGeneratorWAV  *wav = new AudioGeneratorWAV();
+  wav->begin(src, audioI2S);
+  while (wav->isRunning()) {
+    if (!wav->loop()) { wav->stop(); break; }
   }
-
-  // Stop I2S
-  i2s_stop(I2S_PORT);
-  i2s_zero_dma_buffer(I2S_PORT);
-  
+  delete wav;
+  delete src;
+  free(wavBuf);
   yield();
 }
 
 void playWelcomeMelody() {
-  playBeep(523, 100);  // C
-  delay(50);
-  playBeep(659, 100);  // E
-  delay(50);
-  playBeep(784, 150);  // G
+  playBeep(523, 100); delay(50);
+  playBeep(659, 100); delay(50);
+  playBeep(784, 150);
 }
-
 void playSuccessMelody() {
-  playBeep(659, 80);   // E
-  delay(30);
-  playBeep(784, 80);   // G
-  delay(30);
-  playBeep(1047, 120); // C high
+  playBeep(659, 80);  delay(30);
+  playBeep(784, 80);  delay(30);
+  playBeep(1047, 120);
 }
-
 void playErrorMelody() {
-  playBeep(392, 100);  // G low
-  delay(50);
-  playBeep(330, 150);  // E low
+  playBeep(392, 100); delay(50);
+  playBeep(330, 150);
 }
-
-void playTapSound() {
-  playBeep(1200, 30);
-}
-
-void playPreviewBeep() {
-  playBeep(1200, 20);
-}
+void playTapSound()    { playBeep(1200, 30); }
+void playPreviewBeep() { playBeep(1200, 20); }
 
 /* =========================
    DISPLAY FUNCTIONS
@@ -1294,16 +1328,7 @@ void checkKeypad() {
   if (currentMode == MODE_MAIN_MENU) {
     if (key == '1') {
       currentMode = MODE_ATTENDANCE;
-      serverMode = "attendance";
-      tempUID = "";
-      inputMode = false;
-      currentInput = "";
       displayNeedsUpdate = true;
-      
-      // Kirim ke server untuk reset mode ke attendance
-      forceAttendanceModeOnServer();
-      
-      Serial.println("📌 Navigasi ke ATTENDANCE - server notified");
     }
     else if (key == '2') {
       currentMode = MODE_REGISTER;
@@ -1367,41 +1392,6 @@ void resetPN532() {
    SERVER MODE FUNCTIONS
 ========================= */
 
-void forceAttendanceModeOnServer() {
-  if (WiFi.status() != WL_CONNECTED) return;
-  
-  Serial.println("🔄 Forcing attendance mode on server (startup reset)...");
-  
-  InsecureWiFiClient client;
-  client.setTimeout(3000);
-  
-  HTTPClient http;
-  
-  char modeUrl[128];
-  snprintf(modeUrl, sizeof(modeUrl), "%s%s/mode", serverURL, apiEndpoint.c_str());
-  
-  http.begin(client, modeUrl);
-  http.addHeader("Content-Type", "application/json");
-  http.setTimeout(3000);
-  
-  int httpResponseCode = http.POST("{\"mode\":\"attendance\"}");
-  
-  if (httpResponseCode == 200) {
-    Serial.println("✅ Server mode reset to attendance on startup");
-  } else {
-    Serial.printf("⚠️ Failed to reset server mode, code: %d\n", httpResponseCode);
-  }
-  
-  http.end();
-  client.stop();
-  
-  // Pastikan local state juga attendance
-  serverMode = "attendance";
-  currentMode = MODE_ATTENDANCE;
-  
-  feedWatchdog();
-}
-
 void checkModeFromServer() {
   if (WiFi.status() != WL_CONNECTED) return;
 
@@ -1448,7 +1438,7 @@ void checkModeFromServer() {
           
         } else if (serverMode == "register" && currentMode != MODE_REGISTER) {
           currentMode = MODE_REGISTER;
-          Serial.println("✅ Switching to REGISTER MODE (dari server)");
+          Serial.println("✅ Switching to REGISTER MODE");
           
           // PENTING: Clear tempUID saat masuk register mode
           // Agar tidak menggunakan UID lama dari attendance
@@ -1458,8 +1448,8 @@ void checkModeFromServer() {
           lastKey = 0;
           previewChar = "";
           
-          // Clear UID cache di server juga
-          clearUIDCache();
+          // TIDAK perlu clearUIDCache ke server - hemat HTTP request
+          // Server sudah mengelola detected_uid sendiri
           
           Serial.println("🔄 tempUID cleared - waiting for new card tap");
         }
@@ -1569,10 +1559,8 @@ bool sendDataToServer(String uid, String name, String type, bool isOfflineRetry)
     return false;
   }
 
-  feedWatchdog(); // Feed sebelum operasi berat
-
   InsecureWiFiClient client;
-  client.setTimeout(5000); // Timeout 5 detik untuk HTTPS
+  client.setTimeout(3000); // Timeout lebih pendek
   
   HTTPClient http;
   
@@ -1582,33 +1570,25 @@ bool sendDataToServer(String uid, String name, String type, bool isOfflineRetry)
   
   http.begin(client, url);
   http.addHeader("Content-Type", "application/json");
-  http.setTimeout(5000);
+  http.setTimeout(3000);
   
-  // Build JSON request (minimal allocation)
+  DynamicJsonDocument doc(512);
+  doc["uid"] = uid;
+  doc["mode"] = type;
+  
+  if (type == "register" && name.length() > 0) {
+    doc["name"] = name;
+  }
+  
+  if (isOfflineRetry) {
+    doc["offline_retry"] = true;
+  }
+  
   String jsonString;
-  {
-    DynamicJsonDocument doc(256);
-    doc["uid"] = uid;
-    doc["mode"] = type;
-    
-    if (type == "register" && name.length() > 0) {
-      doc["name"] = name;
-    }
-    
-    if (isOfflineRetry) {
-      doc["offline_retry"] = true;
-    }
-    
-    serializeJson(doc, jsonString);
-  } // doc freed here
-  
-  feedWatchdog(); // Feed sebelum POST
+  serializeJson(doc, jsonString);
   
   int httpResponseCode = http.POST(jsonString);
-  jsonString = String(); // Free memory
   bool success = false;
-  
-  feedWatchdog(); // Feed setelah POST
   
   if (httpResponseCode > 0) {
     String response = http.getString();
@@ -1616,10 +1596,7 @@ bool sendDataToServer(String uid, String name, String type, bool isOfflineRetry)
     Serial.println("📨 Server response:");
     Serial.println(response);
     
-    feedWatchdog();
-    
-    // Parse response (gunakan ukuran lebih besar untuk safety)
-    DynamicJsonDocument responseDoc(2048);
+    DynamicJsonDocument responseDoc(1024);
     DeserializationError error = deserializeJson(responseDoc, response);
     
     if (!error && responseDoc["success"] == true) {
@@ -1652,6 +1629,15 @@ bool sendDataToServer(String uid, String name, String type, bool isOfflineRetry)
       if (error) {
         Serial.print("JSON error: ");
         Serial.println(error.c_str());
+      }
+      // Log pesan error dari server jika ada
+      if (!error && responseDoc.containsKey("message")) {
+        Serial.print("Server message: ");
+        Serial.println(responseDoc["message"].as<String>());
+      }
+      if (!error && responseDoc.containsKey("error")) {
+        Serial.print("Server error: ");
+        Serial.println(responseDoc["error"].as<String>());
       }
     }
     
@@ -1933,12 +1919,107 @@ void cleanupStrings() {
 }
 
 /* =========================
+   ANNOUNCEMENT / TTS FUNCTIONS
+========================= */
+
+void checkAnnouncement() {
+  if (WiFi.status() != WL_CONNECTED) return;
+  if (isPlayingAnnouncement) return; // Jangan cek saat sedang main audio
+
+  InsecureWiFiClient client;
+  client.setTimeout(3000);
+  HTTPClient http;
+  
+  char url[128];
+  snprintf(url, sizeof(url), "%s%s/announcement", serverURL, apiEndpoint.c_str());
+  
+  http.begin(client, url);
+  http.setTimeout(3000);
+  
+  int code = http.GET();
+  if (code == 200) {
+    String response = http.getString();
+    DynamicJsonDocument doc(512);
+    DeserializationError err = deserializeJson(doc, response);
+    
+    if (!err && doc["has_announcement"] == true) {
+      String audioUrl = doc["url"].as<String>();
+      Serial.println("📢 Announcement received: " + audioUrl);
+      
+      // Tampilkan di layar
+      if (currentMode == MODE_ATTENDANCE) {
+        tft.fillRoundRect(10, 140, 300, 40, 8, COLOR_PRIMARY);
+        tft.setTextColor(ILI9341_WHITE);
+        tft.setTextSize(1);
+        tft.setCursor(20, 148);
+        tft.print("Memainkan pengumuman...");
+        tft.setCursor(20, 160);
+        tft.print("Harap perhatikan!");
+      }
+      
+      playAnnouncementMP3(audioUrl);
+      response = String();
+    }
+  }
+  
+  http.end();
+  client.stop();
+  feedWatchdog();
+}
+
+void playAnnouncementMP3(String url) {
+  isPlayingAnnouncement = true;
+  Serial.println("🔊 Playing MP3: " + url);
+
+  if (!audioI2S) {
+    Serial.println("❌ audioI2S not initialized");
+    isPlayingAnnouncement = false;
+    return;
+  }
+
+  audioI2S->SetGain(1.5f);
+
+  audioSource = new AudioFileSourceHTTPStream(url.c_str());
+  if (!audioSource || !audioSource->isOpen()) {
+    Serial.println("❌ Failed to open HTTP stream");
+    stopAnnouncement();
+    return;
+  }
+  audioBuffer = new AudioFileSourceBuffer(audioSource, 4096);
+  mp3 = new AudioGeneratorMP3();
+
+  if (!mp3->begin(audioBuffer, audioI2S)) {
+    Serial.println("❌ MP3 begin failed");
+    stopAnnouncement();
+    return;
+  }
+
+  Serial.println("▶️ Playing...");
+  while (mp3 && mp3->isRunning()) {
+    if (!mp3->loop()) { mp3->stop(); break; }
+    feedWatchdog();
+    yield();
+  }
+  Serial.println("✅ MP3 done");
+  stopAnnouncement();
+}
+
+void stopAnnouncement() {
+  if (mp3) { if (mp3->isRunning()) mp3->stop(); delete mp3; mp3 = nullptr; }
+  if (audioBuffer) { delete audioBuffer; audioBuffer = nullptr; }
+  if (audioSource) { delete audioSource; audioSource = nullptr; }
+  if (audioI2S) audioI2S->SetGain(1.0f);
+  isPlayingAnnouncement = false;
+  displayNeedsUpdate = true;
+  Serial.println("🔇 Announcement done");
+}
+
+/* =========================
    RFID FUNCTIONS
 ========================= */
 
 void checkRFID() {
-  if (millis() - lastRFIDCheck < RFID_CHECK_INTERVAL) return;
-  lastRFIDCheck = millis();
+  // Catatan: lastRFIDCheck dikelola dari loop(), tidak perlu cek ulang di sini
   
   // Check jika kartu masih ditempel terlalu lama
   if (cardStillPresent && millis() - cardPresentStart > CARD_PRESENT_TIMEOUT) {
@@ -1995,8 +2076,13 @@ void checkRFID() {
       }
       uidStr.toUpperCase();
       
-      Serial.print("RFID: ");
-      Serial.println(uidStr);
+      Serial.print("RFID UID: ");
+      Serial.print(uidStr);
+      Serial.print(" (length=");
+      Serial.print(uidLength);
+      Serial.print(", mode=");
+      Serial.print(serverMode);
+      Serial.println(")");
       
       // Tap sound effect
       playTapSound();
@@ -2014,25 +2100,67 @@ void checkRFID() {
       
       // Gunakan mode dari server untuk menentukan aksi
       if (serverMode == "attendance") {
-        feedWatchdog(); // Feed watchdog sebelum HTTP call
+        yield(); // Feed watchdog sebelum HTTP
         
         bool sendSuccess = sendDataToServer(uidStr, "", "attendance", false);
         
-        feedWatchdog(); // Feed watchdog setelah HTTP call
+        yield(); // Feed watchdog setelah HTTP
         
         if (sendSuccess) {
-          // Success melody (lebih menarik!)
+          // Success melody
           playSuccessMelody();
           yield();
           
           Serial.println("✅ Attendance recorded");
           
-          // Clear "ANGKAT KARTU" message
+          // Clear SEMUA status message sebelum tampil nama
           statusMessage = "";
+          cardStillPresent = false; // Anggap kartu sudah diangkat
           
-          // PENTING: Force update display untuk menampilkan employee info
+          // Set timer tepat sebelum tampil
+          lastTapDisplay = millis();
+          displayNeedsUpdate = false; // Reset dulu
+          
+          // Tampilkan nama karyawan
+          showAttendanceMode();
+          
+          Serial.printf("👤 Showing employee: %s for 2 seconds\n", lastEmployeeName.c_str());
+          
+          // BLOCKING DISPLAY: Tahan layar dengan nama karyawan selama 2 detik
+          unsigned long displayStart = millis();
+          unsigned long displayEnd = displayStart + 2000; // 2 detik
+          int lastSec = currentSecond;
+          
+          while (millis() < displayEnd) {
+            feedWatchdog();
+            
+            // Update clock setiap detik (partial, tidak menghapus nama)
+            updateClock();
+            if (currentSecond != lastSec) {
+              lastSec = currentSecond;
+              tft.fillRect(85, 40, 150, 20, COLOR_DARK);
+              drawClock(85, 40, 2);
+            }
+            
+            delay(50);
+          }
+          
+          // Setelah selesai, clear nama dan pastikan status bersih
+          lastEmployeeName = "";
+          lastTapTime = "";
+          statusMessage = ""; // Pastikan tidak ada sisa pesan
+          cardStillPresent = false;
+          lastCardRead = 0;    // Reset cooldown
+          lastRFIDCheck = 0;   // Reset agar checkRFID langsung aktif di iterasi berikutnya
+          pn532ErrorCount = 0; // Reset error count PN532
+          
+          // Re-init SAMConfig agar PN532 kembali ke mode siap scan
+          // setelah idle 2 detik selama blocking display
+          nfc.SAMConfig();
+          
           displayNeedsUpdate = true;
-          updateDisplay(true);
+          
+          Serial.println("✅ Employee display done");
         } else {
           saveToOfflineQueue(uidStr, "", "attendance");
           statusMessage = "Offline saved";
@@ -2048,6 +2176,10 @@ void checkRFID() {
         // Kirim UID ke form Laravel
         sendUIDToForm(uidStr);
         
+        inputMode = true;
+        currentInput = "";
+        lastKey = 0;
+        previewChar = "";
         statusMessage = "UID sent!";
         statusMessageTime = millis();
         displayNeedsUpdate = true;
@@ -2059,21 +2191,6 @@ void checkRFID() {
         yield();
         
         Serial.println("✅ UID sent to form");
-        
-        // PENTING: Setelah kartu terdeteksi di register mode,
-        // kembali ke attendance mode dan halaman attendance
-        Serial.println("🔄 Register card detected, switching back to ATTENDANCE mode");
-        serverMode = "attendance";
-        currentMode = MODE_ATTENDANCE;
-        tempUID = "";
-        inputMode = false;
-        currentInput = "";
-        lastKey = 0;
-        previewChar = "";
-        
-        // Force update display ke attendance
-        displayNeedsUpdate = true;
-        updateDisplay(true);
       }
       
       // Cleanup
@@ -2206,10 +2323,6 @@ void setup() {
       
       // Sync time from server
       syncTimeFromServer();
-      
-      // PENTING: Saat startup, paksa mode ke attendance di server
-      // Agar tidak stuck di register mode dari sesi sebelumnya
-      forceAttendanceModeOnServer();
     } else {
       Serial.println("\n❌ WiFi Connection Failed");
       playBeep(500, 200);
@@ -2217,17 +2330,7 @@ void setup() {
   }
   
   delay(1000);
-  
-  // Jika WiFi connected dan mode sudah di-set ke attendance,
-  // langsung masuk ke attendance mode (skip main menu)
-  if (WiFi.status() == WL_CONNECTED) {
-    currentMode = MODE_ATTENDANCE;
-    showAttendanceMode();
-    Serial.println("📌 Auto-start ke ATTENDANCE mode");
-  } else {
-    showMainMenu();
-  }
-  
+  showMainMenu();
   playBeep(1500, 100);
   
   Serial.println("=== READY ===\n");
@@ -2292,15 +2395,16 @@ void loop() {
       drawClock(85, 40, 2);
     }
     
-    // Update animation frame HANYA saat ada employee info
-    if (lastEmployeeName.length() > 0) {
-      if (now - lastAnimationUpdate > ANIMATION_INTERVAL) {
-        lastAnimationUpdate = now;
-        animationFrame++;
-        if (animationFrame > 1000) animationFrame = 0;
-        displayNeedsUpdate = true;
-      }
-    }
+    // Update animation frame - DINONAKTIFKAN karena animasi tidak digunakan
+    // dan menyebabkan full redraw 20x/detik yang mengganggu tampilan nama karyawan
+    // if (lastEmployeeName.length() > 0) {
+    //   if (now - lastAnimationUpdate > ANIMATION_INTERVAL) {
+    //     lastAnimationUpdate = now;
+    //     animationFrame++;
+    //     if (animationFrame > 1000) animationFrame = 0;
+    //     displayNeedsUpdate = true;
+    //   }
+    // }
     
     // Check memory secara berkala
     if (now - lastMemoryCheck > MEMORY_CHECK_INTERVAL) {
@@ -2335,12 +2439,8 @@ void loop() {
     }
     
     // Cek mode dari server (hanya jika WiFi connected)
+    // PENTING: mode check dilakukan SETELAH RFID check agar tidak blocking
     if (WiFi.status() == WL_CONNECTED) {
-      if (now - lastModeCheck > MODE_CHECK_INTERVAL) {
-        checkModeFromServer();
-        lastModeCheck = now;
-      }
-      
       // Sync time setiap 1 jam
       if (now - lastTimeSync > TIME_SYNC_INTERVAL) {
         syncTimeFromServer();
@@ -2348,10 +2448,33 @@ void loop() {
       }
     }
     
-    // Check RFID
+    // Check RFID — PRIORITAS UTAMA, tidak boleh diblokir HTTP
     if (now - lastRFIDCheck >= RFID_CHECK_INTERVAL) {
       checkRFID();
       lastRFIDCheck = now;
+    }
+    
+    // Cek announcement dari server (setiap 10 detik)
+    if (WiFi.status() == WL_CONNECTED) {
+      if (now - lastAnnouncementCheck > ANNOUNCEMENT_CHECK_INTERVAL) {
+        lastAnnouncementCheck = now;
+        if (!cardStillPresent && !isPlayingAnnouncement) {
+          checkAnnouncement();
+        }
+      }
+    }
+
+    // Cek mode dari server (setelah RFID, gunakan interval lebih jarang)
+    if (WiFi.status() == WL_CONNECTED) {
+      if (now - lastModeCheck > MODE_CHECK_INTERVAL) {
+        // Hanya jalankan mode check jika RFID baru saja tidak membaca kartu
+        // (cardStillPresent == false) agar tidak mengganggu proses tap
+        // JUGA: jangan mode check saat menampilkan nama karyawan
+        if (!cardStillPresent && lastEmployeeName.length() == 0) {
+          checkModeFromServer();
+        }
+        lastModeCheck = now;
+      }
     }
     
     // Auto-recovery PN532 jika terlalu banyak error
@@ -2363,7 +2486,7 @@ void loop() {
     // Proses offline queue (non-blocking)
     processOfflineQueue();
     
-    // Auto-clear employee info setelah 2 detik
+    // Auto-clear employee info — hanya sebagai fallback jika blocking display tidak jalan
     if (lastEmployeeName.length() > 0 && now - lastTapDisplay >= TAP_DISPLAY_DURATION) {
       lastEmployeeName = "";
       lastTapTime = "";
@@ -2406,7 +2529,13 @@ void loop() {
   }
   
   // Update display (semua mode)
-  if (displayNeedsUpdate && now - lastDisplayUpdate >= DISPLAY_UPDATE_INTERVAL) {
+  // PENTING: Jangan full redraw saat menampilkan nama karyawan di attendance mode
+  // agar nama tidak tertimpa sebelum waktunya
+  bool isShowingEmployeeName = (currentMode == MODE_ATTENDANCE && 
+                                 lastEmployeeName.length() > 0 && 
+                                 (now - lastTapDisplay) < TAP_DISPLAY_DURATION);
+  
+  if (displayNeedsUpdate && !isShowingEmployeeName && now - lastDisplayUpdate >= DISPLAY_UPDATE_INTERVAL) {
     lastDisplayUpdate = now;
     updateDisplay(false);
   }

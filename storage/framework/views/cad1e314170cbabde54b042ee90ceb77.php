@@ -1,6 +1,15 @@
-<x-layouts.admin title="Kepegawaian & Rekrutmen">
+<?php if (isset($component)) { $__componentOriginalc8c9fd5d7827a77a31381de67195f0c3 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalc8c9fd5d7827a77a31381de67195f0c3 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.layouts.admin','data' => ['title' => 'Kepegawaian & Rekrutmen']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('layouts.admin'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Kepegawaian & Rekrutmen']); ?>
     <div class="space-y-6">
-        {{-- Header --}}
+        
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-slate-900">Kepegawaian & Rekrutmen</h1>
@@ -11,16 +20,16 @@
                     <i class='bx bx-volume-full'></i>
                     <span>Pengumuman Mesin</span>
                 </button>
-                @hasPermission('hrm.karyawan.create')
+                <?php if (\Illuminate\Support\Facades\Blade::check('hasPermission', 'hrm.karyawan.create')): ?>
                 <button onclick="openAddModal()" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2">
                     <i class='bx bx-plus'></i>
                     <span>Tambah Karyawan</span>
                 </button>
-                @endhasPermission
+                <?php endif; ?>
             </div>
         </div>
 
-        {{-- Announcement Modal --}}
+        
         <div id="announcementModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
             <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
                 <div class="flex items-center gap-3 mb-4">
@@ -69,7 +78,7 @@
             </div>
         </div>
 
-        {{-- Stats Cards --}}
+        
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="statsCards">
             <div class="bg-white rounded-xl shadow-card p-4 border border-slate-200">
                 <div class="flex items-center gap-3">
@@ -117,16 +126,16 @@
             </div>
         </div>
 
-        {{-- Filters & Search --}}
+        
         <div class="bg-white rounded-xl shadow-card p-4 border border-slate-200">
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">Outlet</label>
                     <select id="outletFilter" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
                         <option value="all">Semua Outlet</option>
-                        @foreach($outlets as $outlet)
-                            <option value="{{ $outlet->id_outlet }}">{{ $outlet->nama_outlet }}</option>
-                        @endforeach
+                        <?php $__currentLoopData = $outlets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $outlet): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($outlet->id_outlet); ?>"><?php echo e($outlet->nama_outlet); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                 </div>
                 <div>
@@ -152,19 +161,19 @@
                     <button onclick="loadData()" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex-1">
                         <i class='bx bx-search'></i> Filter
                     </button>
-                    @can('hrm.karyawan.export')
+                    <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('hrm.karyawan.export')): ?>
                     <button onclick="exportPdf()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
                         <i class='bx bxs-file-pdf'></i>
                     </button>
                     <button onclick="exportExcel()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                         <i class='bx bxs-file'></i>
                     </button>
-                    @endcan
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
 
-        {{-- Data Grid --}}
+        
         <div class="bg-white rounded-xl shadow-card border border-slate-200 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full" id="employeeTable">
@@ -194,7 +203,7 @@
         </div>
     </div>
 
-    {{-- Add/Edit Modal --}}
+    
     <div class="modal fade" id="employeeModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content rounded-xl border-0 shadow-xl">
@@ -211,9 +220,9 @@
                                 <label class="block text-sm font-medium text-slate-700 mb-2">Outlet <span class="text-red-500">*</span></label>
                                 <select id="outlet_id" class="w-full px-3 py-2 border border-slate-300 rounded-lg" required>
                                     <option value="">Pilih Outlet</option>
-                                    @foreach($outlets as $outlet)
-                                        <option value="{{ $outlet->id_outlet }}">{{ $outlet->nama_outlet }}</option>
-                                    @endforeach
+                                    <?php $__currentLoopData = $outlets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $outlet): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <option value="<?php echo e($outlet->id_outlet); ?>"><?php echo e($outlet->nama_outlet); ?></option>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </select>
                             </div>
                             <div>
@@ -294,7 +303,7 @@
         </div>
     </div>
 
-    @push('scripts')
+    <?php $__env->startPush('scripts'); ?>
     <script>
         let employees = [];
 
@@ -327,7 +336,7 @@
                     search: $('#searchInput').val()
                 });
 
-                const response = await fetch(`{{ route('sdm.kepegawaian.data') }}?${params}`);
+                const response = await fetch(`<?php echo e(route('sdm.kepegawaian.data')); ?>?${params}`);
                 const result = await response.json();
 
                 if (result.success) {
@@ -343,7 +352,7 @@
 
         async function loadDepartments() {
             try {
-                const response = await fetch(`{{ route('sdm.kepegawaian.departments') }}`);
+                const response = await fetch(`<?php echo e(route('sdm.kepegawaian.departments')); ?>`);
                 const result = await response.json();
 
                 if (result.success) {
@@ -400,16 +409,16 @@
                         <td class="px-4 py-3 text-slate-700">${emp.salary_formatted}</td>
                         <td class="px-4 py-3 text-slate-700">${emp.join_date}</td>
                         <td class="px-4 py-3 text-center">
-                            @hasPermission('hrm.karyawan.edit')
+                            <?php if (\Illuminate\Support\Facades\Blade::check('hasPermission', 'hrm.karyawan.edit')): ?>
                             <button onclick="editEmployee(${emp.id})" class="px-2 py-1 text-blue-600 hover:bg-blue-50 rounded">
                                 <i class='bx bx-edit'></i>
                             </button>
-                            @endhasPermission
-                            @hasPermission('hrm.karyawan.delete')
+                            <?php endif; ?>
+                            <?php if (\Illuminate\Support\Facades\Blade::check('hasPermission', 'hrm.karyawan.delete')): ?>
                             <button onclick="deleteEmployee(${emp.id})" class="px-2 py-1 text-red-600 hover:bg-red-50 rounded">
                                 <i class='bx bx-trash'></i>
                             </button>
-                            @endhasPermission
+                            <?php endif; ?>
                         </td>
                     </tr>
                 `;
@@ -442,7 +451,7 @@
 
         async function editEmployee(id) {
             try {
-                const response = await fetch(`{{ route('sdm.kepegawaian.index') }}/${id}`);
+                const response = await fetch(`<?php echo e(route('sdm.kepegawaian.index')); ?>/${id}`);
                 const result = await response.json();
 
                 if (result.success) {
@@ -499,13 +508,13 @@
                 fingerprint_id: $('#fingerprint_id').val(),
                 rfid_uid: $('#rfid_uid').val(),
                 jobdesk: jobdesk,
-                _token: '{{ csrf_token() }}'
+                _token: '<?php echo e(csrf_token()); ?>'
             };
 
             try {
                 const url = id 
-                    ? `{{ route('sdm.kepegawaian.index') }}/${id}`
-                    : `{{ route('sdm.kepegawaian.store') }}`;
+                    ? `<?php echo e(route('sdm.kepegawaian.index')); ?>/${id}`
+                    : `<?php echo e(route('sdm.kepegawaian.store')); ?>`;
                 
                 const method = id ? 'PUT' : 'POST';
 
@@ -513,7 +522,7 @@
                     method: method,
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
                     },
                     body: JSON.stringify(data)
                 });
@@ -537,10 +546,10 @@
             if (!confirm('Yakin ingin menghapus karyawan ini?')) return;
 
             try {
-                const response = await fetch(`{{ route('sdm.kepegawaian.index') }}/${id}`, {
+                const response = await fetch(`<?php echo e(route('sdm.kepegawaian.index')); ?>/${id}`, {
                     method: 'DELETE',
                     headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
                     }
                 });
 
@@ -610,7 +619,7 @@
                 status_filter: $('#statusFilter').val(),
                 department_filter: $('#departmentFilter').val()
             });
-            window.open(`{{ route('sdm.kepegawaian.export.pdf') }}?${params}`, '_blank');
+            window.open(`<?php echo e(route('sdm.kepegawaian.export.pdf')); ?>?${params}`, '_blank');
         }
 
         function exportExcel() {
@@ -619,7 +628,7 @@
                 status_filter: $('#statusFilter').val(),
                 department_filter: $('#departmentFilter').val()
             });
-            window.location.href = `{{ route('sdm.kepegawaian.export.excel') }}?${params}`;
+            window.location.href = `<?php echo e(route('sdm.kepegawaian.export.excel')); ?>?${params}`;
         }
 
         // RFID Detection Functions
@@ -636,11 +645,11 @@
 
             try {
                 // Set ESP32 to register mode
-                const response = await fetch('{{ url("/api/morra/api/rfid/mode") }}', {
+                const response = await fetch('<?php echo e(url("/api/morra/api/rfid/mode")); ?>', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
                     },
                     body: JSON.stringify({ mode: 'register' })
                 });
@@ -685,11 +694,11 @@
             
             // Reset mode to attendance
             try {
-                await fetch('{{ url("/api/morra/api/rfid/mode") }}', {
+                await fetch('<?php echo e(url("/api/morra/api/rfid/mode")); ?>', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
                     },
                     body: JSON.stringify({ mode: 'attendance' })
                 });
@@ -727,7 +736,7 @@
             }
             
             try {
-                const response = await fetch('{{ url("/api/detected-rfid-uid") }}');
+                const response = await fetch('<?php echo e(url("/api/detected-rfid-uid")); ?>');
                 const result = await response.json();
                 
                 if (result.success && result.uid) {
@@ -834,11 +843,11 @@
             showAnnouncementStatus('Sedang generate audio TTS...', 'info');
 
             try {
-                const response = await fetch('{{ url("/api/morra/api/rfid/announce") }}', {
+                const response = await fetch('<?php echo e(url("/api/morra/api/rfid/announce")); ?>', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
                     },
                     body: JSON.stringify({ text: text })
                 });
@@ -878,5 +887,15 @@
             if (e.target === this) closeAnnouncementModal();
         });
     </script>
-    @endpush
-</x-layouts.admin>
+    <?php $__env->stopPush(); ?>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalc8c9fd5d7827a77a31381de67195f0c3)): ?>
+<?php $attributes = $__attributesOriginalc8c9fd5d7827a77a31381de67195f0c3; ?>
+<?php unset($__attributesOriginalc8c9fd5d7827a77a31381de67195f0c3); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc8c9fd5d7827a77a31381de67195f0c3)): ?>
+<?php $component = $__componentOriginalc8c9fd5d7827a77a31381de67195f0c3; ?>
+<?php unset($__componentOriginalc8c9fd5d7827a77a31381de67195f0c3); ?>
+<?php endif; ?>
+<?php /**PATH C:\xampp\htdocs\hm\resources\views/admin/sdm/kepegawaian/index.blade.php ENDPATH**/ ?>

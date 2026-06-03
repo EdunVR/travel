@@ -603,7 +603,9 @@ class KeberangkatanController extends Controller
             }
 
             // Create RAB using service
-            $rab = $this->rabService->createRabForKeberangkatan($keberangkatan);
+            $result = $this->rabService->createRabForKeberangkatan($keberangkatan);
+            $rab    = $result['rab'];
+            $hotelWarning = $result['hotel_warning'] ?? null;
 
             Log::info('RAB created for keberangkatan via controller', [
                 'keberangkatan_id' => $keberangkatan->id,
@@ -613,6 +615,7 @@ class KeberangkatanController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'RAB berhasil dibuat',
+                'hotel_warning' => $hotelWarning,
                 'data' => [
                     'rab_id' => $rab->id_rab,
                     'rab_name' => $rab->nama_template,
@@ -626,6 +629,61 @@ class KeberangkatanController extends Controller
                 'success' => false,
                 'message' => 'Gagal membuat RAB: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Regenerate RAB for keberangkatan (delete old + create new from current HPP)
+     */
+    public function regenerateRab($id)
+    {
+        try {
+            $keberangkatan = Keberangkatan::with('travelPackage.hppCalculation')->find($id);
+            
+            if (!$keberangkatan) {
+                return response()->json(['success' => false, 'message' => 'Keberangkatan tidak ditemukan'], 404);
+            }
+
+            if (!$keberangkatan->travelPackage || !$keberangkatan->travelPackage->hppCalculation) {
+                return response()->json(['success' => false, 'message' => 'Paket belum memiliki kalkulasi HPP'], 400);
+            }
+
+            // Delete old RAB if exists
+            if ($keberangkatan->id_rab) {
+                $oldRab = \App\Models\RabTemplate::find($keberangkatan->id_rab);
+                if ($oldRab) {
+                    // Delete RAB details first
+                    $oldRab->details()->delete();
+                    $oldRab->delete();
+                    Log::info('Old RAB deleted for regeneration', ['rab_id' => $keberangkatan->id_rab, 'keberangkatan_id' => $id]);
+                }
+                $keberangkatan->update(['id_rab' => null]);
+            }
+
+            // Create new RAB from current HPP data
+            $result = $this->rabService->createRabForKeberangkatan($keberangkatan);
+            $rab    = $result['rab'];
+            $hotelWarning = $result['hotel_warning'] ?? null;
+
+            Log::info('RAB regenerated for keberangkatan', [
+                'keberangkatan_id' => $keberangkatan->id,
+                'new_rab_id' => $rab->id_rab
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'RAB berhasil di-regenerate dari data HPP terbaru',
+                'hotel_warning' => $hotelWarning,
+                'data' => [
+                    'rab_id' => $rab->id_rab,
+                    'rab_name' => $rab->nama_template,
+                    'total_budget' => $rab->total_biaya
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error regenerating RAB: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal regenerate RAB: ' . $e->getMessage()], 500);
         }
     }
 
@@ -1246,12 +1304,65 @@ class KeberangkatanController extends Controller
             return response()->json(['error' => 'HPP belum dihitung untuk paket ini'], 404);
         }
 
+        // If RAB exists, read directly from rab_detail (same source as Manajemen RAB Keuangan)
+        if ($keberangkatan->id_rab) {
+            $rab = \App\Models\RabTemplate::with('details')->find($keberangkatan->id_rab);
+            if ($rab) {
+                $allItems = [];
+                foreach ($rab->details as $detail) {
+                    $allItems[] = [
+                        'id'             => 'rab_' . $detail->id,
+                        'rab_detail_id'  => $detail->id,  // for direct update
+                        'hpp_key'        => $this->getHppKeyFromLabel($detail->item),
+                        'label'          => $detail->item,
+                        'type'           => 'hpp_dasar',
+                        'unit_price'     => (float) $detail->harga_satuan,
+                        'qty'            => (int) $detail->qty,
+                        'total'          => (float) $detail->budget,
+                        'payment_status' => $detail->payment_status ?? 'hutang',
+                        'realisasi'      => (float) ($detail->realisasi_pemakaian ?? 0),
+                        'hutang_amount'  => (float) ($detail->hutang_amount ?? 0),
+                    ];
+                }
+
+                $totalBudget    = array_sum(array_column($allItems, 'total'));
+                $totalRealisasi = array_sum(array_column($allItems, 'realisasi'));
+                $totalHutang    = array_sum(array_column($allItems, 'hutang_amount'));
+
+                $jamaahCount = $keberangkatan->jamaahBookings->whereNotIn('status', ['cancelled'])->count() ?: 1;
+
+                // Check hotel warning: hpp hotel_cost = 0 but hotel bookings exist
+                $hppHotelCost = (float) ($hpp->hotel_cost ?? 0);
+                $totalHotelFromBookings = $keberangkatan->jamaahBookings
+                    ->whereNotIn('status', ['cancelled'])
+                    ->flatMap(fn($b) => $b->hotelBookings ?? collect())
+                    ->sum('total_cost');
+                $hotelWarning = ($hppHotelCost <= 0 && $totalHotelFromBookings > 0)
+                    ? 'Biaya hotel di HPP Dasar paket masih Rp 0, namun terdapat tagihan hotel dari booking jamaah sebesar Rp ' . number_format($totalHotelFromBookings, 0, ',', '.') . '. Pertimbangkan untuk mengisi biaya hotel di modal Kelola HPP Paket.'
+                    : null;
+
+                return response()->json([
+                    'keberangkatan_code' => $keberangkatan->keberangkatan_code,
+                    'keberangkatan_name' => $keberangkatan->keberangkatan_name,
+                    'jamaah_count'       => $jamaahCount,
+                    'total_budget'       => $totalBudget,
+                    'total_realisasi'    => $totalRealisasi,
+                    'total_hutang'       => $totalHutang,
+                    'items'              => $allItems,
+                    'hotel_warning'      => $hotelWarning,
+                    'laporan_disesuaikan'    => (bool) ($hpp->laporan_disesuaikan ?? false),
+                    'laporan_adjustment'     => (float) ($hpp->laporan_adjustment ?? 0),
+                    'laporan_disesuaikan_at' => $hpp->laporan_disesuaikan_at?->format('d M Y H:i') ?? null,
+                ]);
+            }
+        }
+
+        // Fallback: no RAB yet, build from HPP data
         $payStatus = $hpp->component_payment_status ?? [];
         $hutangAmt = $hpp->component_hutang_amount ?? [];
         $realisasiMap = $hpp->component_realisasi ?? [];
         $jamaahCount = $keberangkatan->jamaahBookings->whereNotIn('status', ['cancelled'])->count() ?: 1;
 
-        // ===== BARIS HPP DASAR (per komponen × jamaah) =====
         $hppDasarItems = [];
         $dasarDefs = [
             ['key' => 'flight_cost',         'label' => 'Tiket Pesawat'],
@@ -1269,9 +1380,8 @@ class KeberangkatanController extends Controller
             if ($unitPrice <= 0) continue;
 
             $total   = $unitPrice * $jamaahCount;
-            $status  = $payStatus[$def['key']] ?? 'lunas';
+            $status  = $payStatus[$def['key']] ?? 'hutang';
             $hutang  = (float) ($hutangAmt[$def['key']] ?? ($status === 'hutang' ? $total : 0));
-            // Realisasi: ambil dari component_realisasi jika ada, fallback ke logika status
             $realisasi = isset($realisasiMap[$def['key']])
                 ? (float) $realisasiMap[$def['key']]
                 : (($status === 'lunas') ? $total : 0);
@@ -1290,55 +1400,42 @@ class KeberangkatanController extends Controller
             ];
         }
 
-        // ===== BARIS HPP AKTUAL HOTEL per jamaah =====
-        $hotelItems = [];
-        foreach ($keberangkatan->jamaahBookings->whereNotIn('status', ['cancelled']) as $booking) {
-            foreach ($booking->hotelBookings as $hb) {
-                if (!$hb->is_charged) continue;
-                $total = (float) $hb->price_per_night * $hb->nights;
-                if ($total <= 0) continue;
+        // Custom components
+        $customComponents = $hpp->custom_components ?? [];
+        foreach ($customComponents as $cc) {
+            $unitPrice = (float) ($cc['value'] ?? 0);
+            if ($unitPrice <= 0) continue;
+            $total = $unitPrice * $jamaahCount;
+            $status = $cc['payment_status'] ?? 'hutang';
 
-                $hotelItems[] = [
-                    'id'          => 'hotel_' . $hb->id,
-                    'hpp_key'     => null,
-                    'label'       => 'Hotel ' . ($hb->hotel?->hotel_name ?? '-') . ' (' . ($hb->city_type ?? '') . ') - ' . ($booking->jamaah?->nama ?? 'Jamaah'),
-                    'type'        => 'hotel_aktual',
-                    'unit_price'  => (float) $hb->price_per_night,
-                    'qty'         => $hb->nights,
-                    'total'       => $total,
-                    'payment_status' => 'lunas',
-                    'realisasi'   => $total,
-                    'hutang_amount' => 0,
-                ];
-            }
+            $hppDasarItems[] = [
+                'id'          => 'hpp_custom_' . ($cc['id'] ?? uniqid()),
+                'hpp_key'     => null,
+                'label'       => $cc['label'] ?? 'Biaya Lainnya',
+                'type'        => 'hpp_dasar',
+                'unit_price'  => $unitPrice,
+                'qty'         => $jamaahCount,
+                'total'       => $total,
+                'payment_status' => $status,
+                'realisasi'   => ($status === 'lunas') ? $total : 0,
+                'hutang_amount' => ($status === 'hutang') ? $total : 0,
+            ];
         }
 
-        // ===== BARIS HPP AKTUAL ADDONS per jamaah =====
-        $addonItems = [];
-        foreach ($keberangkatan->jamaahBookings->whereNotIn('status', ['cancelled']) as $booking) {
-            foreach ($booking->addons->where('masuk_hpp', true) as $addon) {
-                $total = (float) $addon->harga * $addon->qty;
-                if ($total <= 0) continue;
-
-                $addonItems[] = [
-                    'id'          => 'addon_' . $addon->id,
-                    'hpp_key'     => null,
-                    'label'       => ($addon->nama ?? 'Add-on') . ' - ' . ($booking->jamaah?->nama ?? 'Jamaah'),
-                    'type'        => 'addon_aktual',
-                    'unit_price'  => (float) $addon->harga,
-                    'qty'         => $addon->qty,
-                    'total'       => $total,
-                    'payment_status' => 'lunas',
-                    'realisasi'   => $total,
-                    'hutang_amount' => 0,
-                ];
-            }
-        }
-
-        $allItems = array_merge($hppDasarItems, $hotelItems, $addonItems);
+        $allItems = $hppDasarItems;
         $totalBudget    = array_sum(array_column($allItems, 'total'));
         $totalRealisasi = array_sum(array_column($allItems, 'realisasi'));
         $totalHutang    = array_sum(array_column($allItems, 'hutang_amount'));
+
+        // Check hotel warning
+        $hppHotelCost = (float) ($hpp->hotel_cost ?? 0);
+        $totalHotelFromBookings = $keberangkatan->jamaahBookings
+            ->whereNotIn('status', ['cancelled'])
+            ->flatMap(fn($b) => $b->hotelBookings ?? collect())
+            ->sum('total_cost');
+        $hotelWarning = ($hppHotelCost <= 0 && $totalHotelFromBookings > 0)
+            ? 'Biaya hotel di HPP Dasar paket masih Rp 0, namun terdapat tagihan hotel dari booking jamaah sebesar Rp ' . number_format($totalHotelFromBookings, 0, ',', '.') . '. Pertimbangkan untuk mengisi biaya hotel di modal Kelola HPP Paket.'
+            : null;
 
         return response()->json([
             'keberangkatan_code' => $keberangkatan->keberangkatan_code,
@@ -1348,6 +1445,7 @@ class KeberangkatanController extends Controller
             'total_realisasi'    => $totalRealisasi,
             'total_hutang'       => $totalHutang,
             'items'              => $allItems,
+            'hotel_warning'      => $hotelWarning,
             'laporan_disesuaikan'   => (bool) ($hpp->laporan_disesuaikan ?? false),
             'laporan_adjustment'    => (float) ($hpp->laporan_adjustment ?? 0),
             'laporan_disesuaikan_at'=> $hpp->laporan_disesuaikan_at?->format('d M Y H:i') ?? null,
@@ -1355,8 +1453,96 @@ class KeberangkatanController extends Controller
     }
 
     /**
+     * Helper: map RAB item label back to HPP key
+     */
+    private function getHppKeyFromLabel($label)
+    {
+        $map = [
+            'Tiket Pesawat'      => 'flight_cost',
+            'Hotel'              => 'hotel_cost',
+            'Transportasi'       => 'transportation_cost',
+            'Makan'              => 'meal_cost',
+            'Visa'               => 'visa_cost',
+            'Guide'              => 'guide_cost',
+            'Asuransi'           => 'insurance_cost',
+            'Operasional'        => 'operational_overhead',
+            'Kontingensi'        => 'contingency',
+        ];
+        return $map[$label] ?? null;
+    }
+
+    /**
      * Update status pembayaran item RAB modal (sync ke HPP)
      * Hanya untuk item HPP dasar (hpp_key tidak null)
+     */
+    /**
+     * Update rab_detail directly by detail ID (for modal RAB keberangkatan)
+     */
+    public function updateRabDetailDirect(Request $request, $id)
+    {
+        $keberangkatan = Keberangkatan::with('travelPackage.hppCalculation')->findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'rab_detail_id'  => 'required|integer',
+            'payment_status' => 'required|in:lunas,hutang',
+            'realisasi'      => 'nullable|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $detail = \App\Models\RabDetail::find($request->rab_detail_id);
+        if (!$detail || $detail->id_rab != $keberangkatan->id_rab) {
+            return response()->json(['error' => 'RAB detail tidak ditemukan'], 404);
+        }
+
+        $status = $request->payment_status;
+        $realisasi = (float) ($request->realisasi ?? 0);
+        $budget = (float) $detail->budget;
+        $hutang = ($status === 'hutang') ? $budget : 0;
+
+        $detail->update([
+            'payment_status'      => $status,
+            'realisasi_pemakaian' => $realisasi,
+            'hutang_amount'       => $hutang,
+        ]);
+
+        // Sync back to HPP component_payment_status if this is a known HPP key
+        $itemKeyMap = [
+            'Tiket Pesawat'  => 'flight_cost',
+            'Hotel'          => 'hotel_cost',
+            'Transportasi'   => 'transportation_cost',
+            'Makan'          => 'meal_cost',
+            'Visa'           => 'visa_cost',
+            'Guide'          => 'guide_cost',
+            'Asuransi'       => 'insurance_cost',
+            'Kontingensi'    => 'contingency',
+        ];
+        $hpp = $keberangkatan->travelPackage?->hppCalculation;
+        if ($hpp) {
+            $hppKey = $itemKeyMap[$detail->item] ?? null;
+            if ($hppKey) {
+                $payStatus = $hpp->component_payment_status ?? [];
+                $realisasiMap = $hpp->component_realisasi ?? [];
+                $payStatus[$hppKey] = $status;
+                $realisasiMap[$hppKey] = $realisasi;
+                $hpp->update([
+                    'component_payment_status' => $payStatus,
+                    'component_realisasi'      => $realisasiMap,
+                ]);
+            }
+        }
+
+        return response()->json(['message' => 'Realisasi berhasil disimpan', 'data' => [
+            'payment_status' => $status,
+            'realisasi' => $realisasi,
+            'hutang_amount' => $hutang,
+        ]]);
+    }
+
+    /**
+     * Update rab item status via hpp_key (legacy - for backward compat)
      */
     public function updateKeberangkatanRabItem(Request $request, $id)
     {

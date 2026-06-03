@@ -38,6 +38,9 @@
     <link rel="stylesheet" href="<?php echo e(asset('css/desktop-responsive-scaling.css')); ?>">
     
     
+    <style>[x-cloak] { display: none !important; }</style>
+    
+    
     <link rel="stylesheet" href="<?php echo e(asset('css/dropdown-fix.css')); ?>?v=<?php echo e(time()); ?>">
     
     

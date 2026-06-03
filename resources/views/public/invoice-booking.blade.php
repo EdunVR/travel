@@ -1028,7 +1028,7 @@ window.addEventListener('beforeunload', function() {
 </script>
 
 <!-- Modal Add Family Member (Task 10) -->
-<div id="addFamilyMemberModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+<div id="addFamilyMemberModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start justify-center p-4 pt-8 overflow-y-auto">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 max-h-screen overflow-y-auto">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-xl font-bold">Tambah Anggota Keluarga</h3>

@@ -38,8 +38,18 @@ class RabIntegrationService
             }
             
             // Generate RAB components
-            $components = $this->generateRabComponents($keberangkatan);
+            $result     = $this->generateRabComponents($keberangkatan);
+            $components = $result['components'];
+            $hotelWarning = $result['hotel_warning'] ?? null;
             
+            // Log hotel warning if present
+            if ($hotelWarning) {
+                Log::warning('RAB generation hotel warning', [
+                    'keberangkatan_id' => $keberangkatan->id,
+                    'warning' => $hotelWarning,
+                ]);
+            }
+
             // Calculate total budget
             $totalBudget = collect($components)->sum('biaya');
             
@@ -68,10 +78,10 @@ class RabIntegrationService
                     'subtotal'            => $component['biaya'],
                     'budget'              => $component['biaya'],
                     'biaya'               => $component['biaya'],
-                    'nilai_disetujui'     => $component['biaya'], // semua disetujui sesuai budget
-                    'realisasi_pemakaian' => $component['realisasi'], // LUNAS=budget, HUTANG=0
+                    'nilai_disetujui'     => $component['biaya'], // budget yang disetujui
+                    'realisasi_pemakaian' => 0, // Selalu mulai dari 0, diinput manual oleh admin
                     'disetujui'           => true,
-                    'payment_status'      => $component['payment_status'] ?? 'lunas',
+                    'payment_status'      => $component['payment_status'] ?? 'hutang',
                     'hutang_amount'       => $component['hutang_amount'] ?? 0,
                 ]);
             }
@@ -87,7 +97,7 @@ class RabIntegrationService
                 'total_budget' => $totalBudget
             ]);
             
-            return $rab;
+            return ['rab' => $rab, 'hotel_warning' => $hotelWarning];
             
         } catch (\Exception $e) {
             DB::rollBack();
@@ -107,13 +117,31 @@ class RabIntegrationService
     {
         $package = $keberangkatan->travelPackage;
         $hpp = $package->hppCalculation;
-        $jamaahCount = $keberangkatan->total_jamaah ?: 1;
+        
+        // Use actual jamaah count from bookings INCLUDING family members
+        $jamaahCount = 0;
+        $bookings = $keberangkatan->jamaahBookings()
+            ->whereNotIn('status', ['cancelled'])
+            ->with(['jamaah', 'addons', 'hotelBookings'])
+            ->get();
+        foreach ($bookings as $booking) {
+            $jamaahCount++; // main jamaah
+            $fm = $booking->family_members_booking;
+            if (is_string($fm)) $fm = json_decode($fm, true);
+            if (is_array($fm)) $jamaahCount += count($fm);
+        }
+        
+        if ($jamaahCount <= 0) {
+            throw new \Exception('Belum ada jamaah terdaftar di keberangkatan ini. Tidak bisa membuat RAB.');
+        }
 
         $payStatus = $hpp->component_payment_status ?? [];
         $hutangAmt = $hpp->component_hutang_amount ?? [];
+        $customComponents = $hpp->custom_components ?? [];
 
         $components = [];
 
+        // ── HPP DASAR components (× jamaahCount) ──────────────────────────────
         $items = [
             ['key' => 'flight_cost',           'item' => 'Tiket Pesawat',   'desc' => 'Biaya tiket pesawat'],
             ['key' => 'hotel_cost',             'item' => 'Hotel',           'desc' => 'Biaya akomodasi hotel'],
@@ -122,7 +150,6 @@ class RabIntegrationService
             ['key' => 'visa_cost',              'item' => 'Visa',            'desc' => 'Biaya pengurusan visa'],
             ['key' => 'guide_cost',             'item' => 'Guide',           'desc' => 'Biaya pembimbing'],
             ['key' => 'insurance_cost',         'item' => 'Asuransi',        'desc' => 'Biaya asuransi perjalanan'],
-            ['key' => 'operational_overhead',   'item' => 'Operasional',     'desc' => 'Biaya operasional'],
             ['key' => 'contingency',            'item' => 'Kontingensi',     'desc' => 'Dana cadangan'],
         ];
 
@@ -131,11 +158,7 @@ class RabIntegrationService
             if ($unitPrice <= 0) continue;
 
             $total = $unitPrice * $jamaahCount;
-            // Default status: hutang (semua komponen default hutang)
             $status = $payStatus[$def['key']] ?? 'hutang';
-            // Realisasi: LUNAS = 100% (= budget), HUTANG = 0
-            $realisasi = ($status === 'lunas') ? $total : 0;
-            // Hutang amount (jika ada override)
             $hutang = ($status === 'hutang') ? $total : 0;
 
             $components[] = [
@@ -147,18 +170,19 @@ class RabIntegrationService
                 'biaya'         => $total,
                 'payment_status'=> $status,
                 'hutang_amount' => $hutang,
-                'realisasi'     => $realisasi,
+                'realisasi'     => 0,
             ];
         }
 
-        // Add custom components as individual RAB items
-        $customComponents = $hpp->custom_components ?? [];
+        // Add custom HPP components (× jamaahCount)
         foreach ($customComponents as $custom) {
             $unitPrice = (float) ($custom['value'] ?? 0);
             if ($unitPrice <= 0) continue;
 
             $total = $unitPrice * $jamaahCount;
             $label = $custom['label'] ?? 'Biaya Lainnya';
+            $status = $custom['payment_status'] ?? 'hutang';
+            $hutang = ($status === 'hutang') ? $total : 0;
             
             $components[] = [
                 'item'          => $label,
@@ -167,15 +191,95 @@ class RabIntegrationService
                 'satuan'        => 'pax',
                 'harga_satuan'  => $unitPrice,
                 'biaya'         => $total,
-                'payment_status'=> 'hutang', // Custom components always hutang
-                'hutang_amount' => $total,
-                'realisasi'     => 0, // Hutang = realisasi 0
+                'payment_status'=> $status,
+                'hutang_amount' => $hutang,
+                'realisasi'     => 0,
             ];
         }
 
-        return $components;
+        // ── ADD-ONS dari booking jamaah (NOT × pax — per keluarga/booking) ────
+        // Akumulasikan add-ons yang sama (berdasarkan nama), beda nama = item baru
+        $addonAccumulator = []; // ['nama' => ['total_harga' => X, 'total_qty' => Y]]
+
+        foreach ($bookings as $booking) {
+            foreach ($booking->addons as $addon) {
+                $nama  = trim($addon->nama ?? 'Add-on');
+                $harga = (float) ($addon->harga ?? 0);
+                $qty   = (int)   ($addon->qty   ?? 1);
+                if ($harga <= 0) continue;
+
+                if (!isset($addonAccumulator[$nama])) {
+                    $addonAccumulator[$nama] = ['total_harga' => 0, 'total_qty' => 0, 'unit_price' => $harga];
+                }
+                $addonAccumulator[$nama]['total_qty']   += $qty;
+                $addonAccumulator[$nama]['total_harga'] += $harga * $qty;
+            }
+        }
+
+        foreach ($addonAccumulator as $nama => $acc) {
+            if ($acc['total_harga'] <= 0) continue;
+            $components[] = [
+                'item'          => 'Add-on: ' . $nama,
+                'deskripsi'     => 'Add-on ' . $nama . ' dari ' . count($bookings) . ' booking',
+                'qty'           => $acc['total_qty'],
+                'satuan'        => 'unit',
+                'harga_satuan'  => $acc['unit_price'],
+                'biaya'         => $acc['total_harga'],
+                'payment_status'=> 'hutang',
+                'hutang_amount' => $acc['total_harga'],
+                'realisasi'     => 0,
+            ];
+        }
+
+        // ── HOTEL BOOKINGS dari setiap jamaah (akumulasi per city_type) ─────
+        // Jika ada hotel_booking.total_cost > 0, masukkan ke RAB
+        // Tidak dikali pax — sudah dihitung per booking
+        $hotelAccumulator = []; // ['label' => total_cost]
+
+        foreach ($bookings as $booking) {
+            if (!$booking->hotelBookings) continue;
+            foreach ($booking->hotelBookings as $hb) {
+                $cost = (float) ($hb->total_cost ?? 0);
+                if ($cost <= 0) continue;
+
+                // Label berdasarkan city_type (Mekkah/Madinah/dll) atau fallback 'Hotel'
+                $city  = ucfirst(strtolower(trim($hb->city_type ?? 'Hotel')));
+                $label = 'Hotel ' . $city;
+
+                if (!isset($hotelAccumulator[$label])) {
+                    $hotelAccumulator[$label] = 0;
+                }
+                $hotelAccumulator[$label] += $cost;
+            }
+        }
+
+        foreach ($hotelAccumulator as $label => $totalCost) {
+            if ($totalCost <= 0) continue;
+            $components[] = [
+                'item'          => $label,
+                'deskripsi'     => $label . ' dari ' . count($bookings) . ' booking jamaah',
+                'qty'           => 1,
+                'satuan'        => 'paket',
+                'harga_satuan'  => $totalCost,
+                'biaya'         => $totalCost,
+                'payment_status'=> 'hutang',
+                'hutang_amount' => $totalCost,
+                'realisasi'     => 0,
+            ];
+        }
+
+        // ── WARNING: hotel_cost di HPP = 0 tapi ada hotel_booking ──────────
+        // Flag ini dikembalikan bersama components untuk ditampilkan ke user
+        $hppHotelCost      = (float) ($hpp->hotel_cost ?? 0);
+        $totalHotelBooking = array_sum($hotelAccumulator);
+        $hotelWarning      = ($hppHotelCost <= 0 && $totalHotelBooking > 0)
+            ? 'Biaya hotel di HPP Dasar paket masih Rp 0, namun terdapat tagihan hotel dari booking jamaah sebesar Rp ' . number_format($totalHotelBooking, 0, ',', '.') . '. Pertimbangkan untuk mengisi biaya hotel di modal Kelola HPP Paket.'
+            : null;
+
+        // Attach warning as metadata (accessible via array key, not as RAB component)
+        return ['components' => $components, 'hotel_warning' => $hotelWarning];
     }
-    
+
     /**
      * Get default accounting book ID for outlet
      * 
@@ -209,6 +313,7 @@ class RabIntegrationService
 
         $payStatus = $hpp->component_payment_status ?? [];
         $hutangAmt = $hpp->component_hutang_amount ?? [];
+        $customComponents = $hpp->custom_components ?? [];
 
         $itemKeyMap = [
             'Tiket Pesawat' => 'flight_cost',
@@ -222,20 +327,41 @@ class RabIntegrationService
             'Kontingensi'   => 'contingency',
         ];
 
+        // Build custom component label-to-status map
+        $customStatusMap = [];
+        foreach ($customComponents as $cc) {
+            $label = $cc['label'] ?? '';
+            $customStatusMap[$label] = $cc['payment_status'] ?? 'hutang';
+        }
+
         foreach ($rab->details as $detail) {
             $key = $itemKeyMap[$detail->item] ?? null;
-            if (!$key) continue;
+            
+            if ($key) {
+                // Standard component - default to hutang if not set
+                $status = $payStatus[$key] ?? 'hutang';
+                $budget = (float) $detail->budget;
+                $realisasi = ($status === 'lunas') ? $budget : 0;
+                $hutang = ($status === 'hutang') ? $budget : 0;
 
-            $status = $payStatus[$key] ?? 'lunas';
-            $budget = (float) $detail->budget;
-            $realisasi = ($status === 'lunas') ? $budget : 0;
-            $hutang = (float) ($hutangAmt[$key] ?? 0);
+                $detail->update([
+                    'realisasi_pemakaian' => $realisasi,
+                    'payment_status'      => $status,
+                    'hutang_amount'       => $hutang,
+                ]);
+            } else {
+                // Custom component - check by label
+                $customStatus = $customStatusMap[$detail->item] ?? 'hutang';
+                $budget = (float) $detail->budget;
+                $realisasi = ($customStatus === 'lunas') ? $budget : 0;
+                $hutang = ($customStatus === 'hutang') ? $budget : 0;
 
-            $detail->update([
-                'realisasi_pemakaian' => $realisasi,
-                'payment_status'      => $status,
-                'hutang_amount'       => $hutang,
-            ]);
+                $detail->update([
+                    'realisasi_pemakaian' => $realisasi,
+                    'payment_status'      => $customStatus,
+                    'hutang_amount'       => $hutang,
+                ]);
+            }
         }
     }
     

@@ -87,7 +87,8 @@
           </thead>
           <tbody class="divide-y divide-slate-100">
             <template x-for="pkg in packages" :key="pkg.id">
-              <tr class="hover:bg-slate-50">
+              <tr class="hover:bg-slate-50 transition-colors"
+                  :class="pkg.has_recent_booking ? 'bg-green-50 border-l-4 border-l-green-500' : ''">
                 <td class="px-2 py-2 font-mono text-xs text-slate-500 whitespace-nowrap" x-text="pkg.package_code"></td>
                 <td class="px-2 py-2 font-medium text-sm max-w-[180px]">
                   <div class="truncate" x-text="pkg.package_name" :title="pkg.package_name"></div>
@@ -137,17 +138,35 @@
       </div>
 
       <!-- Pagination -->
-      <div class="px-4 py-3 border-t border-slate-200 flex items-center justify-between">
-        <div class="text-sm text-slate-600">
-          Menampilkan <span x-text="packages.length"></span> dari <span x-text="total"></span> data
+      <div class="px-4 py-3 border-t border-slate-200 flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-3 text-sm text-slate-600">
+          <span>Tampilkan</span>
+          <select x-model.number="perPage" @change="currentPage=1; fetchData()"
+                  class="rounded-lg border border-slate-200 px-2 py-1 text-xs">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+          </select>
+          <span>data per halaman &bull; Total: <strong x-text="total"></strong></span>
+          <span x-show="hasRecentBooking" class="flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+            <span class="inline-block w-2 h-2 rounded-full bg-green-500"></span> Hijau = ada booking baru (7 hari terakhir)
+          </span>
         </div>
-        <div class="flex gap-1">
-          <button x-on:click="prevPage()" :disabled="currentPage === 1" class="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50">
-            <i class='bx bx-chevron-left'></i>
-          </button>
-          <button x-on:click="nextPage()" :disabled="currentPage === lastPage" class="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50">
-            <i class='bx bx-chevron-right'></i>
-          </button>
+        <div class="flex items-center gap-1">
+          <button @click="goToPage(1)" :disabled="currentPage===1"
+                  class="px-2 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 text-xs">«</button>
+          <button @click="prevPage()" :disabled="currentPage===1"
+                  class="px-2 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 text-xs">‹</button>
+          <template x-for="p in pageNumbers()" :key="p">
+            <button @click="goToPage(p)"
+                    :class="p===currentPage ? 'bg-primary-600 text-white border-primary-600' : 'border-slate-200 hover:bg-slate-50'"
+                    class="px-2.5 py-1 rounded-lg border text-xs min-w-[32px]"
+                    x-text="p"></button>
+          </template>
+          <button @click="nextPage()" :disabled="currentPage===lastPage"
+                  class="px-2 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 text-xs">›</button>
+          <button @click="goToPage(lastPage)" :disabled="currentPage===lastPage"
+                  class="px-2 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 text-xs">»</button>
         </div>
       </div>
     </div>
@@ -259,6 +278,8 @@
         currentPage: 1,
         lastPage: 1,
         total: 0,
+        perPage: 10,
+        hasRecentBooking: false,
 
         // HPP Modal State
         showHppModal: false,
@@ -318,13 +339,12 @@
               type_filter: this.typeFilter,
               status_filter: this.statusFilter,
               sort_dir: this.sortDir,
-              page: this.currentPage
+              page: this.currentPage,
+              length: this.perPage,   // DataTables uses 'length' for page size
+              start: (this.currentPage - 1) * this.perPage,
             });
 
             const url = '{{ route('admin.inventaris.travel.package.data') }}';
-            console.log('🔍 [DEBUG] Fetching data from:', url);
-            console.log('🔍 [DEBUG] With params:', params.toString());
-            
             const response = await fetch(`${url}?${params}`);
             
             if (!response.ok) {
@@ -353,7 +373,6 @@
                 status_badge: pkg.status || 'draft',
                 id_outlet: pkg.id_outlet,
                 duration_days: parseInt(pkg.duration_days) || 0,
-                // Flight & Hotel IDs (new + legacy)
                 id_flight_departure: pkg.id_flight_departure || pkg.id_flight || null,
                 id_flight_return: pkg.id_flight_return || null,
                 id_hotel_makkah: pkg.id_hotel_makkah || pkg.id_hotel || null,
@@ -366,15 +385,18 @@
                 price_packages: pkg.price_packages || [],
                 id_saudi_transport: pkg.id_saudi_transport || null,
                 saudi_transport_price: parseFloat(pkg.saudi_transport_price) || 0,
+                has_recent_booking: !!pkg.has_recent_booking,
               }));
-              this.total = data.recordsTotal || data.data.length;
+              this.total = data.recordsTotal || data.recordsFiltered || data.data.length;
+              const filtered = data.recordsFiltered || this.total;
+              this.lastPage = Math.max(1, Math.ceil(filtered / this.perPage));
+              // Check if any package has recent booking (for legend display)
+              this.hasRecentBooking = this.packages.some(p => p.has_recent_booking);
             }
           } catch (error) {
             console.error('Error fetching packages:', error);
             if (typeof Swal !== 'undefined') {
               Swal.fire('Error', 'Gagal memuat data paket', 'error');
-            } else {
-              alert('Gagal memuat data paket');
             }
           } finally {
             this.loading = false;
@@ -485,6 +507,28 @@
             this.currentPage++;
             this.fetchData();
           }
+        },
+
+        goToPage(p) {
+          if (p >= 1 && p <= this.lastPage && p !== this.currentPage) {
+            this.currentPage = p;
+            this.fetchData();
+          }
+        },
+
+        pageNumbers() {
+          // Show at most 5 page buttons centered around current page
+          const range = 2;
+          let start = Math.max(1, this.currentPage - range);
+          let end   = Math.min(this.lastPage, this.currentPage + range);
+          // Extend if near beginning/end
+          if (end - start < range * 2) {
+            if (start === 1) end = Math.min(this.lastPage, start + range * 2);
+            else start = Math.max(1, end - range * 2);
+          }
+          const pages = [];
+          for (let i = start; i <= end; i++) pages.push(i);
+          return pages;
         },
 
         // HPP Management Functions

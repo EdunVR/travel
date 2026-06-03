@@ -739,11 +739,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::post('travel/keberangkatan/generate-code', [KeberangkatanController::class, 'generateCode'])->name('travel.keberangkatan.generate-code');
         Route::get('travel/keberangkatan/{id}/capacity', [KeberangkatanController::class, 'getCapacityTracking'])->name('travel.keberangkatan.capacity');
         Route::post('travel/keberangkatan/{id}/create-rab', [KeberangkatanController::class, 'createRab'])->name('travel.keberangkatan.create-rab');
+        Route::post('travel/keberangkatan/{id}/regenerate-rab', [KeberangkatanController::class, 'regenerateRab'])->name('travel.keberangkatan.regenerate-rab');
         Route::get('travel/keberangkatan/{id}/rab-data', [KeberangkatanController::class, 'getRabData'])->name('travel.keberangkatan.rab-data');
         Route::get('travel/keberangkatan/{id}/budget-variance', [KeberangkatanController::class, 'getBudgetVariance'])->name('travel.keberangkatan.budget-variance');
         Route::post('travel/keberangkatan/{id}/rab-realisasi', [KeberangkatanController::class, 'updateRabRealisasi'])->name('travel.keberangkatan.rab-realisasi');
         Route::get('travel/keberangkatan/{id}/rab-modal', [KeberangkatanController::class, 'getKeberangkatanRabModal'])->name('travel.keberangkatan.rab-modal');
         Route::post('travel/keberangkatan/{id}/rab-modal-update', [KeberangkatanController::class, 'updateKeberangkatanRabItem'])->name('travel.keberangkatan.rab-modal-update');
+        Route::post('travel/keberangkatan/{id}/rab-detail-update', [KeberangkatanController::class, 'updateRabDetailDirect'])->name('travel.keberangkatan.rab-detail-update');
         Route::post('travel/keberangkatan/{id}/sesuaikan-laporan', [KeberangkatanController::class, 'sesuaikanLaporan'])->name('travel.keberangkatan.sesuaikan-laporan');
         Route::post('travel/keberangkatan/{id}/reset-penyesuaian', [KeberangkatanController::class, 'resetPenyesuaianLaporan'])->name('travel.keberangkatan.reset-penyesuaian');
         Route::get('travel/keberangkatan/{id}/financial-summary', [KeberangkatanController::class, 'getFinancialSummary'])->name('travel.keberangkatan.financial-summary');

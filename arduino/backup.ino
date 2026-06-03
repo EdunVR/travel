@@ -5,7 +5,7 @@
 #include <Adafruit_PN532.h>
 #include <Keypad_I2C.h>
 #include <Keypad.h>
-#include <driver/i2s.h>
+#include <driver/i2s.h>   // Beep: I2S_NUM_0 (legacy driver)
 #include <math.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -13,6 +13,14 @@
 #include <Preferences.h>
 #include <WiFiClientSecure.h>
 #include <vector>
+#include <esp_task_wdt.h>  // Hardware watchdog timer
+
+// ESP8266Audio untuk MP3 announcement — pakai I2S_NUM_1 (terpisah dari beep)
+// INSTALL: Library Manager → "ESP8266Audio" by Earle F. Philhower, III
+#include <AudioFileSourceHTTPStream.h>
+#include <AudioFileSourceBuffer.h>
+#include <AudioGeneratorMP3.h>
+#include <AudioOutputI2S.h>
 
 /* =========================
    PIN CONFIG
@@ -33,6 +41,7 @@
 #define I2S_DOUT 40
 #define SAMPLE_RATE 22050
 #define I2S_PORT I2S_NUM_0
+#define MAX_VOLUME 32767  // Volume maksimal (16-bit signed max)
 
 /* =========================
    OBJECTS
@@ -92,22 +101,54 @@ Mode lastMode = MODE_MAIN_MENU;
 // Mode dari server
 String serverMode = "attendance"; // "attendance" atau "register"
 unsigned long lastModeCheck = 0;
-const unsigned long MODE_CHECK_INTERVAL = 2000; // Cek mode setiap 2 detik (lebih responsif!)
+const unsigned long MODE_CHECK_INTERVAL = 5000; // Cek mode setiap 5 detik (kurangi blocking HTTP)
 
 // Data karyawan terakhir yang tap
 String lastEmployeeName = "";
 String lastTapTime = "";
 unsigned long lastTapDisplay = 0;
-const unsigned long TAP_DISPLAY_DURATION = 5000; // Tampilkan 5 detik
+const unsigned long TAP_DISPLAY_DURATION = 4000; // Tampilkan 4 detik
+
+// Real-time clock untuk attendance mode
+unsigned long lastClockUpdate = 0;
+const unsigned long CLOCK_UPDATE_INTERVAL = 1000; // Update setiap detik
+int currentHour = 7;    // Default jam 07:00:00
+int currentMinute = 0;
+int currentSecond = 0;
+unsigned long lastTimeSync = 0;
+const unsigned long TIME_SYNC_INTERVAL = 3600000; // Sync setiap 1 jam
+
+// Animation variables
+int animationFrame = 0;
+unsigned long lastAnimationUpdate = 0;
+const unsigned long ANIMATION_INTERVAL = 50; // 20 FPS
+int slideOffset = 0;
+
+// Modern color palette
+#define COLOR_PRIMARY    0x2196F3  // Material Blue
+#define COLOR_SUCCESS    0x4CAF50  // Material Green  
+#define COLOR_WARNING    0xFFC107  // Material Amber
+#define COLOR_ERROR      0xF44336  // Material Red
+#define COLOR_DARK       0x263238  // Dark Blue Grey
+#define COLOR_LIGHT      0xECEFF1  // Light Blue Grey
 
 // Watchdog timer
 unsigned long lastWatchdogFeed = 0;
 const unsigned long WATCHDOG_FEED_INTERVAL = 1000; // Feed watchdog setiap 1 detik
+const unsigned long WDT_TIMEOUT = 30; // Hardware watchdog timeout 30 detik
 
 // Memory monitoring
 unsigned long lastMemoryCheck = 0;
 const unsigned long MEMORY_CHECK_INTERVAL = 10000; // Cek memory setiap 10 detik
 size_t minFreeHeap = 0xFFFFFFFF;
+
+// Anti-hang monitoring
+unsigned long lastActivityTime = 0;
+const unsigned long ACTIVITY_TIMEOUT = 3600000; // 1 jam tanpa aktivitas = restart
+unsigned long lastWiFiCheck = 0;
+const unsigned long WIFI_CHECK_INTERVAL = 60000; // Cek WiFi setiap 1 menit
+int consecutiveErrors = 0;
+const int MAX_CONSECUTIVE_ERRORS = 10;
 
 // Variabel WiFi
 String ssid = "";
@@ -181,6 +222,11 @@ unsigned long statusMessageTime = 0;
 unsigned long lastCardRead = 0;
 const unsigned long CARD_READ_COOLDOWN = 2000;
 String tempUID = "";
+bool cardStillPresent = false;
+unsigned long cardPresentStart = 0;
+const unsigned long CARD_PRESENT_TIMEOUT = 5000; // 5 detik max
+int pn532ErrorCount = 0;
+const int MAX_PN532_ERRORS = 3;
 
 // Untuk offline queue
 struct OfflineData {
@@ -203,11 +249,13 @@ int currentSendingIndex = -1;
 
 // Timing
 unsigned long lastRFIDCheck = 0;
-const unsigned long RFID_CHECK_INTERVAL = 200;
+const unsigned long RFID_CHECK_INTERVAL = 150; // Optimal untuk RFID
 unsigned long lastDisplayUpdate = 0;
-const unsigned long DISPLAY_UPDATE_INTERVAL = 300;
+const unsigned long DISPLAY_UPDATE_INTERVAL = 50; // Super cepat untuk UI responsiveness (20 FPS)
 unsigned long lastBlinkTime = 0;
 bool blinkState = false;
+unsigned long lastKeypadCheck = 0;
+const unsigned long KEYPAD_CHECK_INTERVAL = 5; // Check keypad setiap 5ms (200 Hz - SUPER RESPONSIF!)
 
 // Flag untuk mencegah update berlebihan
 bool displayNeedsUpdate = true;
@@ -231,6 +279,8 @@ void updateDisplay(bool force = false);
 String getCharFromKey(char key, int count);
 void handleMultiTapInput(char key);
 void connectToWiFi();
+void sendUIDToForm(String uid);
+void clearUIDCache();
 bool sendDataToServer(String uid, String name, String type, bool isOfflineRetry = false);
 void saveToOfflineQueue(String uid, String name, String type);
 void processOfflineQueue();
@@ -281,7 +331,7 @@ void playBeep(uint16_t freq, uint16_t duration_ms) {
   if (millis() - lastBeep < 50) return;
   lastBeep = millis();
   
-  const int bufferSize = 64; // Reduce buffer size
+  const int bufferSize = 64;
   int16_t buffer[bufferSize];
 
   int totalSamples = (SAMPLE_RATE * duration_ms) / 1000;
@@ -298,12 +348,12 @@ void playBeep(uint16_t freq, uint16_t duration_ms) {
     
     for (int i = 0; i < bufferSize && generated < totalSamples; i++) {
       float t = (generated + i) / (float)SAMPLE_RATE;
-      buffer[i] = 4000 * sin(2 * PI * freq * t);
+      buffer[i] = MAX_VOLUME * sin(2 * PI * freq * t);  // Volume maksimal
     }
 
     size_t bytes_written;
     i2s_write(I2S_PORT, buffer, bufferSize * sizeof(int16_t),
-              &bytes_written, 100); // Timeout 100ms
+              &bytes_written, 100);
 
     generated += bufferSize;
     
@@ -318,7 +368,33 @@ void playBeep(uint16_t freq, uint16_t duration_ms) {
   i2s_stop(I2S_PORT);
   i2s_zero_dma_buffer(I2S_PORT);
   
-  yield(); // Feed watchdog
+  yield();
+}
+
+void playWelcomeMelody() {
+  playBeep(523, 100);  // C
+  delay(50);
+  playBeep(659, 100);  // E
+  delay(50);
+  playBeep(784, 150);  // G
+}
+
+void playSuccessMelody() {
+  playBeep(659, 80);   // E
+  delay(30);
+  playBeep(784, 80);   // G
+  delay(30);
+  playBeep(1047, 120); // C high
+}
+
+void playErrorMelody() {
+  playBeep(392, 100);  // G low
+  delay(50);
+  playBeep(330, 150);  // E low
+}
+
+void playTapSound() {
+  playBeep(1200, 30);
 }
 
 void playPreviewBeep() {
@@ -328,6 +404,122 @@ void playPreviewBeep() {
 /* =========================
    DISPLAY FUNCTIONS
 ========================= */
+
+void updateClock() {
+  unsigned long now = millis();
+  if (now - lastClockUpdate >= CLOCK_UPDATE_INTERVAL) {
+    lastClockUpdate = now;
+    currentSecond++;
+    if (currentSecond >= 60) {
+      currentSecond = 0;
+      currentMinute++;
+      if (currentMinute >= 60) {
+        currentMinute = 0;
+        currentHour++;
+        if (currentHour >= 24) {
+          currentHour = 0;
+        }
+      }
+    }
+  }
+}
+
+void syncTimeFromServer() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("⚠️ WiFi not connected, cannot sync time");
+    return;
+  }
+  
+  Serial.println("🕐 Syncing time from server...");
+  
+  InsecureWiFiClient client;
+  client.setTimeout(3000);
+  
+  HTTPClient http;
+  
+  String url = String(serverURL) + apiEndpoint + "/time";
+  
+  http.begin(client, url);
+  http.setTimeout(3000);
+  
+  int httpResponseCode = http.GET();
+  
+  if (httpResponseCode == 200) {
+    String response = http.getString();
+    
+    Serial.print("📨 Time response: ");
+    Serial.println(response);
+    
+    DynamicJsonDocument doc(256);
+    DeserializationError error = deserializeJson(doc, response);
+    
+    if (!error && doc.containsKey("time")) {
+      String timeStr = doc["time"].as<String>(); // Format: "HH:MM:SS"
+      
+      // Parse time
+      currentHour = timeStr.substring(0, 2).toInt();
+      currentMinute = timeStr.substring(3, 5).toInt();
+      currentSecond = timeStr.substring(6, 8).toInt();
+      
+      // RESET lastClockUpdate untuk mulai hitung dari sekarang
+      lastClockUpdate = millis();
+      
+      Serial.printf("✅ Time synced: %02d:%02d:%02d\n", 
+                    currentHour, currentMinute, currentSecond);
+      
+      // Force update display
+      displayNeedsUpdate = true;
+    } else {
+      Serial.println("❌ Failed to parse time from server");
+      if (error) {
+        Serial.print("JSON error: ");
+        Serial.println(error.c_str());
+      }
+    }
+    
+    response = String();
+  }
+  
+  http.end();
+  client.stop();
+  feedWatchdog();
+}
+
+void drawClock(int x, int y, int size) {
+  char timeStr[9];
+  snprintf(timeStr, sizeof(timeStr), "%02d:%02d:%02d", 
+           currentHour, currentMinute, currentSecond);
+  
+  // Shadow effect
+  tft.setTextColor(COLOR_DARK);
+  tft.setTextSize(size);
+  tft.setCursor(x + 2, y + 2);
+  tft.print(timeStr);
+  
+  // Main text
+  tft.setTextColor(ILI9341_WHITE);
+  tft.setCursor(x, y);
+  tft.print(timeStr);
+}
+
+void drawWiFiIndicator(int x, int y) {
+  uint16_t color = (WiFi.status() == WL_CONNECTED) ? COLOR_SUCCESS : COLOR_ERROR;
+  
+  // WiFi bars (3 bars)
+  for (int i = 0; i < 3; i++) {
+    int h = 4 + (i * 3);
+    tft.fillRect(x + (i * 4), y + (12 - h), 3, h, color);
+  }
+}
+
+void drawCheckmark(int x, int y, int size, uint16_t color) {
+  // Animated checkmark
+  tft.fillCircle(x, y, size/2, color);
+  tft.setTextColor(ILI9341_WHITE);
+  tft.setTextSize(size/10);
+  tft.setCursor(x - 3, y - 5);
+  tft.print("✓");
+}
 
 void updateIndicatorLine() {
   indicatorLine = "";
@@ -383,54 +575,138 @@ void showMainMenu() {
 }
 
 void showAttendanceMode() {
-  tft.fillScreen(ILI9341_BLUE);
-  tft.setTextColor(ILI9341_WHITE);
+  // Modern gradient background (dark blue to darker)
+  for (int y = 0; y < 240; y++) {
+    uint8_t brightness = 255 - (y / 2);
+    uint16_t color = tft.color565(0, brightness/4, brightness/2);
+    tft.drawFastHLine(0, y, 320, color);
+  }
+  
+  // Header bar dengan rounded corners
+  tft.fillRoundRect(10, 10, 300, 50, 10, COLOR_DARK);
+  tft.drawRoundRect(10, 10, 300, 50, 10, COLOR_PRIMARY);
+  
+  tft.setTextColor(COLOR_PRIMARY);
   tft.setTextSize(2);
-  tft.setCursor(30, 20);
-  tft.print("ATTENDANCE MODE");
+  tft.setCursor(60, 20);
+  tft.print("ATTENDANCE");
   
+  // Jam berjalan (besar dan jelas) - akan di-update partial di loop()
+  drawClock(85, 40, 2);
+  
+  // WiFi indicator di pojok kanan atas
+  drawWiFiIndicator(280, 25);
+  
+  // Status bar
+  tft.fillRoundRect(10, 70, 300, 30, 8, COLOR_LIGHT);
+  tft.setTextColor(COLOR_DARK);
   tft.setTextSize(1);
-  tft.setCursor(20, 60);
-  tft.print("Tap your card...");
-  tft.setCursor(20, 80);
-  tft.print("Server Mode: " + serverMode);
-  tft.setCursor(20, 100);
-  tft.print("Press # to menu");
+  tft.setCursor(20, 82);
+  tft.print("Tap your RFID card to record");
   
-  // Tampilkan data tap terakhir jika ada
-  if (lastEmployeeName.length() > 0 && millis() - lastTapDisplay < TAP_DISPLAY_DURATION) {
-    tft.fillRect(10, 130, 300, 80, ILI9341_GREEN);
-    tft.drawRect(10, 130, 300, 80, ILI9341_WHITE);
+  // Server mode badge
+  uint16_t badgeColor = (serverMode == "attendance") ? COLOR_SUCCESS : COLOR_WARNING;
+  tft.fillRoundRect(10, 110, 100, 25, 5, badgeColor);
+  tft.setTextColor(ILI9341_WHITE);
+  tft.setTextSize(1);
+  tft.setCursor(20, 118);
+  tft.print("Mode: ");
+  tft.print(serverMode);
+  
+  // INDIKATOR "ANGKAT KARTU!" - PRIORITAS TERTINGGI
+  if (statusMessage == "ANGKAT KARTU!" && millis() - statusMessageTime < 5000) {
+    // Warning box besar di tengah
+    tft.fillRoundRect(40, 140, 240, 60, 10, COLOR_WARNING);
+    tft.drawRoundRect(40, 140, 240, 60, 10, ILI9341_RED);
+    tft.drawRoundRect(41, 141, 238, 58, 10, ILI9341_RED);
     
     tft.setTextColor(ILI9341_BLACK);
-    tft.setTextSize(2);
-    tft.setCursor(20, 140);
-    tft.print("BERHASIL!");
+    tft.setTextSize(3);
+    tft.setCursor(50, 155);
+    tft.print("ANGKAT");
+    tft.setCursor(60, 175);
+    tft.print("KARTU!");
     
+  } 
+  // Tampilkan data tap terakhir dengan animasi
+  else if (lastEmployeeName.length() > 0 && millis() - lastTapDisplay < TAP_DISPLAY_DURATION) {
+    // Animated slide-in effect
+    int targetY = 145;
+    if (slideOffset < targetY) {
+      slideOffset += 20; // Slide speed lebih cepat
+      if (slideOffset > targetY) slideOffset = targetY;
+    }
+    
+    // CENTANG BESAR DI TENGAH (drawn checkmark)
+    int checkX = 160;
+    int checkY = 165;
+    int checkRadius = 35;
+    
+    // Circle background untuk centang
+    tft.fillCircle(checkX, checkY, checkRadius, COLOR_SUCCESS);
+    tft.drawCircle(checkX, checkY, checkRadius, ILI9341_WHITE);
+    tft.drawCircle(checkX, checkY, checkRadius - 1, ILI9341_WHITE);
+    
+    // Draw checkmark (✓) dengan garis
+    // Bagian pendek (kiri bawah ke tengah)
+    int x1 = checkX - 15;
+    int y1 = checkY;
+    int x2 = checkX - 5;
+    int y2 = checkY + 12;
+    
+    // Bagian panjang (tengah ke kanan atas)
+    int x3 = checkX + 18;
+    int y3 = checkY - 15;
+    
+    // Draw thick checkmark (multiple lines untuk ketebalan)
+    for (int i = -3; i <= 3; i++) {
+      // Garis pendek
+      tft.drawLine(x1 + i, y1, x2 + i, y2, ILI9341_WHITE);
+      // Garis panjang
+      tft.drawLine(x2 + i, y2, x3 + i, y3, ILI9341_WHITE);
+    }
+    
+    // Employee info box di bawah centang
+    tft.fillRoundRect(10, 210, 300, 25, 8, COLOR_DARK);
+    tft.setTextColor(ILI9341_WHITE);
     tft.setTextSize(1);
-    tft.setCursor(20, 165);
-    tft.print("Nama: " + lastEmployeeName);
+    tft.setCursor(20, 218);
+    tft.print(lastEmployeeName);
+    tft.print(" - ");
+    tft.print(lastTapTime);
     
-    tft.setCursor(20, 185);
-    tft.print("Waktu: " + lastTapTime);
-  } else if (lastEmployeeName.length() > 0 && millis() - lastTapDisplay >= TAP_DISPLAY_DURATION) {
-    // Clear data setelah durasi habis
-    lastEmployeeName = "";
-    lastTapTime = "";
+  } else {
+    slideOffset = 0; // Reset animation
+    animationFrame = 0;
+    
+    // Idle state - Static RFID icon (TIDAK ADA ANIMASI)
+    tft.drawRoundRect(135, 155, 50, 35, 5, COLOR_PRIMARY);
+    tft.setTextColor(COLOR_PRIMARY);
+    tft.setTextSize(1);
+    tft.setCursor(150, 170);
+    tft.print("RFID");
+    
+    // Static instruction
+    tft.setTextColor(COLOR_LIGHT);
+    tft.setCursor(110, 200);
+    tft.print("Ready to scan");
   }
   
+  // Offline queue indicator
   if (offlineQueue.size() > 0) {
-    tft.setTextColor(ILI9341_YELLOW);
-    tft.setCursor(20, 220);
-    tft.print("Offline: " + String(offlineQueue.size()));
+    tft.fillRoundRect(220, 110, 90, 25, 5, COLOR_WARNING);
+    tft.setTextColor(ILI9341_BLACK);
+    tft.setTextSize(1);
+    tft.setCursor(230, 118);
+    tft.print("Offline: ");
+    tft.print(offlineQueue.size());
   }
   
-  if (statusMessage.length() > 0 && lastEmployeeName.length() == 0) {
-    tft.setTextSize(2);
-    tft.setTextColor(ILI9341_YELLOW);
-    tft.setCursor(20, 160);
-    tft.print(statusMessage);
-  }
+  // Footer dengan instruksi
+  tft.setTextColor(COLOR_LIGHT);
+  tft.setTextSize(1);
+  tft.setCursor(95, 225);
+  tft.print("Press # for menu");
 }
 
 void showRegisterMode() {
@@ -802,13 +1078,7 @@ void handleMultiTapInput(char key) {
 }
 
 void checkKeypad() {
-  char key = 0;
-  
-  for (int i = 0; i < 3; i++) {
-    key = keypad.getKey();
-    if (key != 0) break;
-    delay(1);
-  }
+  char key = keypad.getKey(); // Langsung ambil key tanpa loop delay
   
   if (key == 0) {
     // Cek timeout untuk preview
@@ -833,14 +1103,9 @@ void checkKeypad() {
   
   errorCount = 0;
   
-  Serial.print("Key: ");
-  Serial.print(key);
-  Serial.print(" Mode:");
-  Serial.print(currentMode);
-  Serial.print(" InputMode:");
-  Serial.print(inputMode);
-  Serial.print(" Step:");
-  Serial.println(alarmSettingStep);
+  // Minimal logging untuk speed (hanya di debug mode)
+  // Serial.print("Key: ");
+  // Serial.println(key);
   
   playBeep(1000, 30);
   
@@ -1067,6 +1332,34 @@ void resetKeypad() {
   delay(100);
 }
 
+void resetPN532() {
+  Serial.println("🔄 Resetting PN532...");
+  
+  // Re-initialize PN532
+  nfc.begin();
+  delay(100);
+  
+  if (!nfc.getFirmwareVersion()) {
+    Serial.println("❌ PN532 reset failed!");
+    pn532ErrorCount++;
+    
+    // Jika terlalu banyak error, restart ESP32
+    if (pn532ErrorCount >= MAX_PN532_ERRORS) {
+      Serial.println("🔴 Too many PN532 errors, restarting...");
+      delay(1000);
+      ESP.restart();
+    }
+    return;
+  }
+  
+  nfc.SAMConfig();
+  pn532ErrorCount = 0;
+  cardStillPresent = false;
+  
+  Serial.println("✅ PN532 reset successful");
+  playBeep(1500, 50);
+}
+
 /* =========================
    SERVER MODE FUNCTIONS
 ========================= */
@@ -1109,9 +1402,28 @@ void checkModeFromServer() {
         if (serverMode == "attendance" && currentMode != MODE_ATTENDANCE) {
           currentMode = MODE_ATTENDANCE;
           Serial.println("✅ Switching to ATTENDANCE MODE");
+          
+          // Clear tempUID saat kembali ke attendance
+          tempUID = "";
+          inputMode = false;
+          currentInput = "";
+          
         } else if (serverMode == "register" && currentMode != MODE_REGISTER) {
           currentMode = MODE_REGISTER;
           Serial.println("✅ Switching to REGISTER MODE");
+          
+          // PENTING: Clear tempUID saat masuk register mode
+          // Agar tidak menggunakan UID lama dari attendance
+          tempUID = "";
+          inputMode = false;
+          currentInput = "";
+          lastKey = 0;
+          previewChar = "";
+          
+          // TIDAK perlu clearUIDCache ke server - hemat HTTP request
+          // Server sudah mengelola detected_uid sendiri
+          
+          Serial.println("🔄 tempUID cleared - waiting for new card tap");
         }
         
         // Update tampilan
@@ -1138,6 +1450,81 @@ void checkModeFromServer() {
 /* =========================
    SERVER DATA FUNCTIONS
 ========================= */
+
+void sendUIDToForm(String uid) {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("❌ WiFi not connected, cannot send UID to form");
+    return;
+  }
+
+  Serial.printf("📤 Sending UID to form: %s\n", uid.c_str());
+
+  InsecureWiFiClient client;
+  client.setTimeout(2000);
+  
+  HTTPClient http;
+  
+  String url = String(serverURL) + apiEndpoint + "/register-uid";
+  
+  http.begin(client, url);
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(2000);
+  
+  DynamicJsonDocument doc(128);
+  doc["uid"] = uid;
+  
+  String jsonString;
+  serializeJson(doc, jsonString);
+  
+  Serial.print("📦 JSON: ");
+  Serial.println(jsonString);
+  
+  int httpResponseCode = http.POST(jsonString);
+  
+  Serial.printf("📡 HTTP Response code: %d\n", httpResponseCode);
+  
+  if (httpResponseCode > 0) {
+    String response = http.getString();
+    Serial.print("📨 Response: ");
+    Serial.println(response);
+  }
+  
+  http.end();
+  client.stop();
+  feedWatchdog();
+}
+
+void clearUIDCache() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("⚠️ WiFi not connected, cannot clear UID cache");
+    return;
+  }
+
+  Serial.println("🧹 Clearing UID cache on server...");
+
+  InsecureWiFiClient client;
+  client.setTimeout(2000);
+  
+  HTTPClient http;
+  
+  String url = String(serverURL) + apiEndpoint + "/clear-uid";
+  
+  http.begin(client, url);
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(2000);
+  
+  int httpResponseCode = http.POST("");
+  
+  if (httpResponseCode == 200) {
+    Serial.println("✅ UID cache cleared on server");
+  } else {
+    Serial.printf("⚠️ Failed to clear UID cache, code: %d\n", httpResponseCode);
+  }
+  
+  http.end();
+  client.stop();
+  feedWatchdog();
+}
 
 bool sendDataToServer(String uid, String name, String type, bool isOfflineRetry) {
   if (WiFi.status() != WL_CONNECTED) {
@@ -1177,30 +1564,59 @@ bool sendDataToServer(String uid, String name, String type, bool isOfflineRetry)
   
   if (httpResponseCode > 0) {
     String response = http.getString();
+    
+    Serial.println("📨 Server response:");
+    Serial.println(response);
+    
     DynamicJsonDocument responseDoc(1024);
     DeserializationError error = deserializeJson(responseDoc, response);
     
     if (!error && responseDoc["success"] == true) {
+      Serial.println("✅ Response parsed successfully");
+      
       // Ambil data karyawan dari response
       if (responseDoc.containsKey("employee")) {
         lastEmployeeName = responseDoc["employee"]["name"].as<String>();
+        Serial.println("👤 Employee name: " + lastEmployeeName);
+      } else {
+        Serial.println("⚠️ No employee data in response");
       }
       
       if (responseDoc.containsKey("time")) {
         lastTapTime = responseDoc["time"].as<String>();
+        Serial.println("⏰ Time: " + lastTapTime);
       }
       
       if (responseDoc.containsKey("type")) {
         String tapType = responseDoc["type"].as<String>();
         lastTapTime = tapType + " " + lastTapTime;
+        Serial.println("📋 Type: " + tapType);
       }
       
       lastTapDisplay = millis();
+      Serial.println("✅ Display data set, will show for 2 seconds");
       success = true;
+    } else {
+      Serial.println("❌ Failed to parse response or success=false");
+      if (error) {
+        Serial.print("JSON error: ");
+        Serial.println(error.c_str());
+      }
+      // Log pesan error dari server jika ada
+      if (!error && responseDoc.containsKey("message")) {
+        Serial.print("Server message: ");
+        Serial.println(responseDoc["message"].as<String>());
+      }
+      if (!error && responseDoc.containsKey("error")) {
+        Serial.print("Server error: ");
+        Serial.println(responseDoc["error"].as<String>());
+      }
     }
     
     // Cleanup
     response = String();
+  } else {
+    Serial.printf("❌ HTTP error code: %d\n", httpResponseCode);
   }
   
   http.end();
@@ -1417,11 +1833,11 @@ void loadAlarmSettings() {
 ========================= */
 
 void feedWatchdog() {
-  // Feed ESP32 watchdog timer
+  // Feed hardware watchdog timer
+  esp_task_wdt_reset();
   yield();
-  
-  // Update timestamp
   lastWatchdogFeed = millis();
+  lastActivityTime = millis(); // Update activity time
 }
 
 void checkMemory() {
@@ -1479,122 +1895,203 @@ void cleanupStrings() {
 ========================= */
 
 void checkRFID() {
-  if (millis() - lastRFIDCheck < RFID_CHECK_INTERVAL) return;
-  lastRFIDCheck = millis();
+  // Catatan: lastRFIDCheck dikelola dari loop(), tidak perlu cek ulang di sini
+  
+  // Check jika kartu masih ditempel terlalu lama
+  if (cardStillPresent && millis() - cardPresentStart > CARD_PRESENT_TIMEOUT) {
+    Serial.println("⚠️ Card held too long, forcing release...");
+    
+    // Warning beep
+    playBeep(800, 100);
+    delay(100);
+    playBeep(800, 100);
+    
+    // Display warning - FORCE UPDATE
+    statusMessage = "ANGKAT KARTU!";
+    statusMessageTime = millis();
+    displayNeedsUpdate = true;
+    showAttendanceMode(); // Force show warning
+    
+    Serial.println("🚨 TIMEOUT! Forcing PN532 reset...");
+    
+    // Force reset PN532
+    resetPN532();
+    cardStillPresent = false;
+    
+    // Keep showing warning for 2 more seconds
+    delay(2000);
+    statusMessage = "";
+    displayNeedsUpdate = true;
+    return;
+  }
   
   uint8_t uid[7];
   uint8_t uidLength;
   
-  if (nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength, 50)) {
-    if (millis() - lastCardRead < CARD_READ_COOLDOWN) return;
-    lastCardRead = millis();
-    
-    String uidStr = "";
-    uidStr.reserve(20);
-    
-    for (uint8_t i = 0; i < uidLength; i++) {
-      if (uid[i] < 0x10) uidStr += "0";
-      uidStr += String(uid[i], HEX);
-    }
-    uidStr.toUpperCase();
-    
-    Serial.print("RFID: ");
-    Serial.println(uidStr);
-    
-    // Beep awal
-    playBeep(1500, 50);
-    yield();
-    
-    // Gunakan mode dari server untuk menentukan aksi
-    if (serverMode == "attendance") {
-      statusMessage = "Sending...";
+  // Try to read card with timeout - LEBIH AGRESIF
+  bool cardDetected = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength, 100);
+  
+  if (cardDetected) {
+    // Kartu terdeteksi
+    if (!cardStillPresent) {
+      // Kartu baru terdeteksi (bukan yang sama)
+      if (millis() - lastCardRead < CARD_READ_COOLDOWN) return;
+      
+      cardStillPresent = true;
+      cardPresentStart = millis();
+      lastCardRead = millis();
+      
+      Serial.println("🔔 NEW CARD DETECTED - PLEASE REMOVE!");
+      
+      String uidStr = "";
+      uidStr.reserve(20);
+      
+      for (uint8_t i = 0; i < uidLength; i++) {
+        if (uid[i] < 0x10) uidStr += "0";
+        uidStr += String(uid[i], HEX);
+      }
+      uidStr.toUpperCase();
+      
+      Serial.print("RFID UID: ");
+      Serial.print(uidStr);
+      Serial.print(" (length=");
+      Serial.print(uidLength);
+      Serial.print(", mode=");
+      Serial.print(serverMode);
+      Serial.println(")");
+      
+      // Tap sound effect
+      playTapSound();
+      yield();
+      
+      // TAMPILKAN INDIKATOR "ANGKAT KARTU!" - SEGERA!
+      statusMessage = "ANGKAT KARTU!";
+      statusMessageTime = millis();
       displayNeedsUpdate = true;
-      updateDisplay(true); // Force update
       
-      yield(); // Feed watchdog sebelum HTTP
+      // Force update display SEKARANG
+      showAttendanceMode();
       
-      bool sendSuccess = sendDataToServer(uidStr, "", "attendance", false);
+      Serial.println("⚠️ ANGKAT KARTU! indicator shown");
       
-      yield(); // Feed watchdog setelah HTTP
-      
-      if (sendSuccess) {
-        statusMessage = "Recorded!";
+      // Gunakan mode dari server untuk menentukan aksi
+      if (serverMode == "attendance") {
+        yield(); // Feed watchdog sebelum HTTP
         
-        // Beep sukses
-        playBeep(2000, 100);
-        yield();
+        bool sendSuccess = sendDataToServer(uidStr, "", "attendance", false);
         
-        // Text-to-speech pattern
-        playBeep(1800, 80);
-        yield();
-        playBeep(2200, 80);
-        yield();
+        yield(); // Feed watchdog setelah HTTP
         
-        Serial.println("✅ Attendance recorded");
+        if (sendSuccess) {
+          // Success melody
+          playSuccessMelody();
+          yield();
+          
+          Serial.println("✅ Attendance recorded");
+          
+          // Clear SEMUA status message sebelum tampil nama
+          statusMessage = "";
+          cardStillPresent = false; // Anggap kartu sudah diangkat
+          
+          // Set timer tepat sebelum tampil
+          lastTapDisplay = millis();
+          displayNeedsUpdate = false; // Reset dulu
+          
+          // Tampilkan nama karyawan
+          showAttendanceMode();
+          
+          Serial.printf("👤 Showing employee: %s for 2 seconds\n", lastEmployeeName.c_str());
+          
+          // BLOCKING DISPLAY: Tahan layar dengan nama karyawan selama 2 detik
+          unsigned long displayStart = millis();
+          unsigned long displayEnd = displayStart + 2000; // 2 detik
+          int lastSec = currentSecond;
+          
+          while (millis() < displayEnd) {
+            feedWatchdog();
+            
+            // Update clock setiap detik (partial, tidak menghapus nama)
+            updateClock();
+            if (currentSecond != lastSec) {
+              lastSec = currentSecond;
+              tft.fillRect(85, 40, 150, 20, COLOR_DARK);
+              drawClock(85, 40, 2);
+            }
+            
+            delay(50);
+          }
+          
+          // Setelah selesai, clear nama dan pastikan status bersih
+          lastEmployeeName = "";
+          lastTapTime = "";
+          statusMessage = ""; // Pastikan tidak ada sisa pesan
+          cardStillPresent = false;
+          lastCardRead = 0;    // Reset cooldown
+          lastRFIDCheck = 0;   // Reset agar checkRFID langsung aktif di iterasi berikutnya
+          pn532ErrorCount = 0; // Reset error count PN532
+          
+          // Re-init SAMConfig agar PN532 kembali ke mode siap scan
+          // setelah idle 2 detik selama blocking display
+          nfc.SAMConfig();
+          
+          displayNeedsUpdate = true;
+          
+          Serial.println("✅ Employee display done");
+        } else {
+          saveToOfflineQueue(uidStr, "", "attendance");
+          statusMessage = "Offline saved";
+          statusMessageTime = millis();
+          playErrorMelody();
+          yield();
+          displayNeedsUpdate = true;
+        }
+        
+      } else if (serverMode == "register") {
+        tempUID = uidStr;
+        
+        // Kirim UID ke form Laravel
+        sendUIDToForm(uidStr);
+        
+        inputMode = true;
+        currentInput = "";
+        lastKey = 0;
+        previewChar = "";
+        statusMessage = "UID sent!";
+        statusMessageTime = millis();
         displayNeedsUpdate = true;
-      } else {
-        saveToOfflineQueue(uidStr, "", "attendance");
-        statusMessage = "Offline saved";
-        playBeep(1000, 100);
+        
+        // Beep untuk register
+        playBeep(1500, 100);
         yield();
+        playBeep(1500, 100);
+        yield();
+        
+        Serial.println("✅ UID sent to form");
       }
       
-      statusMessageTime = millis();
-      displayNeedsUpdate = true;
+      // Cleanup
+      uidStr = String();
       
-    } else if (serverMode == "register") {
-      tempUID = uidStr;
-      
-      // Kirim ke server untuk cache
-      if (WiFi.status() == WL_CONNECTED) {
-        yield();
-        
-        InsecureWiFiClient client;
-        client.setTimeout(2000); // Timeout pendek
-        HTTPClient http;
-        
-        char url[128];
-        snprintf(url, sizeof(url), "%s%s/card-detected", serverURL, apiEndpoint.c_str());
-        
-        http.begin(client, url);
-        http.addHeader("Content-Type", "application/json");
-        http.setTimeout(2000);
-        
-        DynamicJsonDocument doc(256);
-        doc["uid"] = uidStr;
-        doc["mode"] = "register";
-        
-        String jsonString;
-        serializeJson(doc, jsonString);
-        
-        http.POST(jsonString);
-        http.end();
-        client.stop();
-        
-        jsonString = String();
-        
-        yield();
-      }
-      
-      inputMode = true;
-      currentInput = "";
-      lastKey = 0;
-      previewChar = "";
-      statusMessage = "Enter name";
-      statusMessageTime = millis();
-      displayNeedsUpdate = true;
-      
-      // Beep untuk register
-      playBeep(1500, 100);
-      yield();
-      playBeep(1500, 100);
-      yield();
-      
-      Serial.println("✅ Card detected for registration");
+      // Beep reminder untuk angkat kartu
+      delay(500);
+      playBeep(1200, 50);
     }
+    // Kartu masih ditempel (cardStillPresent == true)
+    // Tidak lakukan apa-apa, tunggu diangkat atau timeout
     
-    // Cleanup
-    uidStr = String();
+  } else {
+    // Kartu tidak terdeteksi (sudah diangkat)
+    if (cardStillPresent) {
+      Serial.println("✅ Card removed");
+      cardStillPresent = false;
+      pn532ErrorCount = 0; // Reset error count
+      
+      // Clear "ANGKAT KARTU!" message
+      if (statusMessage == "ANGKAT KARTU!") {
+        statusMessage = "";
+        displayNeedsUpdate = true;
+      }
+    }
   }
   
   // Feed watchdog
@@ -1609,10 +2106,24 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
   
-  Serial.println("\n=== STARTING ===");
+  Serial.println("\n=== STARTING ATTENDANCE SYSTEM ===");
+  
+  // Enable hardware watchdog timer (30 seconds) - Compatible with newer ESP32 core
+  // Check if already initialized
+  esp_task_wdt_deinit(); // Deinit jika sudah ada
+  
+  esp_task_wdt_config_t wdt_config = {
+    .timeout_ms = WDT_TIMEOUT * 1000,
+    .idle_core_mask = 0,
+    .trigger_panic = true
+  };
+  esp_task_wdt_init(&wdt_config);
+  esp_task_wdt_add(NULL);
+  Serial.println("✅ Hardware Watchdog enabled (30s timeout)");
   
   Wire.begin(SDA_PIN, SCL_PIN, 50000);
   Serial.println("I2C OK");
+  feedWatchdog();
   
   tft.begin();
   tft.setRotation(1);
@@ -1621,6 +2132,8 @@ void setup() {
   tft.setCursor(40, 100);
   tft.print("SYSTEM READY");
   Serial.println("TFT OK");
+  
+  feedWatchdog();
   
   for (int i = 0; i < 3; i++) {
     keypad.begin();
@@ -1644,6 +2157,9 @@ void setup() {
   setupI2S();
   Serial.println("Audio OK");
   
+  // Welcome melody (setelah I2S ready)
+  playWelcomeMelody();
+  
   preferences.begin("attendance", false);
   
   ssid = preferences.getString("ssid", "");
@@ -1656,8 +2172,37 @@ void setup() {
     Serial.printf("📂 Ada %d data offline tersimpan\n", offlineCount);
   }
   
+  // Auto-connect WiFi saat startup
   if (ssid.length() > 0) {
+    Serial.println("🔌 Auto-connecting to WiFi...");
+    Serial.print("SSID: ");
+    Serial.println(ssid);
+    
+    WiFi.mode(WIFI_STA);
+    WiFi.setAutoReconnect(true);
+    WiFi.setSleep(false);
     WiFi.begin(ssid.c_str(), password.c_str());
+    
+    // Tunggu koneksi maksimal 10 detik
+    int attempts = 0;
+    while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+      delay(500);
+      Serial.print(".");
+      attempts++;
+    }
+    
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("\n✅ WiFi Connected!");
+      Serial.print("IP: ");
+      Serial.println(WiFi.localIP());
+      playBeep(2000, 100);
+      
+      // Sync time from server
+      syncTimeFromServer();
+    } else {
+      Serial.println("\n❌ WiFi Connection Failed");
+      playBeep(500, 200);
+    }
   }
   
   delay(1000);
@@ -1672,46 +2217,196 @@ void setup() {
 ========================= */
 
 void loop() {
-  // Feed watchdog secara berkala
-  if (millis() - lastWatchdogFeed > WATCHDOG_FEED_INTERVAL) {
+  unsigned long now = millis();
+  
+  // Feed watchdog secara berkala (PRIORITAS TERTINGGI - SELALU AKTIF)
+  if (now - lastWatchdogFeed > WATCHDOG_FEED_INTERVAL) {
     feedWatchdog();
   }
   
-  // Check memory secara berkala
-  if (millis() - lastMemoryCheck > MEMORY_CHECK_INTERVAL) {
-    checkMemory();
-    lastMemoryCheck = millis();
+  // ========================================
+  // PRIORITAS TERTINGGI: KEYPAD CHECK
+  // Selalu aktif di semua mode untuk responsivitas maksimal
+  // ========================================
+  if (now - lastKeypadCheck >= KEYPAD_CHECK_INTERVAL) {
+    checkKeypad();
+    lastKeypadCheck = now;
   }
   
-  // Cek mode dari server (PRIORITAS TINGGI untuk responsivitas)
-  if (WiFi.status() == WL_CONNECTED) {
-    if (millis() - lastModeCheck > MODE_CHECK_INTERVAL) {
-      checkModeFromServer();
-      lastModeCheck = millis();
+  // ========================================
+  // MODE-SPECIFIC OPERATIONS
+  // Fitur berat HANYA aktif di mode tertentu
+  // ========================================
+  
+  // WiFi Setup & Main Menu: MINIMAL OPERATIONS (maksimal responsivitas keypad!)
+  if (currentMode == MODE_WIFI_SETUP || currentMode == MODE_MAIN_MENU || 
+      currentMode == MODE_ALARM_SETUP) {
+    
+    // HANYA update display jika ada perubahan
+    if (displayNeedsUpdate && now - lastDisplayUpdate >= DISPLAY_UPDATE_INTERVAL) {
+      lastDisplayUpdate = now;
+      updateDisplay(false);
+    }
+    
+    // TIDAK ADA operasi berat lainnya!
+    // Tidak ada: RFID check, mode check, time sync, offline queue, dll
+    // Semua CPU resource untuk keypad responsiveness!
+    
+    yield();
+    return; // Exit loop early untuk maksimal speed
+  }
+  
+  // ========================================
+  // ATTENDANCE MODE: FULL FEATURES AKTIF
+  // ========================================
+  if (currentMode == MODE_ATTENDANCE) {
+    
+    // Update clock
+    unsigned long prevSecond = currentSecond;
+    updateClock();
+    
+    // Update jam di TFT hanya saat detik berubah (partial update)
+    if (currentSecond != prevSecond) {
+      tft.fillRect(85, 40, 150, 20, COLOR_DARK);
+      drawClock(85, 40, 2);
+    }
+    
+    // Update animation frame - DINONAKTIFKAN karena animasi tidak digunakan
+    // dan menyebabkan full redraw 20x/detik yang mengganggu tampilan nama karyawan
+    // if (lastEmployeeName.length() > 0) {
+    //   if (now - lastAnimationUpdate > ANIMATION_INTERVAL) {
+    //     lastAnimationUpdate = now;
+    //     animationFrame++;
+    //     if (animationFrame > 1000) animationFrame = 0;
+    //     displayNeedsUpdate = true;
+    //   }
+    // }
+    
+    // Check memory secara berkala
+    if (now - lastMemoryCheck > MEMORY_CHECK_INTERVAL) {
+      checkMemory();
+      lastMemoryCheck = now;
+    }
+    
+    // Anti-hang: Restart jika tidak ada aktivitas selama 1 jam
+    if (now - lastActivityTime > ACTIVITY_TIMEOUT) {
+      Serial.println("⏰ No activity for 1 hour, restarting for stability...");
+      delay(1000);
+      ESP.restart();
+    }
+    
+    // WiFi reconnect check
+    if (now - lastWiFiCheck > WIFI_CHECK_INTERVAL) {
+      if (WiFi.status() != WL_CONNECTED && ssid.length() > 0) {
+        Serial.println("📡 WiFi disconnected, reconnecting...");
+        WiFi.disconnect();
+        WiFi.begin(ssid.c_str(), password.c_str());
+        consecutiveErrors++;
+        
+        if (consecutiveErrors > MAX_CONSECUTIVE_ERRORS) {
+          Serial.println("� Too many errors, restarting...");
+          delay(1000);
+          ESP.restart();
+        }
+      } else {
+        consecutiveErrors = 0;
+      }
+      lastWiFiCheck = now;
+    }
+    
+    // Cek mode dari server (hanya jika WiFi connected)
+    // PENTING: mode check dilakukan SETELAH RFID check agar tidak blocking
+    if (WiFi.status() == WL_CONNECTED) {
+      // Sync time setiap 1 jam
+      if (now - lastTimeSync > TIME_SYNC_INTERVAL) {
+        syncTimeFromServer();
+        lastTimeSync = now;
+      }
+    }
+    
+    // Check RFID — PRIORITAS UTAMA, tidak boleh diblokir HTTP
+    if (now - lastRFIDCheck >= RFID_CHECK_INTERVAL) {
+      checkRFID();
+      lastRFIDCheck = now;
+    }
+    
+    // Cek mode dari server (setelah RFID, gunakan interval lebih jarang)
+    if (WiFi.status() == WL_CONNECTED) {
+      if (now - lastModeCheck > MODE_CHECK_INTERVAL) {
+        // Hanya jalankan mode check jika RFID baru saja tidak membaca kartu
+        // (cardStillPresent == false) agar tidak mengganggu proses tap
+        // JUGA: jangan mode check saat menampilkan nama karyawan
+        if (!cardStillPresent && lastEmployeeName.length() == 0) {
+          checkModeFromServer();
+        }
+        lastModeCheck = now;
+      }
+    }
+    
+    // Auto-recovery PN532 jika terlalu banyak error
+    if (pn532ErrorCount >= MAX_PN532_ERRORS) {
+      Serial.println("🔄 Auto-recovering PN532...");
+      resetPN532();
+    }
+    
+    // Proses offline queue (non-blocking)
+    processOfflineQueue();
+    
+    // Auto-clear employee info — hanya sebagai fallback jika blocking display tidak jalan
+    if (lastEmployeeName.length() > 0 && now - lastTapDisplay >= TAP_DISPLAY_DURATION) {
+      lastEmployeeName = "";
+      lastTapTime = "";
+      slideOffset = 0;
+      animationFrame = 0;
+      displayNeedsUpdate = true;
+    }
+    
+    // Auto-clear status message
+    if (statusMessage.length() > 0 && now - statusMessageTime > 3000) {
+      statusMessage = "";
+      displayNeedsUpdate = true;
+    }
+    
+    // Cleanup strings periodically
+    cleanupStrings();
+  }
+  
+  // ========================================
+  // REGISTER MODE: MODERATE FEATURES
+  // ========================================
+  if (currentMode == MODE_REGISTER) {
+    
+    // Check RFID untuk register
+    if (now - lastRFIDCheck >= RFID_CHECK_INTERVAL) {
+      checkRFID();
+      lastRFIDCheck = now;
+    }
+    
+    // Proses offline queue jika ada
+    if (WiFi.status() == WL_CONNECTED) {
+      processOfflineQueue();
+    }
+    
+    // Auto-clear status message
+    if (statusMessage.length() > 0 && now - statusMessageTime > 3000) {
+      statusMessage = "";
+      displayNeedsUpdate = true;
     }
   }
   
-  checkKeypad();
-  checkRFID();
+  // Update display (semua mode)
+  // PENTING: Jangan full redraw saat menampilkan nama karyawan di attendance mode
+  // agar nama tidak tertimpa sebelum waktunya
+  bool isShowingEmployeeName = (currentMode == MODE_ATTENDANCE && 
+                                 lastEmployeeName.length() > 0 && 
+                                 (now - lastTapDisplay) < TAP_DISPLAY_DURATION);
   
-  // Proses offline queue (non-blocking)
-  processOfflineQueue();
-  
-  // Update display
-  if (millis() - lastDisplayUpdate > DISPLAY_UPDATE_INTERVAL) {
-    lastDisplayUpdate = millis();
+  if (displayNeedsUpdate && !isShowingEmployeeName && now - lastDisplayUpdate >= DISPLAY_UPDATE_INTERVAL) {
+    lastDisplayUpdate = now;
     updateDisplay(false);
   }
   
-  // Auto-clear status message
-  if (statusMessage.length() > 0 && millis() - statusMessageTime > 3000) {
-    statusMessage = "";
-    displayNeedsUpdate = true;
-  }
-  
-  // Cleanup strings periodically
-  cleanupStrings();
-  
+  // Reset keypad jika error
   if (errorCount > 10) {
     resetKeypad();
     errorCount = 0;

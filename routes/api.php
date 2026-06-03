@@ -50,17 +50,15 @@ Route::prefix('morra')->group(function () {
             ['value' => $uid, 'updated_at' => now()]
         );
         
-        // Reset mode ke attendance setelah UID terdeteksi
-        \DB::table('rfid_settings')->updateOrInsert(
-            ['key' => 'mode'],
-            ['value' => 'attendance', 'updated_at' => now()]
-        );
+        // JANGAN reset mode ke attendance di sini!
+        // Mode tetap "register" sampai user menyimpan UID ke karyawan di form web.
+        // Mode akan dikembalikan ke attendance oleh registerRfidCard() setelah user klik Save.
         
-        \Log::info('RFID UID stored in DB, mode reset to attendance', ['uid' => $uid]);
+        \Log::info('RFID UID stored in DB (mode kept as register)', ['uid' => $uid]);
         
         return response()->json([
             'success' => true,
-            'message' => 'UID received and stored, mode reset to attendance',
+            'message' => 'UID received and stored. Waiting for admin to assign to employee.',
             'uid' => $uid
         ]);
     });
@@ -84,6 +82,107 @@ Route::prefix('morra')->group(function () {
     Route::get('/api/attendance/time-settings', [AttendanceManagementController::class, 'getTimeSettings']);
     Route::post('/api/attendance/time-settings', [AttendanceManagementController::class, 'updateTimeSettings']);
     Route::post('/api/attendance/test-time-period', [AttendanceManagementController::class, 'testTimePeriod']);
+
+    // =============================================
+    // API untuk Announcement / TTS ke Mesin Absensi
+    // =============================================
+
+    // Admin kirim teks → generate audio via Google TTS → simpan di server
+    Route::post('/api/rfid/announce', function(Request $request) {
+        $text = $request->input('text', '');
+        if (empty($text)) {
+            return response()->json(['success' => false, 'message' => 'Text kosong']);
+        }
+
+        // Generate audio via Google TTS (tidak butuh API key, pakai endpoint publik)
+        $encodedText = urlencode($text);
+        $ttsUrl = "https://translate.google.com/translate_tts?ie=UTF-8&q={$encodedText}&tl=id&client=tw-ob";
+
+        $audioData = null;
+        try {
+            $ch = curl_init($ttsUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            $audioData = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode !== 200 || empty($audioData) || strlen($audioData) < 1000) {
+                \Log::error('Google TTS failed', ['code' => $httpCode, 'text' => $text, 'size' => strlen($audioData ?? '')]);
+                return response()->json(['success' => false, 'message' => 'Gagal generate audio dari Google TTS (HTTP ' . $httpCode . ')']);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+
+        // Pastikan folder ada
+        $storageDir = storage_path('app/public/announcements');
+        if (!is_dir($storageDir)) {
+            mkdir($storageDir, 0755, true);
+        }
+
+        // Simpan langsung ke filesystem (bukan Storage::put agar lebih reliable)
+        $filename = 'announce_' . time() . '.mp3';
+        $filePath = $storageDir . '/' . $filename;
+        
+        $written = file_put_contents($filePath, $audioData);
+        if ($written === false) {
+            \Log::error('Failed to write announcement file', ['path' => $filePath]);
+            return response()->json(['success' => false, 'message' => 'Gagal menyimpan file audio']);
+        }
+
+        $publicUrl = url('storage/announcements/' . $filename);
+
+        // Simpan URL di rfid_settings agar ESP32 bisa polling
+        \DB::table('rfid_settings')->updateOrInsert(
+            ['key' => 'announcement_url'],
+            ['value' => $publicUrl, 'updated_at' => now()]
+        );
+        \DB::table('rfid_settings')->updateOrInsert(
+            ['key' => 'announcement_text'],
+            ['value' => $text, 'updated_at' => now()]
+        );
+        \DB::table('rfid_settings')->updateOrInsert(
+            ['key' => 'announcement_played'],
+            ['value' => '0', 'updated_at' => now()]
+        );
+
+        \Log::info('Announcement generated', ['text' => $text, 'url' => $publicUrl, 'size' => $written]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Audio berhasil dibuat',
+            'text' => $text,
+            'url' => $publicUrl
+        ]);
+    });
+
+    // ESP32 polling: cek apakah ada announcement baru
+    Route::get('/api/rfid/announcement', function() {
+        $urlRow = \DB::table('rfid_settings')->where('key', 'announcement_url')->first();
+        $playedRow = \DB::table('rfid_settings')->where('key', 'announcement_played')->first();
+
+        $url = $urlRow ? $urlRow->value : null;
+        $played = $playedRow ? $playedRow->value : '1';
+
+        if ($url && $played === '0') {
+            // Mark sebagai sudah dikirim ke ESP32 (bukan sudah diplay)
+            \DB::table('rfid_settings')->where('key', 'announcement_played')->update(['value' => '1', 'updated_at' => now()]);
+
+            return response()->json([
+                'success' => true,
+                'has_announcement' => true,
+                'url' => $url
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'has_announcement' => false
+        ]);
+    });
 });
 
 // Legacy routes (for backward compatibility)

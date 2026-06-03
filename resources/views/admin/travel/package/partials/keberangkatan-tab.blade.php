@@ -169,6 +169,7 @@
                                             <div class="text-sm font-semibold" x-text="formatCurrency(booking.hpp_aktual)"></div>
                                             <div class="text-xs text-slate-400">
                                                 <span x-text="'Dasar: ' + formatCurrency(booking.hpp_dasar||0)"></span>
+                                                <span x-show="(booking.total_pax||1) > 1" class="text-blue-500" x-text="' (' + (booking.total_pax||1) + ' pax)'"></span>
                                                 <span x-show="(booking.hpp_hotel||0) > 0" x-text="' + Hotel: ' + formatCurrency(booking.hpp_hotel||0)"></span>
                                                 <span x-show="(booking.hpp_addons||0) > 0" x-text="' + Addons: ' + formatCurrency(booking.hpp_addons||0)"></span>
                                             </div>
@@ -352,6 +353,16 @@
 
             <!-- Data -->
             <div x-show="rabData && !rabData.error">
+                <!-- Hotel warning: biaya hotel di HPP = 0 tapi ada hotel dari booking -->
+                <div x-show="rabData?.hotel_warning"
+                     class="mb-3 p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-800 text-sm flex items-start gap-2">
+                    <i class='bx bx-hotel text-lg flex-shrink-0 mt-0.5'></i>
+                    <div>
+                        <div class="font-semibold mb-0.5">⚠ Biaya Hotel HPP Belum Diisi</div>
+                        <span x-text="rabData?.hotel_warning"></span>
+                    </div>
+                </div>
+
                 <!-- Summary cards -->
                 <div class="grid grid-cols-4 gap-3 mb-4">
                     <div class="rounded-xl bg-blue-50 border border-blue-200 p-3 text-center">
@@ -433,25 +444,32 @@
                                               :class="item.payment_status==='lunas' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
                                               x-text="item.payment_status==='lunas' ? '✓ LUNAS' : '⚠ HUTANG'"></span>
                                     </td>
-                                    <!-- Kolom aksi: hanya HPP dasar yang bisa diinput realisasi -->
+                                    <!-- Kolom aksi: semua item bisa diinput realisasi + ubah status -->
                                     <td class="px-3 py-2">
-                                        <template x-if="item.hpp_key">
+                                        <div class="flex flex-col gap-1.5">
+                                            <!-- Status toggle -->
+                                            <div class="flex items-center gap-1">
+                                                <select x-model="item.payment_status"
+                                                        class="flex-1 rounded-lg border border-slate-200 px-2 py-1 text-xs focus:ring-1 focus:ring-primary-300"
+                                                        :class="item.payment_status==='lunas' ? 'border-green-300 bg-green-50 text-green-700' : 'border-red-300 bg-red-50 text-red-700'">
+                                                    <option value="hutang">⚠ HUTANG</option>
+                                                    <option value="lunas">✓ LUNAS</option>
+                                                </select>
+                                            </div>
+                                            <!-- Realisasi input + save -->
                                             <div class="flex items-center gap-1">
                                                 <input type="number" min="0"
                                                        :value="item.realisasi||0"
                                                        @change="item.realisasi = parseFloat($event.target.value)||0"
                                                        class="w-24 rounded-lg border border-slate-200 px-2 py-1 text-xs text-right focus:ring-1 focus:ring-primary-300"
                                                        placeholder="0">
-                                                <button x-on:click="updateRabItemStatus(item.hpp_key, item.payment_status, item.hutang_amount||0, item.realisasi||0)"
+                                                <button x-on:click="updateRabDetailItem(item, item.realisasi||0)"
                                                         :disabled="updatingRab"
                                                         class="px-2 py-1 rounded-lg bg-primary-600 text-white text-xs hover:bg-primary-700 disabled:opacity-50 whitespace-nowrap">
                                                     <i class='bx bx-save'></i> Simpan
                                                 </button>
                                             </div>
-                                        </template>
-                                        <template x-if="!item.hpp_key">
-                                            <span class="text-slate-300 text-xs">Auto</span>
-                                        </template>
+                                        </div>
                                     </td>
                                 </tr>
                             </template>
@@ -530,6 +548,18 @@
         </div>
         <div class="px-5 pb-4 pt-2 border-t border-slate-100 flex items-center justify-between">
             <div class="flex items-center gap-2">
+                <!-- Tombol Regenerate RAB -->
+                <button x-on:click="regenerateRab()"
+                        :disabled="updatingRab"
+                        class="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-medium bg-orange-100 text-orange-700 border border-orange-300 hover:bg-orange-200 disabled:opacity-50">
+                    <i class='bx bx-refresh'></i> Regenerate RAB
+                </button>
+                <!-- Link ke Manajemen RAB -->
+                <a :href="'{{ url('admin/finance/rab') }}?keberangkatan_id=' + (rabKb?.id||'')"
+                   target="_blank"
+                   class="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-medium bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200">
+                    <i class='bx bx-link-external'></i> Buka di Manajemen RAB
+                </a>
                 <!-- Tombol Sesuaikan Laporan -->
                 <template x-if="rabData && !rabData.error && Math.abs((rabData?.total_budget||0)-(rabData?.total_realisasi||0)) > 0">
                     <button x-on:click="sesuaikanLaporan()"
@@ -558,7 +588,7 @@
                     </div>
                 </template>
                 <template x-if="!rabData || rabData.error || (Math.abs((rabData?.total_budget||0)-(rabData?.total_realisasi||0)) === 0 && !rabData?.laporan_disesuaikan)">
-                    <span class="text-xs text-slate-400">Tidak ada penyesuaian diperlukan</span>
+                    <span></span>
                 </template>
             </div>
             <button class="rounded-xl border border-slate-200 px-4 py-2 hover:bg-slate-50 text-sm" x-on:click="showRabModal=false">Tutup</button>

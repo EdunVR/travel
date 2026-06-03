@@ -66,8 +66,51 @@
       <button @click="resetFilter()" class="rounded-xl border border-slate-200 px-3 py-2 hover:bg-slate-50">Reset Filter</button>
     </div>
 
+    <!-- Keberangkatan context banner (shown when coming from package detail) -->
+    <template x-if="keberangkatanId && keberangkatanInfo">
+      <div class="rounded-xl border p-4"
+           :class="keberangkatanInfo.has_rab ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <i class='bx text-xl' :class="keberangkatanInfo.has_rab ? 'bx-calculator text-blue-600' : 'bx-info-circle text-amber-600'"></i>
+            <div>
+              <div class="font-semibold text-sm" :class="keberangkatanInfo.has_rab ? 'text-blue-800' : 'text-amber-800'">
+                <template x-if="keberangkatanInfo.has_rab">
+                  <span>Menampilkan RAB untuk keberangkatan: <span x-text="keberangkatanInfo.name"></span></span>
+                </template>
+                <template x-if="!keberangkatanInfo.has_rab">
+                  <span>Belum ada RAB untuk keberangkatan: <span x-text="keberangkatanInfo.name"></span></span>
+                </template>
+              </div>
+              <div class="text-xs mt-0.5" :class="keberangkatanInfo.has_rab ? 'text-blue-600' : 'text-amber-600'"
+                   x-text="keberangkatanInfo.has_rab ? 'Kode: ' + (keberangkatanInfo.code||'-') + ' · RAB ID: ' + (keberangkatanInfo.id_rab||'-') : 'Silakan buka halaman detail paket dan klik Generate RAB dari modal RAB keberangkatan.'">
+              </div>
+            </div>
+          </div>
+          <a :href="`{{ url('admin/inventaris/travel/package') }}`" 
+             class="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border hover:bg-white"
+             :class="keberangkatanInfo.has_rab ? 'border-blue-300 text-blue-700' : 'border-amber-300 text-amber-700'">
+            <i class='bx bx-arrow-back'></i> Ke Halaman Paket
+          </a>
+        </div>
+      </div>
+    </template>
+
+    <!-- Empty state when keberangkatan has no RAB -->
+    <template x-if="keberangkatanId && keberangkatanInfo && !keberangkatanInfo.has_rab">
+      <div class="rounded-2xl border border-amber-200 bg-amber-50 p-12 text-center">
+        <i class='bx bx-calculator text-5xl text-amber-300 mb-3'></i>
+        <div class="font-semibold text-amber-800 mb-1">RAB Belum Dibuat</div>
+        <div class="text-sm text-amber-700 mb-4">
+          Keberangkatan <strong x-text="keberangkatanInfo.name"></strong> belum memiliki RAB.<br>
+          Buka halaman detail paket, pilih keberangkatan, lalu klik tombol <strong>Generate RAB</strong> di modal RAB.
+        </div>
+      </div>
+    </template>
+
     <!-- Desktop table -->
-    <div class="hidden xl:block rounded-2xl border border-slate-200 bg-white shadow-card overflow-hidden">
+    <div x-show="!keberangkatanId || (keberangkatanInfo && keberangkatanInfo.has_rab)"
+         class="hidden xl:block rounded-2xl border border-slate-200 bg-white shadow-card overflow-hidden">
       <table class="w-full text-sm table-auto">
         <colgroup>
           <col class="w-36" />
@@ -171,7 +214,8 @@
     </div>
 
     <!-- Mobile cards -->
-    <div class="xl:hidden grid grid-cols-1 gap-3">
+    <div x-show="!keberangkatanId || (keberangkatanInfo && keberangkatanInfo.has_rab)"
+         class="xl:hidden grid grid-cols-1 gap-3">
       <template x-for="r in filtered()" :key="r.id">
         <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
           <div class="flex items-start justify-between gap-3">
@@ -727,6 +771,9 @@
         isAdmin: {{ auth()->user() ? 'true' : 'true' }},
         formattedBudget: '',
         formattedApproved: '',
+        // Keberangkatan filter (set when coming from package detail page)
+        keberangkatanId: null,
+        keberangkatanInfo: null,  // {name, code, has_rab, id_rab}
 
         statusOptions: [
           {value:'DRAFT',            label:'Draft'},
@@ -738,6 +785,27 @@
         ],
 
         async init(){
+          // Check for keberangkatan_id in URL
+          const urlParams = new URLSearchParams(window.location.search);
+          const kbId = urlParams.get('keberangkatan_id');
+          if (kbId) {
+            this.keberangkatanId = kbId;
+            // Fetch keberangkatan info to check if RAB exists
+            try {
+              const res = await fetch(`{{ url('') }}/admin/inventaris/travel/keberangkatan/${kbId}`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+              });
+              if (res.ok) {
+                const kb = await res.json();
+                this.keberangkatanInfo = {
+                  name: kb.keberangkatan_name,
+                  code: kb.keberangkatan_code,
+                  has_rab: !!kb.id_rab,
+                  id_rab: kb.id_rab
+                };
+              }
+            } catch(e) { console.error('Error fetching keberangkatan info:', e); }
+          }
           await this.loadOutlets();
           await this.loadBooks();
           if(!this.selectedBook && this.books.length > 0) {
@@ -866,6 +934,11 @@
 
         // filters/sort
         filtered(){
+          // If filtering by keberangkatan: only show if RAB exists, and only that RAB
+          if (this.keberangkatanId && this.keberangkatanInfo) {
+            if (!this.keberangkatanInfo.has_rab) return []; // no RAB yet = empty
+            return this.items.filter(r => r.id == this.keberangkatanInfo.id_rab);
+          }
           const q=this.q.toLowerCase();
           let list=this.items.filter(r=>{
             const matchesQ = !q || [r.name,r.description,(r.components||[]).join(' '),this.statusLabel(r.status)]

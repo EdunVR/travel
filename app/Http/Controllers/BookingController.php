@@ -122,8 +122,9 @@ class BookingController extends Controller
             ];
 
             // HPP Dasar dari package hpp_calculation (flight + extras, tanpa hotel)
+            // Dikalikan total pax (jamaah utama + anggota keluarga)
             $hppCalc = $booking->travelPackage->hppCalculation ?? null;
-            $hppDasar = $hppCalc
+            $hppDasarPerOrang = $hppCalc
                 ? (($hppCalc->flight_cost ?? 0) + ($hppCalc->transportation_cost ?? 0) + ($hppCalc->meal_cost ?? 0)
                    + ($hppCalc->visa_cost ?? 0) + ($hppCalc->guide_cost ?? 0) + ($hppCalc->insurance_cost ?? 0)
                    + ($hppCalc->operational_overhead ?? 0) + ($hppCalc->contingency ?? 0))
@@ -133,6 +134,10 @@ class BookingController extends Controller
             $familyMembers = $booking->jamaah->family_members ?? [];
             if (is_string($familyMembers)) $familyMembers = json_decode($familyMembers, true) ?? [];
             $familyCount = is_array($familyMembers) ? count($familyMembers) : 0;
+            $totalPax = 1 + $familyCount; // jamaah utama + anggota keluarga
+
+            // HPP Dasar = per orang × total pax
+            $hppDasar = $hppDasarPerOrang * $totalPax;
 
             return [
                 'id' => $booking->id,
@@ -163,7 +168,7 @@ class BookingController extends Controller
                 'final_total' => $finalTotal,
                 'final_total_formatted' => 'Rp ' . number_format($finalTotal, 0, ',', '.'),
                 'paid_amount' => $booking->paid_amount,
-                'total_pax' => 1 + $familyCount, // jamaah utama + anggota keluarga
+                'total_pax' => $totalPax, // jamaah utama + anggota keluarga
                 'paid_amount_formatted' => 'Rp ' . number_format($booking->paid_amount, 0, ',', '.'),
                 'remaining_amount_formatted' => 'Rp ' . number_format($remaining, 0, ',', '.'),
                 'status' => $booking->status,
@@ -171,6 +176,8 @@ class BookingController extends Controller
                 'status_badge' => $statusBadges[$booking->status] ?? '<span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">' . ucfirst($booking->status) . '</span>',
                 'payment_status_badge' => $paymentBadges[$booking->payment_status] ?? '<span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">' . ucfirst($booking->payment_status) . '</span>',
                 'hpp_dasar' => $hppDasar,
+                'hpp_dasar_per_orang' => $hppDasarPerOrang,
+                'total_pax' => $totalPax,
                 'family_members_count' => $familyCount,
                 'family_members_list' => is_array($familyMembers) ? $familyMembers : [],
                 'hotel_bookings' => $booking->hotelBookings ? $booking->hotelBookings->map(fn($hb) => [
