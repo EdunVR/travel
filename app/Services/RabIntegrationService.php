@@ -174,26 +174,47 @@ class RabIntegrationService
             ];
         }
 
-        // Add custom HPP components (× jamaahCount)
+        // Add custom HPP components — gunakan qty dari HPP, TIDAK dikali jamaahCount
+        // Qty di HPP sudah diset secara eksplisit oleh admin di modal Kelola HPP Dasar
         foreach ($customComponents as $custom) {
-            $unitPrice = (float) ($custom['value'] ?? 0);
-            if ($unitPrice <= 0) continue;
+            $rawValue  = (float) ($custom['value'] ?? 0);
+            $idrValue  = (float) ($custom['idr_value'] ?? 0);
+            $qty       = max(1, (int) ($custom['qty'] ?? 1));
+            $satuan    = $custom['satuan'] ?? 'unit';
+            $currency  = $custom['currency'] ?? 'IDR';
 
-            $total = $unitPrice * $jamaahCount;
-            $label = $custom['label'] ?? 'Biaya Lainnya';
+            // Unit price dalam IDR
+            if ($idrValue > 0) {
+                $unitPriceIDR = $idrValue / $qty; // idr_value = total (value × qty × kurs)
+            } elseif ($currency === 'IDR') {
+                $unitPriceIDR = $rawValue;
+            } else {
+                $unitPriceIDR = $rawValue;
+            }
+
+            if ($unitPriceIDR <= 0) continue;
+
+            // Total = harga_satuan × qty dari HPP (bukan jamaahCount)
+            $total  = $unitPriceIDR * $qty;
+            $label  = !empty($custom['label']) ? $custom['label'] : ($custom['id'] ?? 'Biaya Lainnya');
             $status = $custom['payment_status'] ?? 'hutang';
             $hutang = ($status === 'hutang') ? $total : 0;
-            
+
+            $desc = $label . ' (' . $qty . ' ' . $satuan . ')';
+            if ($currency !== 'IDR') {
+                $desc .= ' — ' . $rawValue . ' ' . $currency . '/unit → IDR';
+            }
+
             $components[] = [
                 'item'          => $label,
-                'deskripsi'     => $label . ' untuk ' . $jamaahCount . ' jamaah',
-                'qty'           => $jamaahCount,
-                'satuan'        => 'pax',
-                'harga_satuan'  => $unitPrice,
+                'deskripsi'     => $desc,
+                'qty'           => $qty,
+                'satuan'        => $satuan,
+                'harga_satuan'  => $unitPriceIDR,
                 'biaya'         => $total,
                 'payment_status'=> $status,
                 'hutang_amount' => $hutang,
-                'realisasi'     => 0,
+                'realisasi'     => 0, // Realisasi selalu 0 saat generate, input manual
             ];
         }
 
@@ -338,28 +359,27 @@ class RabIntegrationService
             $key = $itemKeyMap[$detail->item] ?? null;
             
             if ($key) {
-                // Standard component - default to hutang if not set
+                // Standard component - hanya update payment_status dan hutang_amount
+                // realisasi_pemakaian TIDAK diubah di sini — itu input manual admin
+                // Status "lunas" artinya sudah dibayarkan, bukan berarti realisasi = budget
                 $status = $payStatus[$key] ?? 'hutang';
                 $budget = (float) $detail->budget;
-                $realisasi = ($status === 'lunas') ? $budget : 0;
                 $hutang = ($status === 'hutang') ? $budget : 0;
 
                 $detail->update([
-                    'realisasi_pemakaian' => $realisasi,
-                    'payment_status'      => $status,
-                    'hutang_amount'       => $hutang,
+                    'payment_status' => $status,
+                    'hutang_amount'  => $hutang,
                 ]);
             } else {
-                // Custom component - check by label
+                // Custom component - hanya update payment_status dan hutang_amount
+                // realisasi_pemakaian TIDAK diubah — input manual admin
                 $customStatus = $customStatusMap[$detail->item] ?? 'hutang';
                 $budget = (float) $detail->budget;
-                $realisasi = ($customStatus === 'lunas') ? $budget : 0;
                 $hutang = ($customStatus === 'hutang') ? $budget : 0;
 
                 $detail->update([
-                    'realisasi_pemakaian' => $realisasi,
-                    'payment_status'      => $customStatus,
-                    'hutang_amount'       => $hutang,
+                    'payment_status' => $customStatus,
+                    'hutang_amount'  => $hutang,
                 ]);
             }
         }

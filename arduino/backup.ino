@@ -5,7 +5,7 @@
 #include <Adafruit_PN532.h>
 #include <Keypad_I2C.h>
 #include <Keypad.h>
-#include <driver/i2s.h>   // Beep: I2S_NUM_0 (legacy driver)
+#include <driver/i2s.h>
 #include <math.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -14,13 +14,6 @@
 #include <WiFiClientSecure.h>
 #include <vector>
 #include <esp_task_wdt.h>  // Hardware watchdog timer
-
-// ESP8266Audio untuk MP3 announcement — pakai I2S_NUM_1 (terpisah dari beep)
-// INSTALL: Library Manager → "ESP8266Audio" by Earle F. Philhower, III
-#include <AudioFileSourceHTTPStream.h>
-#include <AudioFileSourceBuffer.h>
-#include <AudioGeneratorMP3.h>
-#include <AudioOutputI2S.h>
 
 /* =========================
    PIN CONFIG
@@ -71,7 +64,7 @@ Keypad_I2C keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS, KEYPAD_ADDR);
 /* =========================
    LARAVEL API
 ========================= */
-const char* serverURL = "https://poshan.my.id/hm";
+const char* serverURL = "https://hmtourtravel.com";
 String apiEndpoint = "/api/morra/api/rfid";
 
 // Untuk mengabaikan verifikasi sertifikat SSL
@@ -337,31 +330,43 @@ void playBeep(uint16_t freq, uint16_t duration_ms) {
   int totalSamples = (SAMPLE_RATE * duration_ms) / 1000;
   int generated = 0;
 
-  // Start I2S
+  // Guard: jika durasi terlalu panjang, batasi agar tidak blocking lama
+  if (duration_ms > 500) duration_ms = 500;
+
+  // Start I2S — gunakan timeout singkat agar tidak hang
   i2s_start(I2S_PORT);
 
+  unsigned long beepStart = millis();
+  const unsigned long BEEP_MAX_MS = duration_ms + 200; // batas hard timeout
+
   while (generated < totalSamples) {
-    // Feed watchdog during long beep
-    if (generated % 512 == 0) {
+    // Hard timeout: jika melebihi batas, hentikan
+    if (millis() - beepStart > BEEP_MAX_MS) {
+      Serial.println("⚠️ Beep timeout, breaking");
+      break;
+    }
+
+    // Feed watchdog setiap 256 sample
+    if (generated % 256 == 0) {
+      esp_task_wdt_reset();
       yield();
     }
     
     for (int i = 0; i < bufferSize && generated < totalSamples; i++) {
       float t = (generated + i) / (float)SAMPLE_RATE;
-      buffer[i] = MAX_VOLUME * sin(2 * PI * freq * t);  // Volume maksimal
+      buffer[i] = MAX_VOLUME * sin(2 * PI * freq * t);
     }
 
     size_t bytes_written;
-    i2s_write(I2S_PORT, buffer, bufferSize * sizeof(int16_t),
-              &bytes_written, 100);
-
-    generated += bufferSize;
-    
-    // Prevent infinite loop
-    if (generated > totalSamples * 2) {
-      Serial.println("⚠️ Beep timeout, breaking");
+    // Timeout i2s_write dikurangi ke 20ms agar tidak blocking lama
+    esp_err_t err = i2s_write(I2S_PORT, buffer, bufferSize * sizeof(int16_t),
+                               &bytes_written, 20 / portTICK_PERIOD_MS);
+    if (err != ESP_OK || bytes_written == 0) {
+      // I2S buffer penuh atau error, skip dan lanjut
       break;
     }
+
+    generated += bufferSize;
   }
 
   // Stop I2S
@@ -575,11 +580,12 @@ void showMainMenu() {
 }
 
 void showAttendanceMode() {
-  // Modern gradient background (dark blue to darker)
+  // Gradient background — dibatasi yield setiap 40 baris agar tidak freeze TFT
   for (int y = 0; y < 240; y++) {
     uint8_t brightness = 255 - (y / 2);
     uint16_t color = tft.color565(0, brightness/4, brightness/2);
     tft.drawFastHLine(0, y, 320, color);
+    if (y % 40 == 0) yield(); // beri jeda tiap 40 baris
   }
   
   // Header bar dengan rounded corners
@@ -1337,7 +1343,8 @@ void resetPN532() {
   
   // Re-initialize PN532
   nfc.begin();
-  delay(100);
+  esp_task_wdt_reset(); // feed watchdog selama re-init
+  yield();
   
   if (!nfc.getFirmwareVersion()) {
     Serial.println("❌ PN532 reset failed!");
@@ -1346,7 +1353,8 @@ void resetPN532() {
     // Jika terlalu banyak error, restart ESP32
     if (pn532ErrorCount >= MAX_PN532_ERRORS) {
       Serial.println("🔴 Too many PN532 errors, restarting...");
-      delay(1000);
+      esp_task_wdt_reset();
+      delay(500);
       ESP.restart();
     }
     return;
@@ -1903,7 +1911,7 @@ void checkRFID() {
     
     // Warning beep
     playBeep(800, 100);
-    delay(100);
+    feedWatchdog();
     playBeep(800, 100);
     
     // Display warning - FORCE UPDATE
@@ -1918,9 +1926,8 @@ void checkRFID() {
     resetPN532();
     cardStillPresent = false;
     
-    // Keep showing warning for 2 more seconds
-    delay(2000);
-    statusMessage = "";
+    // Non-blocking: set statusMessage akan auto-clear setelah 3 detik via loop()
+    // TIDAK pakai delay(2000) yang akan memblok loop
     displayNeedsUpdate = true;
     return;
   }
@@ -2072,8 +2079,7 @@ void checkRFID() {
       // Cleanup
       uidStr = String();
       
-      // Beep reminder untuk angkat kartu
-      delay(500);
+      // Short beep reminder untuk angkat kartu (non-blocking via playBeep guard)
       playBeep(1200, 50);
     }
     // Kartu masih ditempel (cardStillPresent == true)
@@ -2295,17 +2301,17 @@ void loop() {
       ESP.restart();
     }
     
-    // WiFi reconnect check
+    // WiFi reconnect check — gunakan WiFi.reconnect() agar tidak blocking
     if (now - lastWiFiCheck > WIFI_CHECK_INTERVAL) {
       if (WiFi.status() != WL_CONNECTED && ssid.length() > 0) {
         Serial.println("📡 WiFi disconnected, reconnecting...");
-        WiFi.disconnect();
-        WiFi.begin(ssid.c_str(), password.c_str());
+        WiFi.reconnect(); // non-blocking, tidak perlu WiFi.begin() lagi
         consecutiveErrors++;
         
         if (consecutiveErrors > MAX_CONSECUTIVE_ERRORS) {
-          Serial.println("� Too many errors, restarting...");
-          delay(1000);
+          Serial.println("🔴 Too many errors, restarting...");
+          esp_task_wdt_reset();
+          delay(500);
           ESP.restart();
         }
       } else {

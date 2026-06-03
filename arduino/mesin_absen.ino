@@ -12,10 +12,12 @@
 #include <Preferences.h>
 #include <WiFiClientSecure.h>
 #include <vector>
-#include <esp_task_wdt.h>
+#include <esp_task_wdt.h>  // Hardware watchdog timer
 
-// ESP8266Audio - satu-satunya library audio, kelola I2S sepenuhnya
+// ESP8266Audio untuk beep dan MP3 Announcement dari admin
 // INSTALL: Library Manager → "ESP8266Audio" by Earle F. Philhower, III
+// CATATAN: Semua audio (beep + MP3) pakai satu AudioOutputI2S — TIDAK ada driver/i2s.h (legacy)
+//          Tidak ada konflik karena hanya satu driver I2S yang dipakai.
 #include <AudioFileSourceHTTPStream.h>
 #include <AudioFileSourceBuffer.h>
 #include <AudioGeneratorMP3.h>
@@ -35,11 +37,12 @@
 #define TFT_DC    9
 #define TFT_RST  14
 
-// I2S Audio pins (shared untuk beep dan MP3, pin fisik sama)
+// I2S Audio
 #define I2S_BCLK 41
 #define I2S_LRC  42
 #define I2S_DOUT 40
 #define SAMPLE_RATE 22050
+// I2S_PORT dihapus — tidak pakai driver/i2s.h legacy lagi, semua lewat ESP8266Audio
 #define MAX_VOLUME 32767
 
 /* =========================
@@ -249,14 +252,13 @@ int currentSendingIndex = -1;
 // Timing
 unsigned long lastRFIDCheck = 0;
 const unsigned long RFID_CHECK_INTERVAL = 150; // Optimal untuk RFID
-
-// Announcement / TTS
-unsigned long lastAnnouncementCheck = 0;
-const unsigned long ANNOUNCEMENT_CHECK_INTERVAL = 10000; // Cek setiap 10 detik
-bool isPlayingAnnouncement = false;
-// mp3, audioSource, audioBuffer dideklarasikan di AUDIO FUNCTIONS
 unsigned long lastDisplayUpdate = 0;
 const unsigned long DISPLAY_UPDATE_INTERVAL = 50; // Super cepat untuk UI responsiveness (20 FPS)
+
+// Announcement / TTS dari admin
+unsigned long lastAnnouncementCheck = 0;
+const unsigned long ANNOUNCEMENT_CHECK_INTERVAL = 10000; // Poll setiap 10 detik
+bool isPlayingAnnouncement = false;
 unsigned long lastBlinkTime = 0;
 bool blinkState = false;
 unsigned long lastKeypadCheck = 0;
@@ -306,128 +308,197 @@ void stopAnnouncement();
 
 /* =========================
    AUDIO FUNCTIONS
-   Semua audio pakai ESP8266Audio dengan AudioOutputI2S tunggal.
-   Satu instance output dibuat di setup(), tidak pernah dihapus.
-   Beep → generate PCM sine wave sebagai WAV di RAM
-   MP3  → stream dari HTTP
+   Semua audio via ESP8266Audio AudioOutputI2S — satu driver, tidak ada konflik.
+   Beep: generate sine wave PCM → AudioGeneratorWAV dari RAM
+   MP3:  AudioGeneratorMP3 dari HTTP stream
+   Satu instance AudioOutputI2S dibuat di setup() dan dipakai bersama.
 ========================= */
 
-// Satu-satunya I2S output, dibuat sekali di setup()
-static AudioOutputI2S *audioI2S = nullptr;
-
-// Untuk MP3 announcement
-AudioGeneratorMP3         *mp3        = nullptr;
-AudioFileSourceHTTPStream *audioSource = nullptr;
-AudioFileSourceBuffer     *audioBuffer = nullptr;
+// Satu-satunya AudioOutputI2S, dibuat sekali di setup()
+static AudioOutputI2S *audioOut = nullptr;
 
 // Custom AudioFileSource yang baca dari RAM buffer
 class AudioFileSourceRAM : public AudioFileSource {
 public:
-  AudioFileSourceRAM(const uint8_t *data, uint32_t size)
-    : _data(data), _size(size), _pos(0) {}
-  virtual bool open(const char *) override { _pos = 0; return true; }
-  virtual uint32_t read(void *data, uint32_t len) override {
-    uint32_t avail = _size - _pos;
+  AudioFileSourceRAM(const uint8_t *d, size_t s) : data(d), size(s), pos(0) {}
+  bool     open(const char*)           override { pos = 0; return true; }
+  uint32_t read(void *buf, uint32_t len) override {
+    size_t avail = size - pos;
     if (len > avail) len = avail;
-    memcpy(data, _data + _pos, len);
-    _pos += len;
+    memcpy(buf, data + pos, len);
+    pos += len;
     return len;
   }
-  virtual bool seek(int32_t pos, int whence) override {
-    if (whence == SEEK_SET) _pos = pos;
-    else if (whence == SEEK_CUR) _pos += pos;
-    else if (whence == SEEK_END) _pos = _size + pos;
-    if (_pos > _size) _pos = _size;
+  bool     seek(int32_t p, int w)      override {
+    if      (w == SEEK_SET) pos = p;
+    else if (w == SEEK_CUR) pos += p;
+    else                    pos = size + p;
+    if (pos > size) pos = size;
     return true;
   }
-  virtual bool close() override { return true; }
-  virtual bool isOpen() override { return true; }
-  virtual uint32_t getSize() override { return _size; }
-  virtual uint32_t getPos() override { return _pos; }
+  bool     close()  override { return true; }
+  bool     isOpen() override { return true; }
+  uint32_t getSize() override { return size; }
+  uint32_t getPos()  override { return pos; }
 private:
-  const uint8_t *_data;
-  uint32_t _size, _pos;
+  const uint8_t *data;
+  size_t size, pos;
 };
 
-// Generate WAV 16-bit mono di heap, return pointer (caller harus free())
-static uint8_t* makeBeepWAV(uint16_t freq, uint16_t duration_ms, size_t &outSize) {
-  const uint32_t sr         = SAMPLE_RATE;
-  const uint32_t numSamples = (sr * duration_ms) / 1000;
-  const uint32_t dataBytes  = numSamples * 2;
-  const uint32_t fileSize   = 44 + dataBytes;
-
-  uint8_t *buf = (uint8_t*)malloc(fileSize);
+// Generate WAV 16-bit mono di heap; caller harus free()
+static uint8_t* makeBeepWAV(uint16_t freq, uint16_t dur_ms, size_t &outSize) {
+  const uint32_t sr  = SAMPLE_RATE;
+  const uint32_t n   = (sr * dur_ms) / 1000;
+  const uint32_t db  = n * 2;
+  const uint32_t fsz = 44 + db;
+  uint8_t *buf = (uint8_t*)malloc(fsz);
   if (!buf) { outSize = 0; return nullptr; }
-
-  // WAV RIFF header
-  auto w4 = [&](int off, uint32_t v){ memcpy(buf+off, &v, 4); };
-  auto w2 = [&](int off, uint16_t v){ memcpy(buf+off, &v, 2); };
-  memcpy(buf,    "RIFF", 4); w4(4, fileSize-8);
-  memcpy(buf+8,  "WAVE", 4);
-  memcpy(buf+12, "fmt ", 4); w4(16, 16);
-  w2(20, 1); w2(22, 1);          // PCM, mono
-  w4(24, sr); w4(28, sr*2);      // sample rate, byte rate
-  w2(32, 2); w2(34, 16);        // block align, bits per sample
-  memcpy(buf+36, "data", 4); w4(40, dataBytes);
-
-  // Generate sine wave
-  int16_t *samples = (int16_t*)(buf + 44);
-  for (uint32_t i = 0; i < numSamples; i++) {
-    float t = i / (float)sr;
-    samples[i] = (int16_t)(MAX_VOLUME * sinf(2.0f * PI * freq * t));
-  }
-  outSize = fileSize;
+  auto w4 = [&](int o, uint32_t v){ memcpy(buf+o,&v,4); };
+  auto w2 = [&](int o, uint16_t v){ memcpy(buf+o,&v,2); };
+  memcpy(buf,"RIFF",4); w4(4,fsz-8);
+  memcpy(buf+8,"WAVE",4); memcpy(buf+12,"fmt ",4); w4(16,16);
+  w2(20,1); w2(22,1); w4(24,sr); w4(28,sr*2); w2(32,2); w2(34,16);
+  memcpy(buf+36,"data",4); w4(40,db);
+  int16_t *s = (int16_t*)(buf+44);
+  for (uint32_t i=0;i<n;i++) s[i]=(int16_t)(MAX_VOLUME*sinf(2.f*PI*freq*i/(float)sr));
+  outSize = fsz;
   return buf;
 }
 
 void setupI2S() {
-  if (!audioI2S) {
-    audioI2S = new AudioOutputI2S();
-    audioI2S->SetPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
-    audioI2S->SetOutputModeMono(true);
-    audioI2S->SetGain(1.0f);
-    Serial.println("✅ AudioOutputI2S initialized");
+  if (!audioOut) {
+    audioOut = new AudioOutputI2S();
+    audioOut->SetPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
+    audioOut->SetOutputModeMono(true);
+    audioOut->SetGain(1.0f);
+    Serial.println("✅ AudioOutputI2S ready");
   }
 }
 
-void playBeep(uint16_t freq, uint16_t duration_ms) {
+void playBeep(uint16_t freq, uint16_t dur_ms) {
   static unsigned long lastBeep = 0;
   if (millis() - lastBeep < 50) return;
   lastBeep = millis();
-  if (isPlayingAnnouncement || !audioI2S) return;
+  if (isPlayingAnnouncement || !audioOut) return;
 
-  size_t wavSize = 0;
-  uint8_t *wavBuf = makeBeepWAV(freq, duration_ms, wavSize);
-  if (!wavBuf) { Serial.println("⚠️ Beep: malloc failed"); return; }
+  size_t wsz = 0;
+  uint8_t *wav = makeBeepWAV(freq, dur_ms, wsz);
+  if (!wav) return;
 
-  AudioFileSourceRAM *src = new AudioFileSourceRAM(wavBuf, wavSize);
-  AudioGeneratorWAV  *wav = new AudioGeneratorWAV();
-  wav->begin(src, audioI2S);
-  while (wav->isRunning()) {
-    if (!wav->loop()) { wav->stop(); break; }
-  }
-  delete wav;
-  delete src;
-  free(wavBuf);
+  AudioFileSourceRAM *src = new AudioFileSourceRAM(wav, wsz);
+  AudioGeneratorWAV  *gen = new AudioGeneratorWAV();
+  gen->begin(src, audioOut);
+  while (gen->isRunning()) { if (!gen->loop()) { gen->stop(); break; } }
+  delete gen; delete src; free(wav);
   yield();
 }
 
-void playWelcomeMelody() {
-  playBeep(523, 100); delay(50);
-  playBeep(659, 100); delay(50);
-  playBeep(784, 150);
+void playWelcomeMelody()  { playBeep(523,100); delay(50); playBeep(659,100); delay(50); playBeep(784,150); }
+void playSuccessMelody()  { playBeep(659,80);  delay(30); playBeep(784,80);  delay(30); playBeep(1047,120); }
+void playErrorMelody()    { playBeep(392,100); delay(50); playBeep(330,150); }
+void playTapSound()       { playBeep(1200,30); }
+void playPreviewBeep()    { playBeep(1200,20); }
+
+/* =========================
+   ANNOUNCEMENT / TTS FUNCTIONS
+   Semua audio (beep dan MP3) via satu AudioOutputI2S.
+   Beep: generate PCM sine wave → AudioGeneratorWAV dari RAM
+   MP3:  AudioGeneratorMP3 dari HTTP stream
+   Tidak ada driver/i2s.h (legacy) — tidak ada konflik.
+========================= */
+
+void checkAnnouncement() {
+  if (WiFi.status() != WL_CONNECTED) return;
+  if (isPlayingAnnouncement) return;
+
+  InsecureWiFiClient client;
+  client.setTimeout(3000);
+  HTTPClient http;
+
+  char url[128];
+  snprintf(url, sizeof(url), "%s%s/announcement", serverURL, apiEndpoint.c_str());
+  http.begin(client, url);
+  http.setTimeout(3000);
+
+  int code = http.GET();
+  if (code == 200) {
+    String response = http.getString();
+    DynamicJsonDocument doc(512);
+    if (!deserializeJson(doc, response) && doc["has_announcement"] == true) {
+      String audioUrl = doc["url"].as<String>();
+      Serial.println("📢 Announcement: " + audioUrl);
+
+      if (currentMode == MODE_ATTENDANCE) {
+        tft.fillRoundRect(10, 140, 300, 40, 8, 0x2196F3);
+        tft.setTextColor(ILI9341_WHITE);
+        tft.setTextSize(1);
+        tft.setCursor(20, 155);
+        tft.print("Memainkan pengumuman...");
+      }
+
+      playAnnouncementMP3(audioUrl);
+      response = String();
+    }
+  }
+  http.end();
+  client.stop();
+  feedWatchdog();
 }
-void playSuccessMelody() {
-  playBeep(659, 80);  delay(30);
-  playBeep(784, 80);  delay(30);
-  playBeep(1047, 120);
+
+void playAnnouncementMP3(String url) {
+  isPlayingAnnouncement = true;
+  Serial.println("🔊 Playing MP3: " + url);
+
+  if (!audioOut) {
+    Serial.println("❌ audioOut not initialized");
+    isPlayingAnnouncement = false;
+    return;
+  }
+
+  // Volume lebih tinggi untuk pengumuman
+  audioOut->SetGain(1.5f);
+
+  AudioFileSourceHTTPStream *src = new AudioFileSourceHTTPStream(url.c_str());
+  if (!src || !src->isOpen()) {
+    Serial.println("❌ HTTP stream open failed");
+    if (src) delete src;
+    audioOut->SetGain(1.0f);
+    stopAnnouncement();
+    return;
+  }
+
+  AudioFileSourceBuffer *buf = new AudioFileSourceBuffer(src, 4096);
+  AudioGeneratorMP3    *mp3 = new AudioGeneratorMP3();
+
+  if (!mp3->begin(buf, audioOut)) {
+    Serial.println("❌ MP3 begin failed");
+    delete mp3; delete buf; delete src;
+    audioOut->SetGain(1.0f);
+    stopAnnouncement();
+    return;
+  }
+
+  Serial.println("▶️ Playing...");
+  while (mp3->isRunning()) {
+    if (!mp3->loop()) { mp3->stop(); break; }
+    feedWatchdog();
+    yield();
+  }
+  Serial.println("✅ MP3 done");
+
+  delete mp3;
+  delete buf;
+  delete src;
+  audioOut->SetGain(1.0f);
+
+  stopAnnouncement();
 }
-void playErrorMelody() {
-  playBeep(392, 100); delay(50);
-  playBeep(330, 150);
+
+void stopAnnouncement() {
+  isPlayingAnnouncement = false;
+  displayNeedsUpdate = true;
+  Serial.println("🔇 Announcement stopped");
 }
-void playTapSound()    { playBeep(1200, 30); }
-void playPreviewBeep() { playBeep(1200, 20); }
 
 /* =========================
    DISPLAY FUNCTIONS
@@ -1919,102 +1990,6 @@ void cleanupStrings() {
 }
 
 /* =========================
-   ANNOUNCEMENT / TTS FUNCTIONS
-========================= */
-
-void checkAnnouncement() {
-  if (WiFi.status() != WL_CONNECTED) return;
-  if (isPlayingAnnouncement) return; // Jangan cek saat sedang main audio
-
-  InsecureWiFiClient client;
-  client.setTimeout(3000);
-  HTTPClient http;
-  
-  char url[128];
-  snprintf(url, sizeof(url), "%s%s/announcement", serverURL, apiEndpoint.c_str());
-  
-  http.begin(client, url);
-  http.setTimeout(3000);
-  
-  int code = http.GET();
-  if (code == 200) {
-    String response = http.getString();
-    DynamicJsonDocument doc(512);
-    DeserializationError err = deserializeJson(doc, response);
-    
-    if (!err && doc["has_announcement"] == true) {
-      String audioUrl = doc["url"].as<String>();
-      Serial.println("📢 Announcement received: " + audioUrl);
-      
-      // Tampilkan di layar
-      if (currentMode == MODE_ATTENDANCE) {
-        tft.fillRoundRect(10, 140, 300, 40, 8, COLOR_PRIMARY);
-        tft.setTextColor(ILI9341_WHITE);
-        tft.setTextSize(1);
-        tft.setCursor(20, 148);
-        tft.print("Memainkan pengumuman...");
-        tft.setCursor(20, 160);
-        tft.print("Harap perhatikan!");
-      }
-      
-      playAnnouncementMP3(audioUrl);
-      response = String();
-    }
-  }
-  
-  http.end();
-  client.stop();
-  feedWatchdog();
-}
-
-void playAnnouncementMP3(String url) {
-  isPlayingAnnouncement = true;
-  Serial.println("🔊 Playing MP3: " + url);
-
-  if (!audioI2S) {
-    Serial.println("❌ audioI2S not initialized");
-    isPlayingAnnouncement = false;
-    return;
-  }
-
-  audioI2S->SetGain(1.5f);
-
-  audioSource = new AudioFileSourceHTTPStream(url.c_str());
-  if (!audioSource || !audioSource->isOpen()) {
-    Serial.println("❌ Failed to open HTTP stream");
-    stopAnnouncement();
-    return;
-  }
-  audioBuffer = new AudioFileSourceBuffer(audioSource, 4096);
-  mp3 = new AudioGeneratorMP3();
-
-  if (!mp3->begin(audioBuffer, audioI2S)) {
-    Serial.println("❌ MP3 begin failed");
-    stopAnnouncement();
-    return;
-  }
-
-  Serial.println("▶️ Playing...");
-  while (mp3 && mp3->isRunning()) {
-    if (!mp3->loop()) { mp3->stop(); break; }
-    feedWatchdog();
-    yield();
-  }
-  Serial.println("✅ MP3 done");
-  stopAnnouncement();
-}
-
-void stopAnnouncement() {
-  if (mp3) { if (mp3->isRunning()) mp3->stop(); delete mp3; mp3 = nullptr; }
-  if (audioBuffer) { delete audioBuffer; audioBuffer = nullptr; }
-  if (audioSource) { delete audioSource; audioSource = nullptr; }
-  if (audioI2S) audioI2S->SetGain(1.0f);
-  isPlayingAnnouncement = false;
-  displayNeedsUpdate = true;
-  Serial.println("🔇 Announcement done");
-}
-
-/* =========================
    RFID FUNCTIONS
 ========================= */
 
@@ -2454,16 +2429,6 @@ void loop() {
       lastRFIDCheck = now;
     }
     
-    // Cek announcement dari server (setiap 10 detik)
-    if (WiFi.status() == WL_CONNECTED) {
-      if (now - lastAnnouncementCheck > ANNOUNCEMENT_CHECK_INTERVAL) {
-        lastAnnouncementCheck = now;
-        if (!cardStillPresent && !isPlayingAnnouncement) {
-          checkAnnouncement();
-        }
-      }
-    }
-
     // Cek mode dari server (setelah RFID, gunakan interval lebih jarang)
     if (WiFi.status() == WL_CONNECTED) {
       if (now - lastModeCheck > MODE_CHECK_INTERVAL) {
@@ -2474,6 +2439,14 @@ void loop() {
           checkModeFromServer();
         }
         lastModeCheck = now;
+      }
+
+      // Cek announcement dari admin (setiap 10 detik, hanya saat idle)
+      if (now - lastAnnouncementCheck > ANNOUNCEMENT_CHECK_INTERVAL) {
+        lastAnnouncementCheck = now;
+        if (!cardStillPresent && !isPlayingAnnouncement && lastEmployeeName.length() == 0) {
+          checkAnnouncement();
+        }
       }
     }
     

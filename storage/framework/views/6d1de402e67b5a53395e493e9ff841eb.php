@@ -1,4 +1,13 @@
-<x-layouts.admin :title="'Travel / Paket Perjalanan'">
+<?php if (isset($component)) { $__componentOriginalc8c9fd5d7827a77a31381de67195f0c3 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalc8c9fd5d7827a77a31381de67195f0c3 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.layouts.admin','data' => ['title' => 'Travel / Paket Perjalanan']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('layouts.admin'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute('Travel / Paket Perjalanan')]); ?>
   <div x-data="packageCrud()" x-init="init()" class="space-y-4 overflow-x-hidden self-start w-full">
     <!-- Header -->
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -7,11 +16,11 @@
         <p class="text-slate-600 text-sm">Kelola paket Hajj dan Umrah dengan perhitungan HPP.</p>
       </div>
       <div class="flex flex-wrap gap-2">
-        @hasPermission('travel.package.create')
+        <?php if (\Illuminate\Support\Facades\Blade::check('hasPermission', 'travel.package.create')): ?>
         <button x-on:click="openCreate()" class="inline-flex items-center gap-2 rounded-xl bg-primary-600 text-white px-4 py-2 hover:bg-primary-700">
           <i class='bx bx-plus-circle text-lg'></i> Tambah Paket
         </button>
-        @endhasPermission
+        <?php endif; ?>
       </div>
     </div>
 
@@ -28,9 +37,9 @@
         <div class="lg:col-span-2">
           <select x-model="outletFilter" x-on:change="fetchData()" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
             <option value="ALL">Semua Outlet</option>
-            @foreach($outlets as $outlet)
-            <option value="{{ $outlet->id_outlet }}">{{ $outlet->nama_outlet }}</option>
-            @endforeach
+            <?php $__currentLoopData = $outlets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $outlet): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <option value="<?php echo e($outlet->id_outlet); ?>"><?php echo e($outlet->nama_outlet); ?></option>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
           </select>
         </div>
         <div class="lg:col-span-2">
@@ -113,22 +122,22 @@
                 <td class="px-2 py-2 text-center" x-html="pkg.status_badge"></td>
                 <td class="px-2 py-2">
                   <div class="flex items-center justify-end gap-0.5">
-                    <a :href="`{{ url('admin/inventaris/travel/package') }}/${pkg.id}/detail`" class="p-1 rounded hover:bg-slate-100" title="Detail">
+                    <a :href="`<?php echo e(url('admin/inventaris/travel/package')); ?>/${pkg.id}/detail`" class="p-1 rounded hover:bg-slate-100" title="Detail">
                       <i class='bx bx-show text-base text-slate-600'></i>
                     </a>
-                    @hasPermission('travel.package.update')
+                    <?php if (\Illuminate\Support\Facades\Blade::check('hasPermission', 'travel.package.update')): ?>
                     <button x-on:click="openEdit(pkg)" class="p-1 rounded hover:bg-slate-100" title="Edit">
                       <i class='bx bx-edit text-base text-blue-600'></i>
                     </button>
                     <button x-on:click="openHppModal(pkg)" class="p-1 rounded hover:bg-blue-50" title="Kelola HPP">
                       <i class='bx bx-calculator text-base text-blue-600'></i>
                     </button>
-                    @endhasPermission
-                    @hasPermission('travel.package.delete')
+                    <?php endif; ?>
+                    <?php if (\Illuminate\Support\Facades\Blade::check('hasPermission', 'travel.package.delete')): ?>
                     <button x-on:click="confirmDelete(pkg)" class="p-1 rounded hover:bg-slate-100" title="Hapus">
                       <i class='bx bx-trash text-base text-red-600'></i>
                     </button>
-                    @endhasPermission
+                    <?php endif; ?>
                   </div>
                 </td>
               </tr>
@@ -175,24 +184,25 @@
     <div x-show="!loading && packages.length === 0" class="text-center py-12">
       <i class='bx bx-package text-6xl text-slate-300'></i>
       <p class="mt-4 text-slate-600">Belum ada paket perjalanan</p>
-      @hasPermission('travel.package.create')
+      <?php if (\Illuminate\Support\Facades\Blade::check('hasPermission', 'travel.package.create')): ?>
       <button x-on:click="openCreate()" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary-600 text-white px-4 py-2 hover:bg-primary-700">
         <i class='bx bx-plus-circle'></i> Tambah Paket Pertama
       </button>
-      @endhasPermission
+      <?php endif; ?>
     </div>
 
     <!-- Debug: Verify Alpine scope -->
     <div x-show="false" x-init="console.log('✅ Alpine scope active, methods available:', Object.keys($data).filter(k => typeof $data[k] === 'function').slice(0, 10))"></div>
   </div>
 
-  @push('scripts')
+  <?php $__env->startPush('scripts'); ?>
   <script>
-    // HPP Custom Components Fix V2.0.2 - INLINE VERSION - TIMESTAMP: {{ time() }}
+    // HPP Custom Components Fix V2.0.2 - INLINE VERSION - TIMESTAMP: <?php echo e(time()); ?>
+
     // FORCE RELOAD: Press Ctrl+Shift+R if you don't see console message below
     
     window.hppCustomComponentsV2 = {
-      version: '2.0.2-inline-{{ time() }}',
+      version: '2.0.2-inline-<?php echo e(time()); ?>',
       
       buildPayload(hppForm, hppExtraComponents, selectedPackage) {
         const extraMap = {};
@@ -242,7 +252,7 @@
         };
         
         console.log('=== HPP PAYLOAD V2.0.2 INLINE ===');
-        console.log('TIMESTAMP:', '{{ time() }}');
+        console.log('TIMESTAMP:', '<?php echo e(time()); ?>');
         console.log('Custom components count:', customComponents.length);
         console.log('Custom components:', customComponents);
         console.log('Full payload:', payload);
@@ -254,7 +264,7 @@
     
     // IMMEDIATE CONSOLE OUTPUT TO VERIFY LOAD
     console.log('%c✓✓✓ HPP Custom Components V2.0.2 INLINE LOADED ✓✓✓', 'color: green; font-size: 16px; font-weight: bold');
-    console.log('%cTIMESTAMP: {{ time() }}', 'color: blue; font-size: 14px');
+    console.log('%cTIMESTAMP: <?php echo e(time()); ?>', 'color: blue; font-size: 14px');
     console.log('%cIf you see this, the fix is loaded!', 'color: green; font-size: 12px');
     
     // GLOBAL BRIDGE: Store Alpine component reference for modal access
@@ -341,7 +351,7 @@
               start: (this.currentPage - 1) * this.perPage,
             });
 
-            const url = '{{ route('admin.inventaris.travel.package.data') }}';
+            const url = '<?php echo e(route('admin.inventaris.travel.package.data')); ?>';
             const response = await fetch(`${url}?${params}`);
             
             if (!response.ok) {
@@ -401,11 +411,11 @@
         },
 
         openCreate() {
-          window.location.href = '{{ route('admin.inventaris.travel.package.create') }}';
+          window.location.href = '<?php echo e(route('admin.inventaris.travel.package.create')); ?>';
         },
 
         openEdit(pkg) {
-          const baseUrl = '{{ url('admin/inventaris/travel/package') }}';
+          const baseUrl = '<?php echo e(url('admin/inventaris/travel/package')); ?>';
           window.location.href = `${baseUrl}/${pkg.id}/edit`;
         },
 
@@ -434,7 +444,7 @@
 
         async deletePackage(id, packageName, force = false) {
           try {
-            const baseUrl = '{{ url('admin/inventaris/travel/package') }}';
+            const baseUrl = '<?php echo e(url('admin/inventaris/travel/package')); ?>';
             const url = force ? `${baseUrl}/${id}?force=1` : `${baseUrl}/${id}`;
             const response = await fetch(url, {
               method: 'DELETE',
@@ -647,7 +657,7 @@
 
         async loadSaudiTransports() {
           try {
-            const url = '{{ route('admin.inventaris.travel.package.hpp.saudi-transports') }}';
+            const url = '<?php echo e(route('admin.inventaris.travel.package.hpp.saudi-transports')); ?>';
             const response = await fetch(url);
             if (response.ok) {
               this.availableSaudiTransports = await response.json();
@@ -710,7 +720,7 @@
 
         async loadFlights() {
           try {
-            const url = '{{ route('admin.inventaris.travel.package.hpp.flights') }}';
+            const url = '<?php echo e(route('admin.inventaris.travel.package.hpp.flights')); ?>';
             const params = new URLSearchParams();
             
             // Add outlet filter if package has outlet
@@ -729,7 +739,7 @@
 
         async loadHotels() {
           try {
-            const url = '{{ route('admin.inventaris.travel.package.hpp.hotels') }}';
+            const url = '<?php echo e(route('admin.inventaris.travel.package.hpp.hotels')); ?>';
             const params = new URLSearchParams();
             
             // Add outlet filter if package has outlet
@@ -783,7 +793,7 @@
           
           this.loadingHpp = true;
           try {
-            const baseUrl = '{{ url('admin/inventaris/travel/package') }}';
+            const baseUrl = '<?php echo e(url('admin/inventaris/travel/package')); ?>';
             const response = await fetch(`${baseUrl}/${this.selectedPackage.id}/hpp`);
             
             if (response.ok) {
@@ -922,7 +932,7 @@
               return;
             }
 
-            const baseUrl = '{{ url('admin/inventaris/travel/package') }}';
+            const baseUrl = '<?php echo e(url('admin/inventaris/travel/package')); ?>';
             const response = await fetch(`${baseUrl}/${this.selectedPackage.id}/hpp`, {
               method: 'PUT',
               headers: {
@@ -971,7 +981,7 @@
           this.lockingHpp = true;
 
           try {
-            const baseUrl = '{{ url('admin/inventaris/travel/package') }}';
+            const baseUrl = '<?php echo e(url('admin/inventaris/travel/package')); ?>';
             const response = await fetch(`${baseUrl}/${this.selectedPackage.id}/hpp/lock`, {
               method: 'POST',
               headers: {
@@ -1039,5 +1049,15 @@
       return instance;
     }
   </script>
-  @endpush
-</x-layouts.admin>
+  <?php $__env->stopPush(); ?>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalc8c9fd5d7827a77a31381de67195f0c3)): ?>
+<?php $attributes = $__attributesOriginalc8c9fd5d7827a77a31381de67195f0c3; ?>
+<?php unset($__attributesOriginalc8c9fd5d7827a77a31381de67195f0c3); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc8c9fd5d7827a77a31381de67195f0c3)): ?>
+<?php $component = $__componentOriginalc8c9fd5d7827a77a31381de67195f0c3; ?>
+<?php unset($__componentOriginalc8c9fd5d7827a77a31381de67195f0c3); ?>
+<?php endif; ?>
+<?php /**PATH C:\xampp\htdocs\hm\resources\views/admin/travel/package/index.blade.php ENDPATH**/ ?>
