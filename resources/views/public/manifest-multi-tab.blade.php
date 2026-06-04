@@ -574,7 +574,10 @@
                 headers: { 'X-CSRF-TOKEN': csrfToken },
                 body: ocrForm
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error('OCR server error ' + response.status);
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     document.getElementById(`passport_nomor_${index}`).value = data.data.passport_nomor || '';
@@ -587,12 +590,19 @@
                     document.getElementById(`passport_tanggal_terbit_${index}`).value = data.data.passport_tanggal_terbit || '';
                     document.getElementById(`passport_kantor_terbit_${index}`).value = data.data.passport_kantor_terbit || '';
                     document.getElementById(`passport_tempat_lahir_${index}`).value = data.data.passport_tempat_lahir || '';
+                    statusEl.innerHTML = `<i class='bx bx-check-circle text-2xl text-green-500'></i><div class="text-sm text-green-700 mt-1">OCR berhasil! Silakan periksa & lengkapi data.</div>`;
+                } else {
+                    // OCR gagal tapi file tetap diupload
+                    statusEl.innerHTML = `<i class='bx bx-info-circle text-2xl text-amber-500'></i><div class="text-sm text-amber-700 mt-1">${data.message || 'OCR tidak berhasil. Isi data secara manual.'}</div>`;
                 }
             })
-            .catch(() => {})
+            .catch(err => {
+                console.warn('OCR passport error:', err);
+                statusEl.innerHTML = `<i class='bx bx-info-circle text-2xl text-amber-500'></i><div class="text-sm text-amber-700 mt-1">OCR tidak tersedia. Silakan isi data passport secara manual.</div>`;
+            })
             .finally(() => {
                 // 2. Upload file to server regardless of OCR result
-                uploadDocumentToServer(index, 'passport_foto', file, statusEl);
+                uploadDocumentToServer(index, 'passport_foto', file, null);
             });
         }
 
@@ -617,7 +627,10 @@
                 headers: { 'X-CSRF-TOKEN': csrfToken },
                 body: ocrForm
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error('OCR server error ' + response.status);
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     document.getElementById(`ktp_nik_${index}`).value = data.data.ktp_nik || '';
@@ -625,12 +638,18 @@
                     document.getElementById(`ktp_tempat_lahir_${index}`).value = data.data.ktp_tempat_lahir || '';
                     document.getElementById(`ktp_tanggal_lahir_${index}`).value = data.data.ktp_tanggal_lahir || '';
                     document.getElementById(`ktp_alamat_${index}`).value = data.data.ktp_alamat || '';
+                    statusEl.innerHTML = `<i class='bx bx-check-circle text-2xl text-green-500'></i><div class="text-sm text-green-700 mt-1">OCR berhasil! Silakan periksa & lengkapi data.</div>`;
+                } else {
+                    statusEl.innerHTML = `<i class='bx bx-info-circle text-2xl text-amber-500'></i><div class="text-sm text-amber-700 mt-1">${data.message || 'OCR tidak berhasil. Isi data secara manual.'}</div>`;
                 }
             })
-            .catch(() => {})
+            .catch(err => {
+                console.warn('OCR KTP error:', err);
+                statusEl.innerHTML = `<i class='bx bx-info-circle text-2xl text-amber-500'></i><div class="text-sm text-amber-700 mt-1">OCR tidak tersedia. Silakan isi data KTP secara manual.</div>`;
+            })
             .finally(() => {
                 // 2. Upload file to server regardless of OCR result
-                uploadDocumentToServer(index, 'ktp_foto', file, statusEl);
+                uploadDocumentToServer(index, 'ktp_foto', file, null);
             });
         }
 

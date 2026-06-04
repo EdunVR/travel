@@ -249,7 +249,10 @@ class PublicDocumentController extends Controller
             \Storage::disk('public')->delete($path);
 
             if (empty($text)) {
-                return response()->json(['success' => false, 'message' => 'OCR tidak dapat mengekstrak teks. Silakan isi data secara manual.'], 500);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'OCR tidak dapat mengekstrak teks dari passport. Silakan isi data secara manual.',
+                ]);
             }
 
             $parsedData = $this->parsePassportTextNew($text);
@@ -272,7 +275,10 @@ class PublicDocumentController extends Controller
 
         } catch (\Exception $e) {
             Log::error('OCR Passport error: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Gagal memproses OCR: ' . $e->getMessage()], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses OCR. Silakan isi data passport secara manual.',
+            ]);
         }
     }
 
@@ -318,7 +324,10 @@ class PublicDocumentController extends Controller
             \Storage::disk('public')->delete($path);
 
             if (empty($text)) {
-                return response()->json(['success' => false, 'message' => 'OCR tidak dapat mengekstrak teks. Silakan isi data secara manual.'], 500);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'OCR tidak dapat mengekstrak teks dari KTP. Silakan isi data secara manual.',
+                ]);
             }
 
             $parsedData = $this->parseKtpTextNew($text);
@@ -336,7 +345,10 @@ class PublicDocumentController extends Controller
 
         } catch (\Exception $e) {
             Log::error('OCR KTP error: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Gagal memproses OCR: ' . $e->getMessage()], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses OCR. Silakan isi data KTP secara manual.',
+            ]);
         }
     }
 

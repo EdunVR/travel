@@ -1,0 +1,1 @@
+<?php /**PATH C:\xampp\htdocs\hm\resources\views\admin\finance\equity-change\index.blade.php ENDPATH**/ ?>

@@ -176,7 +176,16 @@
                             <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Departemen</th>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Status</th>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Telepon</th>
-                            <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Gaji</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">
+                                <div class="flex items-center gap-1">
+                                    Gaji
+                                    <button onclick="toggleAllSalary(this)" title="Tampilkan/sembunyikan semua gaji"
+                                            class="text-slate-400 hover:text-slate-600 transition-colors ml-1"
+                                            data-visible="false">
+                                        <i class='bx bx-hide text-base' id="globalSalaryEyeIcon"></i>
+                                    </button>
+                                </div>
+                            </th>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Tgl Bergabung</th>
                             <th class="px-4 py-3 text-center text-sm font-semibold text-slate-700">Aksi</th>
                         </tr>
@@ -247,7 +256,17 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-2">Gaji (Rp)</label>
-                                <input type="number" id="salary" class="w-full px-3 py-2 border border-slate-300 rounded-lg" min="0">
+                                <div class="relative">
+                                    <input type="password" id="salary"
+                                           class="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg"
+                                           min="0" placeholder="Masukkan nominal gaji"
+                                           style="-webkit-text-security: disc;">
+                                    <button type="button" onclick="toggleSalaryVisibility()"
+                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                            title="Tampilkan/sembunyikan gaji">
+                                        <i class='bx bx-hide text-lg' id="salaryEyeIcon"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-2">Tarif Per Jam (Rp)</label>
@@ -443,7 +462,17 @@
                             </span>
                         </td>
                         <td class="px-4 py-3 text-slate-700">${emp.phone}</td>
-                        <td class="px-4 py-3 text-slate-700">${emp.salary_formatted}</td>
+                        <td class="px-4 py-3 text-slate-700">
+                            <div class="flex items-center gap-1.5">
+                                <span class="salary-value" data-real="${emp.salary_formatted}">
+                                    <span class="salary-display">••••••</span>
+                                </span>
+                                <button onclick="toggleRowSalary(this)" title="Tampilkan gaji"
+                                        class="text-slate-400 hover:text-slate-600 transition-colors shrink-0">
+                                    <i class='bx bx-hide text-sm salary-eye-icon'></i>
+                                </button>
+                            </div>
+                        </td>
                         <td class="px-4 py-3 text-slate-700">${emp.join_date}</td>
                         <td class="px-4 py-3 text-center">
                             @hasPermission('hrm.karyawan.edit')
@@ -487,6 +516,11 @@
             $('#create_user').prop('checked', false);
             $('#userAccessFields').addClass('hidden');
             $('#createUserSection').show();
+            // Reset salary field ke mode tersembunyi
+            const salInput = document.getElementById('salary');
+            if (salInput) { salInput.type = 'password'; }
+            const salIcon = document.getElementById('salaryEyeIcon');
+            if (salIcon) { salIcon.className = 'bx bx-hide text-lg'; }
             $('#employeeModal').modal('show');
         }
 
@@ -702,10 +736,63 @@
             window.location.href = `{{ route('sdm.kepegawaian.export.excel') }}?${params}`;
         }
 
+        // ── Salary Visibility Helpers ────────────────────────────────────────────
+
+        // Toggle salary di input modal
+        function toggleSalaryVisibility() {
+            const input = document.getElementById('salary');
+            const icon  = document.getElementById('salaryEyeIcon');
+            if (!input || !icon) return;
+            if (input.type === 'password') {
+                input.type = 'number';
+                icon.className = 'bx bx-show text-lg';
+            } else {
+                input.type = 'password';
+                icon.className = 'bx bx-hide text-lg';
+            }
+        }
+
+        // Toggle salary pada satu baris tabel
+        function toggleRowSalary(btn) {
+            const cell  = btn.closest('td');
+            const span  = cell.querySelector('.salary-display');
+            const icon  = btn.querySelector('.salary-eye-icon');
+            const real  = cell.querySelector('.salary-value').getAttribute('data-real');
+            const isHidden = span.textContent.includes('•');
+            if (isHidden) {
+                span.textContent = real;
+                icon.className = 'bx bx-show text-sm salary-eye-icon';
+            } else {
+                span.textContent = '••••••';
+                icon.className = 'bx bx-hide text-sm salary-eye-icon';
+            }
+        }
+
+        // Toggle semua salary di tabel sekaligus (dari header)
+        function toggleAllSalary(btn) {
+            const isVisible = btn.getAttribute('data-visible') === 'true';
+            const icon = document.getElementById('globalSalaryEyeIcon');
+
+            document.querySelectorAll('.salary-value').forEach(function(el) {
+                const display = el.querySelector('.salary-display');
+                const rowBtn  = el.closest('td').querySelector('[onclick="toggleRowSalary(this)"]');
+                const rowIcon = rowBtn ? rowBtn.querySelector('.salary-eye-icon') : null;
+                const real    = el.getAttribute('data-real');
+                if (!isVisible) {
+                    display.textContent = real;
+                    if (rowIcon) rowIcon.className = 'bx bx-show text-sm salary-eye-icon';
+                } else {
+                    display.textContent = '••••••';
+                    if (rowIcon) rowIcon.className = 'bx bx-hide text-sm salary-eye-icon';
+                }
+            });
+
+            btn.setAttribute('data-visible', (!isVisible).toString());
+            icon.className = isVisible ? 'bx bx-hide text-base' : 'bx bx-show text-base';
+        }
+
         // ── User Access Helper Functions ─────────────────────────────────────────
         function toggleUserFields(checked) {
-            if (checked) {
-                $('#userAccessFields').removeClass('hidden');
                 // Jika email sudah diisi, fokus ke role
                 if ($('#email').val().trim()) {
                     $('#user_role_id').focus();
