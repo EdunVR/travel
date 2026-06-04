@@ -2490,14 +2490,20 @@ Route::middleware(['auth'])->group(function () {
         // Performance Appraisal / Manajemen Kinerja
         Route::prefix('kinerja')->name('kinerja.')->group(function () {
             Route::get('/', [\App\Http\Controllers\PerformanceAppraisalController::class, 'index'])->name('index');
+
+            // Data APIs
             Route::get('/data', [\App\Http\Controllers\PerformanceAppraisalController::class, 'getData'])->name('data');
+            Route::get('/all-users', [\App\Http\Controllers\PerformanceAppraisalController::class, 'getAllUsersProgress'])->name('all-users');
+
+            // Grade settings
+            Route::get('/grade-settings', [\App\Http\Controllers\PerformanceAppraisalController::class, 'getGradeSettings'])->name('grade-settings.get');
+            Route::post('/grade-settings', [\App\Http\Controllers\PerformanceAppraisalController::class, 'saveGradeSettings'])->name('grade-settings.save');
+
+            // Job target CRUD — specific routes BEFORE /{id}
             Route::get('/statistics', [\App\Http\Controllers\PerformanceAppraisalController::class, 'getStatistics'])->name('statistics');
             Route::get('/employees', [\App\Http\Controllers\PerformanceAppraisalController::class, 'getEmployees'])->name('employees');
-            
-            // Export routes - SEBELUM /{id}
             Route::get('/export/pdf', [\App\Http\Controllers\PerformanceAppraisalController::class, 'exportPdf'])->name('export.pdf');
-            
-            // CRUD routes dengan {id} parameter - HARUS PALING AKHIR
+
             Route::post('/store', [\App\Http\Controllers\PerformanceAppraisalController::class, 'store'])->name('store');
             Route::get('/{id}', [\App\Http\Controllers\PerformanceAppraisalController::class, 'show'])->name('show');
             Route::put('/{id}', [\App\Http\Controllers\PerformanceAppraisalController::class, 'update'])->name('update');

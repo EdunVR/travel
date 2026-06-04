@@ -210,6 +210,7 @@ const char* keyMapUpper[] = {
 // Variabel untuk status
 String statusMessage = "";
 unsigned long statusMessageTime = 0;
+bool lastTapLate = false;      // true jika tap masuk terlambat
 
 // Variabel RFID
 unsigned long lastCardRead = 0;
@@ -320,58 +321,51 @@ void setupI2S() {
 }
 
 void playBeep(uint16_t freq, uint16_t duration_ms) {
-  static unsigned long lastBeep = 0;
-  if (millis() - lastBeep < 50) return;
-  lastBeep = millis();
+  // Tidak ada debounce global — setiap panggilan diproses independen
+  // (debounce ada di caller jika diperlukan)
   
   const int bufferSize = 64;
   int16_t buffer[bufferSize];
 
+  if (duration_ms > 500) duration_ms = 500;
+
   int totalSamples = (SAMPLE_RATE * duration_ms) / 1000;
   int generated = 0;
 
-  // Guard: jika durasi terlalu panjang, batasi agar tidak blocking lama
-  if (duration_ms > 500) duration_ms = 500;
-
-  // Start I2S — gunakan timeout singkat agar tidak hang
   i2s_start(I2S_PORT);
 
   unsigned long beepStart = millis();
-  const unsigned long BEEP_MAX_MS = duration_ms + 200; // batas hard timeout
+  const unsigned long BEEP_MAX_MS = (unsigned long)duration_ms + 300;
 
   while (generated < totalSamples) {
-    // Hard timeout: jika melebihi batas, hentikan
     if (millis() - beepStart > BEEP_MAX_MS) {
-      Serial.println("⚠️ Beep timeout, breaking");
       break;
     }
 
-    // Feed watchdog setiap 256 sample
-    if (generated % 256 == 0) {
+    if (generated % 512 == 0) {
       esp_task_wdt_reset();
       yield();
     }
     
     for (int i = 0; i < bufferSize && generated < totalSamples; i++) {
       float t = (generated + i) / (float)SAMPLE_RATE;
-      buffer[i] = MAX_VOLUME * sin(2 * PI * freq * t);
+      buffer[i] = (int16_t)(MAX_VOLUME * sin(2.0f * PI * freq * t));
     }
 
     size_t bytes_written;
-    // Timeout i2s_write dikurangi ke 20ms agar tidak blocking lama
+    // Timeout 50ms agar buffer DMA tidak terputus di tengah
     esp_err_t err = i2s_write(I2S_PORT, buffer, bufferSize * sizeof(int16_t),
-                               &bytes_written, 20 / portTICK_PERIOD_MS);
+                               &bytes_written, 50 / portTICK_PERIOD_MS);
     if (err != ESP_OK || bytes_written == 0) {
-      // I2S buffer penuh atau error, skip dan lanjut
       break;
     }
 
     generated += bufferSize;
   }
 
-  // Stop I2S
-  i2s_stop(I2S_PORT);
+  // Flush sisa di DMA buffer sebelum stop
   i2s_zero_dma_buffer(I2S_PORT);
+  i2s_stop(I2S_PORT);
   
   yield();
 }
@@ -643,44 +637,41 @@ void showAttendanceMode() {
       if (slideOffset > targetY) slideOffset = targetY;
     }
     
-    // CENTANG BESAR DI TENGAH (drawn checkmark)
+    // CENTANG BESAR DI TENGAH — warna berbeda jika terlambat
     int checkX = 160;
     int checkY = 165;
     int checkRadius = 35;
     
+    uint16_t circleColor = lastTapLate ? COLOR_WARNING : COLOR_SUCCESS;
+    
     // Circle background untuk centang
-    tft.fillCircle(checkX, checkY, checkRadius, COLOR_SUCCESS);
+    tft.fillCircle(checkX, checkY, checkRadius, circleColor);
     tft.drawCircle(checkX, checkY, checkRadius, ILI9341_WHITE);
     tft.drawCircle(checkX, checkY, checkRadius - 1, ILI9341_WHITE);
     
     // Draw checkmark (✓) dengan garis
-    // Bagian pendek (kiri bawah ke tengah)
     int x1 = checkX - 15;
     int y1 = checkY;
     int x2 = checkX - 5;
     int y2 = checkY + 12;
-    
-    // Bagian panjang (tengah ke kanan atas)
     int x3 = checkX + 18;
     int y3 = checkY - 15;
     
-    // Draw thick checkmark (multiple lines untuk ketebalan)
     for (int i = -3; i <= 3; i++) {
-      // Garis pendek
       tft.drawLine(x1 + i, y1, x2 + i, y2, ILI9341_WHITE);
-      // Garis panjang
       tft.drawLine(x2 + i, y2, x3 + i, y3, ILI9341_WHITE);
     }
     
-    // Employee info box di bawah centang
-    tft.fillRoundRect(10, 210, 300, 25, 8, COLOR_DARK);
+    // Employee info box — orange jika terlambat, dark jika tepat waktu
+    uint16_t boxColor = lastTapLate ? tft.color565(180, 60, 0) : COLOR_DARK;
+    tft.fillRoundRect(10, 207, 300, 28, 8, boxColor);
     tft.setTextColor(ILI9341_WHITE);
     tft.setTextSize(1);
-    tft.setCursor(20, 218);
+    tft.setCursor(20, 213);
     tft.print(lastEmployeeName);
-    tft.print(" - ");
+    // Baris kedua: waktu/status
+    tft.setCursor(20, 224);
     tft.print(lastTapTime);
-    
   } else {
     slideOffset = 0; // Reset animation
     animationFrame = 0;
@@ -1601,6 +1592,27 @@ bool sendDataToServer(String uid, String name, String type, bool isOfflineRetry)
         Serial.println("📋 Type: " + tapType);
       }
       
+      // Cek apakah terlambat dari response server
+      lastTapLate = false;
+      if (responseDoc.containsKey("late_minutes")) {
+        int lateMin = responseDoc["late_minutes"].as<int>();
+        if (lateMin > 0) {
+          lastTapLate = true;
+          lastTapTime = "TERLAMBAT " + String(lateMin) + "mnt - " + lastTapTime;
+          Serial.println("⏰ Terlambat: " + String(lateMin) + " menit");
+        }
+      }
+      // Fallback: cek field status
+      if (!lastTapLate && responseDoc.containsKey("attendance")) {
+        String attStatus = responseDoc["attendance"]["status"] | "";
+        if (attStatus == "late") {
+          lastTapLate = true;
+          if (lastTapTime.indexOf("TERLAMBAT") < 0) {
+            lastTapTime = "TERLAMBAT - " + lastTapTime;
+          }
+        }
+      }
+      
       lastTapDisplay = millis();
       Serial.println("✅ Display data set, will show for 2 seconds");
       success = true;
@@ -2031,6 +2043,7 @@ void checkRFID() {
           // Setelah selesai, clear nama dan pastikan status bersih
           lastEmployeeName = "";
           lastTapTime = "";
+          lastTapLate = false;
           statusMessage = ""; // Pastikan tidak ada sisa pesan
           cardStillPresent = false;
           lastCardRead = 0;    // Reset cooldown

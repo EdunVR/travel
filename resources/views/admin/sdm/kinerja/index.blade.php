@@ -1,809 +1,971 @@
-<x-layouts.admin :title="'SDM / Manajemen Kinerja'">
-  <div x-data="kinerjaCrud()" x-init="init()" class="space-y-4 overflow-x-hidden">
-    <!-- Header -->
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-xl sm:text-2xl font-bold">Manajemen Kinerja</h1>
-        <p class="text-slate-600 text-sm">Kelola penilaian kinerja karyawan</p>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        @hasPermission('hrm.kinerja.create')
-        <button x-on:click="openCreate()" class="inline-flex items-center gap-2 rounded-xl bg-primary-600 text-white px-4 py-2 hover:bg-primary-700">
-          <i class='bx bx-plus-circle text-lg'></i> Tambah Penilaian
-        </button>
-        @endhasPermission
-        <button x-on:click="exportPdf()" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 hover:bg-slate-50">
-          <i class='bx bx-export text-lg'></i> Export PDF
-        </button>
-      </div>
-    </div>
+﻿@php
+    $config = [
+        'isSuperAdmin' => $isSuperAdmin,
+        'csrfToken'    => csrf_token(),
+        'routes'       => [
+            'allUsers'         => route('sdm.kinerja.all-users'),
+            'data'             => route('sdm.kinerja.data'),
+            'store'            => route('sdm.kinerja.store'),
+            'update'           => url('sdm/kinerja'),
+            'destroy'          => url('sdm/kinerja'),
+            'gradeSettings'    => route('sdm.kinerja.grade-settings.get'),
+            'saveGradeSettings'=> route('sdm.kinerja.grade-settings.save'),
+        ],
+    ];
+@endphp
 
-    <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="bg-white rounded-xl border border-slate-200 p-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-slate-600 text-sm">Total Penilaian</p>
-            <p class="text-2xl font-bold text-slate-800" x-text="stats.total">0</p>
-          </div>
-          <div class="bg-blue-100 p-3 rounded-xl">
-            <i class='bx bx-clipboard text-blue-600 text-2xl'></i>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl border border-slate-200 p-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-slate-600 text-sm">Rata-rata Skor</p>
-            <p class="text-2xl font-bold text-slate-800" x-text="stats.average_score">0</p>
-          </div>
-          <div class="bg-green-100 p-3 rounded-xl">
-            <i class='bx bx-line-chart text-green-600 text-2xl'></i>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl border border-slate-200 p-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-slate-600 text-sm">Grade A</p>
-            <p class="text-2xl font-bold text-slate-800" x-text="stats.grade_a">0</p>
-          </div>
-          <div class="bg-yellow-100 p-3 rounded-xl">
-            <i class='bx bx-star text-yellow-600 text-2xl'></i>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl border border-slate-200 p-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-slate-600 text-sm">Grade B</p>
-            <p class="text-2xl font-bold text-slate-800" x-text="stats.grade_b">0</p>
-          </div>
-          <div class="bg-purple-100 p-3 rounded-xl">
-            <i class='bx bx-award text-purple-600 text-2xl'></i>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Toolbar -->
-    <div class="grid grid-cols-1 gap-3">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <!-- Search -->
-        <div class="lg:col-span-4">
-          <div class="relative">
-            <i class='bx bx-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400'></i>
-            <input x-model="search" x-on:input.debounce.500ms="fetchData()" placeholder="Cari nama karyawan…" 
-                   class="w-full pl-10 pr-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-200">
-          </div>
-        </div>
-        
-        <!-- Filter Periode -->
-        <div class="lg:col-span-3">
-          <input type="month" x-model="periodFilter" x-on:change="fetchData()" 
-                 class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
+<x-layouts.admin title="Manajemen Kinerja">
+    <div
+        x-data="kinerjaDashboard({{ json_encode($config) }})"
+        x-init="init()"
+        class="space-y-6"
+    >
+        {{-- ─── Toast Notification ─────────────────────────────────────────── --}}
+        <div
+            x-show="notification.show"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-2"
+            x-transition:enter-end="opacity-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 translate-y-0"
+            x-transition:leave-end="opacity-0 translate-y-2"
+            :class="notification.type === 'success'
+                ? 'bg-emerald-50 border-emerald-400 text-emerald-800'
+                : 'bg-red-50 border-red-400 text-red-800'"
+            class="fixed top-4 right-4 z-50 flex items-center gap-3 rounded-xl border px-4 py-3 shadow-lg max-w-sm"
+            style="display: none;"
+        >
+            <i :class="notification.type === 'success' ? 'bx bx-check-circle text-emerald-500' : 'bx bx-x-circle text-red-500'"
+               class="text-xl flex-shrink-0"></i>
+            <span class="text-sm font-medium" x-text="notification.message"></span>
         </div>
 
-        <!-- Filter Karyawan -->
-        <div class="lg:col-span-3">
-          <select x-model="employeeFilter" x-on:change="fetchData()" 
-                  class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
-            <option value="">Karyawan: Semua</option>
-            <template x-for="emp in employees" :key="emp.id">
-              <option :value="emp.id" x-text="emp.name"></option>
-            </template>
-          </select>
-        </div>
-
-        <!-- Filter Status -->
-        <div class="lg:col-span-2">
-          <select x-model="statusFilter" x-on:change="fetchData()" 
-                  class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
-            <option value="all">Status: Semua</option>
-            <option value="draft">Draft</option>
-            <option value="final">Final</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <!-- Loading State -->
-    <div x-show="loading" class="text-center py-8">
-      <div class="inline-flex items-center gap-2 text-slate-600">
-        <i class='bx bx-loader-alt bx-spin text-xl'></i>
-        <span>Memuat data...</span>
-      </div>
-    </div>
-
-    <!-- Table -->
-    <div x-show="!loading" class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead class="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">No</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Karyawan</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Jabatan</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Periode</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Tanggal</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Skor</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Grade</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Evaluator</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Status</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Aksi</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200">
-            <template x-for="(item, index) in appraisals" :key="item.id">
-              <tr class="hover:bg-slate-50">
-                <td class="px-4 py-3 text-sm text-slate-600" x-text="index + 1"></td>
-                <td class="px-4 py-3 text-sm font-medium text-slate-800" x-text="item.employee_name"></td>
-                <td class="px-4 py-3 text-sm text-slate-600" x-text="item.employee_position"></td>
-                <td class="px-4 py-3 text-sm text-slate-600" x-text="item.period"></td>
-                <td class="px-4 py-3 text-sm text-slate-600" x-text="item.appraisal_date"></td>
-                <td class="px-4 py-3 text-sm font-semibold text-slate-800" x-text="item.average_score"></td>
-                <td class="px-4 py-3">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                        :class="{
-                          'bg-green-100 text-green-800': item.grade === 'A',
-                          'bg-blue-100 text-blue-800': item.grade === 'B',
-                          'bg-yellow-100 text-yellow-800': item.grade === 'C',
-                          'bg-orange-100 text-orange-800': item.grade === 'D',
-                          'bg-red-100 text-red-800': item.grade === 'E'
-                        }"
-                        x-text="item.grade + ' - ' + item.grade_label">
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-sm text-slate-600" x-text="item.evaluator_name"></td>
-                <td class="px-4 py-3">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                        :class="item.status === 'final' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'"
-                        x-text="item.status_label">
-                  </span>
-                </td>
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-1">
-                    <button x-on:click="viewDetail(item.id)" class="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100" title="Lihat Detail">
-                      <i class='bx bx-show text-lg'></i>
+        {{-- ─── Page Header ─────────────────────────────────────────────────── --}}
+        <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight text-slate-900">Manajemen Kinerja</h1>
+                    <p class="text-sm text-slate-500 mt-0.5">
+                        <template x-if="isSuperAdmin">
+                            <span>Kelola job target dan pantau progress kinerja seluruh tim</span>
+                        </template>
+                        <template x-if="!isSuperAdmin">
+                            <span>Pantau progress kinerja dan perbarui realisasi pekerjaan Anda</span>
+                        </template>
+                    </p>
+                </div>
+                <template x-if="isSuperAdmin">
+                    <button
+                        @click="openGradeModal()"
+                        class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 transition-colors"
+                    >
+                        <i class="bx bx-cog"></i>
+                        Atur Nilai/Grade
                     </button>
-                    <template x-if="item.status === 'draft'">
-                      <button x-on:click="openEdit(item.id)" class="p-1.5 rounded-lg bg-yellow-50 text-yellow-600 hover:bg-yellow-100" title="Edit">
-                        <i class='bx bx-edit text-lg'></i>
-                      </button>
-                    </template>
-                    <template x-if="item.status === 'draft'">
-                      <button x-on:click="deleteItem(item.id)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100" title="Hapus">
-                        <i class='bx bx-trash text-lg'></i>
-                      </button>
-                    </template>
-                    <button x-on:click="viewPdf(item.id)" class="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100" title="Lihat PDF">
-                      <i class='bx bxs-file-pdf text-lg'></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </template>
-            <tr x-show="appraisals.length === 0">
-              <td colspan="10" class="px-4 py-8 text-center text-slate-500">
-                <i class='bx bx-info-circle text-3xl mb-2'></i>
-                <p>Tidak ada data penilaian kinerja</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-
-    <!-- Modal Detail -->
-    <div x-show="showDetailModal" x-cloak class="fixed inset-0 z-50 flex items-start justify-center bg-slate-500/75 p-4 overflow-y-auto" style="display: none;" x-on:click.self="closeDetailModal()">
-        <!-- Modal Panel -->
-        <div x-show="showDetailModal" x-transition:enter="ease-out duration-300" 
-             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
-             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
-             x-transition:leave="ease-in duration-200" 
-             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" 
-             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-             class="w-full max-w-4xl my-4 text-left transition-all transform bg-white shadow-xl rounded-2xl">
-          
-          <!-- Header -->
-          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-            <h3 class="text-lg font-semibold text-slate-800">Detail Penilaian Kinerja</h3>
-            <button x-on:click="closeDetailModal()" class="text-slate-400 hover:text-slate-600">
-              <i class='bx bx-x text-2xl'></i>
-            </button>
-          </div>
-
-          <!-- Body -->
-          <div class="px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
-            <template x-if="detailData">
-              <div class="space-y-4">
-                <!-- Info Karyawan -->
-                <div class="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl">
-                  <div>
-                    <p class="text-xs text-slate-500">Karyawan</p>
-                    <p class="font-semibold text-slate-800" x-text="detailData.employee_name"></p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-slate-500">Jabatan</p>
-                    <p class="font-semibold text-slate-800" x-text="detailData.employee_position"></p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-slate-500">Periode</p>
-                    <p class="font-semibold text-slate-800" x-text="detailData.period"></p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-slate-500">Tanggal Penilaian</p>
-                    <p class="font-semibold text-slate-800" x-text="detailData.appraisal_date"></p>
-                  </div>
-                </div>
-
-                <!-- Parameter Penilaian -->
-                <div>
-                  <h4 class="font-semibold text-slate-700 mb-3">Parameter Penilaian</h4>
-                  <div class="space-y-2">
-                    <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                      <span class="text-slate-700">Disiplin</span>
-                      <span class="font-bold text-slate-800" x-text="detailData.discipline_score"></span>
-                    </div>
-                    <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                      <span class="text-slate-700">Kerjasama</span>
-                      <span class="font-bold text-slate-800" x-text="detailData.teamwork_score"></span>
-                    </div>
-                    <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                      <span class="text-slate-700">Hasil Kerja</span>
-                      <span class="font-bold text-slate-800" x-text="detailData.work_result_score"></span>
-                    </div>
-                    <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                      <span class="text-slate-700">Inisiatif</span>
-                      <span class="font-bold text-slate-800" x-text="detailData.initiative_score"></span>
-                    </div>
-                    <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                      <span class="text-slate-700">Target KPI</span>
-                      <span class="font-bold text-slate-800" x-text="detailData.kpi_score"></span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Hasil -->
-                <div class="grid grid-cols-2 gap-4 p-4 bg-blue-50 rounded-xl">
-                  <div>
-                    <p class="text-xs text-blue-600">Rata-rata Skor</p>
-                    <p class="text-2xl font-bold text-blue-800" x-text="detailData.average_score"></p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-blue-600">Grade</p>
-                    <p class="text-2xl font-bold text-blue-800" x-text="detailData.grade + ' - ' + detailData.grade_label"></p>
-                  </div>
-                </div>
-
-                <!-- Catatan -->
-                <div x-show="detailData.evaluator_notes" class="p-4 bg-slate-50 rounded-xl">
-                  <p class="text-xs text-slate-500 mb-1">Catatan Evaluator</p>
-                  <p class="text-slate-700" x-text="detailData.evaluator_notes"></p>
-                </div>
-
-                <div x-show="detailData.employee_notes" class="p-4 bg-slate-50 rounded-xl">
-                  <p class="text-xs text-slate-500 mb-1">Catatan Karyawan</p>
-                  <p class="text-slate-700" x-text="detailData.employee_notes"></p>
-                </div>
-
-                <div x-show="detailData.improvement_plan" class="p-4 bg-slate-50 rounded-xl">
-                  <p class="text-xs text-slate-500 mb-1">Rencana Perbaikan</p>
-                  <p class="text-slate-700" x-text="detailData.improvement_plan"></p>
-                </div>
-
-                <!-- Evaluator -->
-                <div class="p-4 bg-slate-50 rounded-xl">
-                  <p class="text-xs text-slate-500">Evaluator</p>
-                  <p class="font-semibold text-slate-800" x-text="detailData.evaluator_name"></p>
-                </div>
-              </div>
-            </template>
-          </div>
-
-          <!-- Footer -->
-          <div class="flex justify-end gap-2 px-6 py-4 border-t border-slate-200">
-            <button x-on:click="closeDetailModal()" 
-                    class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50">
-              Tutup
-            </button>
-          </div>
-        </div>
-    </div>
-
-    <!-- Modal PDF Viewer -->
-    <div x-show="showPdfModal" x-cloak class="fixed inset-0 z-50 flex items-start justify-center bg-slate-500/75 p-4 overflow-y-auto" style="display: none;" x-on:click.self="closePdfModal()">
-        <!-- Modal Panel -->
-        <div x-show="showPdfModal" x-transition:enter="ease-out duration-300" 
-             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
-             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
-             x-transition:leave="ease-in duration-200" 
-             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" 
-             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-             class="w-full max-w-6xl my-4 text-left transition-all transform bg-white shadow-xl rounded-2xl">
-          
-          <!-- Header -->
-          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-            <h3 class="text-lg font-semibold text-slate-800">Preview PDF - Penilaian Kinerja</h3>
-            <button x-on:click="closePdfModal()" class="text-slate-400 hover:text-slate-600">
-              <i class='bx bx-x text-2xl'></i>
-            </button>
-          </div>
-
-          <!-- Body -->
-          <div class="px-6 py-4">
-            <iframe :src="pdfUrl" class="w-full h-[70vh] border border-slate-200 rounded-lg"></iframe>
-          </div>
-
-          <!-- Footer -->
-          <div class="flex justify-end gap-2 px-6 py-4 border-t border-slate-200">
-            <button x-on:click="closePdfModal()" 
-                    class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50">
-              Tutup
-            </button>
-          </div>
-        </div>
-    </div>
-
-    <!-- Modal Form -->
-    <div x-show="showModal" x-cloak class="fixed inset-0 z-50 flex items-start justify-center bg-slate-500/75 p-4 overflow-y-auto" style="display: none;" x-on:click.self="closeModal()">
-        <!-- Modal Panel -->
-        <div x-show="showModal" x-transition:enter="ease-out duration-300" 
-             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
-             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
-             x-transition:leave="ease-in duration-200" 
-             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" 
-             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-             class="w-full max-w-4xl my-4 text-left transition-all transform bg-white shadow-xl rounded-2xl">
-          
-          <!-- Header -->
-          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-            <h3 class="text-lg font-semibold text-slate-800" x-text="modalTitle"></h3>
-            <button x-on:click="closeModal()" class="text-slate-400 hover:text-slate-600">
-              <i class='bx bx-x text-2xl'></i>
-            </button>
-          </div>
-
-          <!-- Body -->
-          <form x-on:submit.prevent="saveData()" class="px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
-            
-            <!-- Karyawan & Periode -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Karyawan <span class="text-red-500">*</span></label>
-                <select x-model="form.recruitment_id" required 
-                        class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
-                  <option value="">Pilih Karyawan</option>
-                  <template x-for="emp in employees" :key="emp.id">
-                    <option :value="emp.id" x-text="emp.name + ' - ' + emp.position"></option>
-                  </template>
-                </select>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Periode <span class="text-red-500">*</span></label>
-                <input type="month" x-model="form.period" required 
-                       class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Tanggal Penilaian <span class="text-red-500">*</span></label>
-                <input type="date" x-model="form.appraisal_date" required 
-                       class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Status <span class="text-red-500">*</span></label>
-                <select x-model="form.status" required 
-                        class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
-                  <option value="draft">Draft</option>
-                  <option value="final">Final</option>
-                </select>
-              </div>
+                </template>
             </div>
+        </section>
 
-            <!-- Parameter Penilaian -->
-            <div class="border-t border-slate-200 pt-4">
-              <h4 class="font-semibold text-slate-700 mb-3">Parameter Penilaian (Skala 0-100)</h4>
-              
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Disiplin <span class="text-red-500">*</span></label>
-                  <input type="number" x-model="form.discipline_score" required min="0" max="100" 
-                         class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
-                </div>
+        {{-- ─── Super Admin View ────────────────────────────────────────────── --}}
+        <template x-if="isSuperAdmin">
+            <div class="space-y-4">
+                {{-- Loading State --}}
+                <template x-if="loading">
+                    <div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-card text-center">
+                        <div class="flex items-center justify-center gap-2 text-slate-500">
+                            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600"></div>
+                            <span class="text-sm">Memuat data pengguna...</span>
+                        </div>
+                    </div>
+                </template>
 
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Kerjasama <span class="text-red-500">*</span></label>
-                  <input type="number" x-model="form.teamwork_score" required min="0" max="100" 
-                         class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
-                </div>
-
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Hasil Kerja <span class="text-red-500">*</span></label>
-                  <input type="number" x-model="form.work_result_score" required min="0" max="100" 
-                         class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
-                </div>
-
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Inisiatif <span class="text-red-500">*</span></label>
-                  <input type="number" x-model="form.initiative_score" required min="0" max="100" 
-                         class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
-                </div>
-
-                <div class="md:col-span-2">
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Target KPI <span class="text-red-500">*</span></label>
-                  <input type="number" x-model="form.kpi_score" required min="0" max="100" 
-                         class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200">
-                </div>
-              </div>
+                {{-- Users Table --}}
+                <template x-if="!loading">
+                    <div class="rounded-2xl border border-slate-200 bg-white shadow-card overflow-hidden">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-10">No</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden sm:table-cell">Email</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">Job</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Progress</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 bg-white">
+                                <template x-if="usersData.length === 0">
+                                    <tr>
+                                        <td colspan="6" class="px-4 py-10 text-center text-sm text-slate-400">
+                                            <i class="bx bx-user text-3xl block mb-2"></i>
+                                            Tidak ada data pengguna aktif
+                                        </td>
+                                    </tr>
+                                </template>
+                                <template x-for="(user, index) in usersData" :key="user.user_id">
+                                    <template>
+                                        {{-- User Row --}}
+                                        <tr
+                                            @click="toggleExpandUser(user.user_id)"
+                                            class="cursor-pointer hover:bg-slate-50 transition-colors"
+                                            :class="expandedUserId === user.user_id ? 'bg-slate-50' : ''"
+                                        >
+                                            <td class="px-4 py-3 text-sm text-slate-500" x-text="index + 1"></td>
+                                            <td class="px-4 py-3">
+                                                <div class="flex items-center gap-2">
+                                                    <i :class="expandedUserId === user.user_id ? 'bx bx-chevron-down' : 'bx bx-chevron-right'"
+                                                       class="text-slate-400 text-lg flex-shrink-0"></i>
+                                                    <span class="text-sm font-medium text-slate-900" x-text="user.name"></span>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-slate-500 hidden sm:table-cell" x-text="user.email"></td>
+                                            <td class="px-4 py-3 text-center">
+                                                <span class="inline-flex items-center justify-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
+                                                    <span x-text="user.job_count"></span>
+                                                    <span class="ml-1">job</span>
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
+                                                        <div
+                                                            :class="progressBarColorClass(user.overall)"
+                                                            class="h-2 rounded-full transition-all duration-500"
+                                                            :style="'width: ' + user.overall + '%'"
+                                                        ></div>
+                                                    </div>
+                                                    <span class="text-xs text-slate-600 font-medium w-10 text-right" x-text="user.overall + '%'"></span>
+                                                    <span
+                                                        :class="gradeColorClass(user.grade_color)"
+                                                        class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-bold"
+                                                        x-text="user.grade"
+                                                    ></span>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 text-center" @click.stop>
+                                                <button
+                                                    @click="openAddJobModal(user.user_id, user.name)"
+                                                    class="inline-flex items-center gap-1 rounded-lg bg-primary-50 px-3 py-1.5 text-xs font-medium text-primary-700 hover:bg-primary-100 transition-colors"
+                                                >
+                                                    <i class="bx bx-plus"></i>
+                                                    Tambah Job
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {{-- Expanded Job List Panel --}}
+                                        <tr x-show="expandedUserId === user.user_id" style="display: none;">
+                                            <td colspan="6" class="bg-slate-50 px-0 py-0">
+                                                <div class="border-t border-slate-200 px-6 py-4">
+                                                    {{-- Loading inside panel --}}
+                                                    <template x-if="loadingExpanded[user.user_id]">
+                                                        <div class="py-6 text-center text-sm text-slate-400">
+                                                            <div class="flex items-center justify-center gap-2">
+                                                                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
+                                                                <span>Memuat job list...</span>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                    {{-- Job items --}}
+                                                    <template x-if="!loadingExpanded[user.user_id]">
+                                                        <div>
+                                                            <template x-if="!expandedJobs[user.user_id] || expandedJobs[user.user_id].items.length === 0">
+                                                                <p class="py-4 text-sm text-slate-400 text-center">Belum ada job target untuk user ini</p>
+                                                            </template>
+                                                            <template x-if="expandedJobs[user.user_id] && expandedJobs[user.user_id].items.length > 0">
+                                                                <div class="space-y-3">
+                                                                    <template x-for="job in expandedJobs[user.user_id].items" :key="job.id">
+                                                                        <div class="rounded-xl border border-slate-200 bg-white p-4">
+                                                                            <div class="flex items-start justify-between gap-4">
+                                                                                <div class="flex-1 min-w-0">
+                                                                                    <p class="font-medium text-slate-900 text-sm" x-text="job.title"></p>
+                                                                                    <p x-show="job.description" class="text-xs text-slate-500 mt-0.5" x-text="job.description"></p>
+                                                                                    <div class="mt-2 flex flex-wrap gap-3 text-xs text-slate-600">
+                                                                                        <span>Target: <b x-text="job.target_percent + '%'"></b></span>
+                                                                                        <span>Realisasi: <b x-text="job.realisasi_percent + '%'"></b></span>
+                                                                                        <span x-show="job.period">Periode: <b x-text="job.period"></b></span>
+                                                                                    </div>
+                                                                                    <div class="mt-2 flex items-center gap-2">
+                                                                                        <div class="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                                                                            <div
+                                                                                                :class="progressBarColorClass(job.progress)"
+                                                                                                class="h-1.5 rounded-full transition-all duration-500"
+                                                                                                :style="'width: ' + job.progress + '%'"
+                                                                                            ></div>
+                                                                                        </div>
+                                                                                        <span class="text-xs text-slate-600 w-10 text-right" x-text="job.progress + '%'"></span>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div class="flex gap-2 flex-shrink-0">
+                                                                                    <button
+                                                                                        @click.stop="openEditJobModal(job, user.user_id)"
+                                                                                        class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-600 hover:bg-slate-100 transition-colors"
+                                                                                    >
+                                                                                        <i class="bx bx-pencil"></i> Edit
+                                                                                    </button>
+                                                                                    <button
+                                                                                        @click.stop="deleteJob(job.id, user.user_id, job.title)"
+                                                                                        class="rounded-lg border border-red-100 px-2.5 py-1.5 text-xs text-red-600 hover:bg-red-50 transition-colors"
+                                                                                    >
+                                                                                        <i class="bx bx-trash"></i> Hapus
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </template>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
             </div>
+        </template>
 
-            <!-- Catatan -->
-            <div class="border-t border-slate-200 pt-4 space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Catatan Evaluator</label>
-                <textarea x-model="form.evaluator_notes" rows="3" 
-                          class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200"></textarea>
-              </div>
+        {{-- ─── User Biasa View ─────────────────────────────────────────────── --}}
+        <template x-if="!isSuperAdmin">
+            <div class="space-y-4">
+                {{-- Loading State --}}
+                <template x-if="loading">
+                    <div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-card text-center">
+                        <div class="flex items-center justify-center gap-2 text-slate-500">
+                            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600"></div>
+                            <span class="text-sm">Memuat data kinerja Anda...</span>
+                        </div>
+                    </div>
+                </template>
 
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Catatan Karyawan</label>
-                <textarea x-model="form.employee_notes" rows="3" 
-                          class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200"></textarea>
-              </div>
+                <template x-if="!loading">
+                    <div class="space-y-4">
+                        {{-- Overall Dashboard Card --}}
+                        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                <div class="flex-1">
+                                    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide">Progress Overall</h2>
+                                    <div class="mt-3 flex items-center gap-4">
+                                        <div class="flex-1">
+                                            <div class="flex items-center justify-between mb-1.5">
+                                                <span class="text-xs text-slate-500">Progress</span>
+                                                <span class="text-sm font-bold text-slate-900" x-text="(myOverall.progress ?? 0) + '%'"></span>
+                                            </div>
+                                            <div class="bg-slate-100 rounded-full h-3 overflow-hidden">
+                                                <div
+                                                    :class="progressBarColorClass(myOverall.progress ?? 0)"
+                                                    class="h-3 rounded-full transition-all duration-700"
+                                                    :style="'width: ' + (myOverall.progress ?? 0) + '%'"
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex-shrink-0 text-center">
+                                    <span
+                                        :class="gradeColorClass(myOverall.grade_color ?? 'gray')"
+                                        class="inline-flex items-center justify-center rounded-xl border-2 text-3xl font-black h-16 w-16"
+                                        x-text="myOverall.grade ?? '-'"
+                                    ></span>
+                                    <p class="text-xs text-slate-500 mt-1" x-text="myOverall.grade_label ?? '-'"></p>
+                                </div>
+                            </div>
+                        </div>
 
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Rencana Perbaikan</label>
-                <textarea x-model="form.improvement_plan" rows="3" 
-                          class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-primary-200"></textarea>
-              </div>
+                        {{-- Empty state --}}
+                        <template x-if="myJobs.length === 0">
+                            <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+                                <i class="bx bx-task text-4xl text-slate-300 block mb-3"></i>
+                                <p class="text-sm text-slate-500">Belum ada job target yang ditetapkan untuk Anda</p>
+                            </div>
+                        </template>
+
+                        {{-- Job List --}}
+                        <template x-if="myJobs.length > 0">
+                            <div class="space-y-3">
+                                <template x-for="job in myJobs" :key="job.id">
+                                    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
+                                        <div class="flex items-start justify-between gap-4">
+                                            <div class="flex-1 min-w-0">
+                                                <p class="font-semibold text-slate-900" x-text="job.title"></p>
+                                                <p x-show="job.description" class="text-sm text-slate-500 mt-0.5" x-text="job.description"></p>
+                                                <div class="mt-2 flex flex-wrap gap-3 text-sm text-slate-600">
+                                                    <span>Target: <b x-text="job.target_percent + '%'"></b></span>
+                                                    <span>Realisasi: <b x-text="job.realisasi_percent + '%'"></b></span>
+                                                    <span x-show="job.period">Periode: <b x-text="job.period"></b></span>
+                                                </div>
+                                                <div class="mt-3 flex items-center gap-2">
+                                                    <div class="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
+                                                        <div
+                                                            :class="progressBarColorClass(job.progress)"
+                                                            class="h-2 rounded-full transition-all duration-500"
+                                                            :style="'width: ' + job.progress + '%'"
+                                                        ></div>
+                                                    </div>
+                                                    <span class="text-xs text-slate-600 font-medium w-10 text-right" x-text="job.progress + '%'"></span>
+                                                </div>
+                                            </div>
+                                            <button
+                                                @click="openUpdateModal(job)"
+                                                class="flex-shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-primary-600 px-3 py-2 text-xs font-medium text-white hover:bg-primary-700 transition-colors"
+                                            >
+                                                <i class="bx bx-edit-alt"></i>
+                                                Update Realisasi
+                                            </button>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </template>
             </div>
+        </template>
 
-            <!-- Footer -->
-            <div class="flex justify-end gap-2 pt-4 border-t border-slate-200">
-              <button type="button" x-on:click="closeModal()" 
-                      class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50">
-                Batal
-              </button>
-              <button type="submit" :disabled="saving" 
-                      class="px-4 py-2 rounded-xl bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50">
-                <span x-show="!saving">Simpan</span>
-                <span x-show="saving" class="inline-flex items-center gap-2">
-                  <i class='bx bx-loader-alt bx-spin'></i> Menyimpan...
-                </span>
-              </button>
+        {{-- ─── Modal: Tambah/Edit Job (Super Admin) ─────────────────────────── --}}
+        <template x-if="showJobModal">
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-black/40" @click="showJobModal = false"></div>
+                <div class="relative w-full max-w-md rounded-2xl bg-white shadow-2xl">
+                    <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                        <h3 class="font-semibold text-slate-900">
+                            <span x-show="!modalJobForm.id">Tambah Job Target</span>
+                            <span x-show="modalJobForm.id">Edit Job Target</span>
+                            <span x-show="modalJobForm.user_name" class="font-normal text-slate-500">
+                                — <span x-text="modalJobForm.user_name"></span>
+                            </span>
+                        </h3>
+                        <button @click="showJobModal = false" class="text-slate-400 hover:text-slate-600">
+                            <i class="bx bx-x text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="px-6 py-4 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Judul Job <span class="text-red-500">*</span></label>
+                            <input type="text" x-model="modalJobForm.title" placeholder="Masukkan judul pekerjaan"
+                                   class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Deskripsi</label>
+                            <textarea x-model="modalJobForm.description" rows="2" placeholder="Deskripsi opsional"
+                                      class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Target % <span class="text-red-500">*</span></label>
+                                <input type="number" x-model="modalJobForm.target_percent" min="0" max="100" placeholder="0–100"
+                                       class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Periode</label>
+                                <input type="text" x-model="modalJobForm.period" placeholder="YYYY-MM"
+                                       class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            </div>
+                        </div>
+                        <template x-if="modalJobForm.id">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Realisasi %</label>
+                                <input type="number" x-model="modalJobForm.realisasi_percent" min="0" max="100" placeholder="0–100"
+                                       class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            </div>
+                        </template>
+                    </div>
+                    <div class="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
+                        <button @click="showJobModal = false"
+                                class="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+                            Batal
+                        </button>
+                        <button @click="saveJob()" :disabled="saving"
+                                class="rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            <span x-show="!saving">Simpan</span>
+                            <span x-show="saving" class="flex items-center gap-2">
+                                <div class="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
+                                Menyimpan...
+                            </span>
+                        </button>
+                    </div>
+                </div>
             </div>
-          </form>
-        </div>
-    </div>
+        </template>
 
-  </div>
+        {{-- ─── Modal: Update Realisasi (User Biasa) ─────────────────────────── --}}
+        <template x-if="showUpdateModal">
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-black/40" @click="showUpdateModal = false"></div>
+                <div class="relative w-full max-w-sm rounded-2xl bg-white shadow-2xl">
+                    <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                        <h3 class="font-semibold text-slate-900">Update Realisasi</h3>
+                        <button @click="showUpdateModal = false" class="text-slate-400 hover:text-slate-600">
+                            <i class="bx bx-x text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="px-6 py-4 space-y-4">
+                        <div>
+                            <p class="text-sm text-slate-500">Job</p>
+                            <p class="font-medium text-slate-900" x-text="modalUpdateForm.title"></p>
+                        </div>
+                        <div class="flex gap-4">
+                            <div>
+                                <p class="text-sm text-slate-500">Target</p>
+                                <p class="font-semibold text-slate-900" x-text="modalUpdateForm.target_percent + '%'"></p>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Realisasi % <span class="text-red-500">*</span></label>
+                            <input type="number" x-model="modalUpdateForm.realisasi_percent" min="0" max="100" placeholder="0–100"
+                                   class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        </div>
+                        {{-- Reactive preview --}}
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-500 mb-1">
+                                <span>Preview Progress</span>
+                                <span x-text="previewProgress + '%'"></span>
+                            </div>
+                            <div class="bg-slate-100 rounded-full h-2 overflow-hidden">
+                                <div
+                                    :class="progressBarColorClass(previewProgress)"
+                                    class="h-2 rounded-full transition-all duration-300"
+                                    :style="'width: ' + previewProgress + '%'"
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
+                        <button @click="showUpdateModal = false"
+                                class="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+                            Batal
+                        </button>
+                        <button @click="saveUpdate()" :disabled="saving"
+                                class="rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            <span x-show="!saving">Update</span>
+                            <span x-show="saving" class="flex items-center gap-2">
+                                <div class="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
+                                Menyimpan...
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
 
-  @push('scripts')
-  <script>
-  function kinerjaCrud() {
-    return {
-      loading: false,
-      saving: false,
-      showModal: false,
-      showDetailModal: false,
-      showPdfModal: false,
-      modalTitle: 'Tambah Penilaian',
-      editId: null,
-      detailData: null,
-      pdfUrl: '',
-      
-      // Data
-      appraisals: [],
-      employees: [],
-      stats: {
-        total: 0,
-        average_score: 0,
-        grade_a: 0,
-        grade_b: 0
-      },
-      
-      // Filters
-      search: '',
-      periodFilter: new Date().toISOString().slice(0, 7),
-      employeeFilter: '',
-      statusFilter: 'all',
-      
-      // Form
-      form: {
-        outlet_id: {{ auth()->user()->outlets()->first()->id_outlet ?? 'null' }},
-        recruitment_id: '',
-        period: new Date().toISOString().slice(0, 7),
-        appraisal_date: new Date().toISOString().slice(0, 10),
-        discipline_score: 0,
-        teamwork_score: 0,
-        work_result_score: 0,
-        initiative_score: 0,
-        kpi_score: 0,
-        evaluator_notes: '',
-        employee_notes: '',
-        improvement_plan: '',
-        status: 'draft'
-      },
+        {{-- ─── Modal: Grade Settings (Super Admin) ──────────────────────────── --}}
+        <template x-if="showGradeModal">
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-black/40" @click="showGradeModal = false"></div>
+                <div class="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+                    <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                        <h3 class="font-semibold text-slate-900">Pengaturan Nilai Grade</h3>
+                        <button @click="showGradeModal = false" class="text-slate-400 hover:text-slate-600">
+                            <i class="bx bx-x text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="px-6 py-4">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-xs text-slate-500 uppercase">
+                                    <th class="pb-2 text-left">Grade</th>
+                                    <th class="pb-2 text-left">Label</th>
+                                    <th class="pb-2 text-center">Min %</th>
+                                    <th class="pb-2 text-center">Max %</th>
+                                    <th class="pb-2 text-center">Warna</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <template x-for="(grade, index) in gradeSettingsForm" :key="grade.grade">
+                                    <tr>
+                                        <td class="py-2 pr-3">
+                                            <span
+                                                :class="gradeColorClass(grade.color)"
+                                                class="inline-flex items-center justify-center rounded-md border px-2.5 py-0.5 text-sm font-bold"
+                                                x-text="grade.grade"
+                                            ></span>
+                                        </td>
+                                        <td class="py-2 pr-3">
+                                            <input type="text" x-model="gradeSettingsForm[index].label"
+                                                   class="w-full rounded-lg border border-slate-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                        </td>
+                                        <td class="py-2 pr-2">
+                                            <input type="number" x-model="gradeSettingsForm[index].min_percent" min="0" max="100"
+                                                   class="w-20 rounded-lg border border-slate-300 px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                        </td>
+                                        <td class="py-2 pr-2">
+                                            <input type="number" x-model="gradeSettingsForm[index].max_percent" min="0" max="100"
+                                                   class="w-20 rounded-lg border border-slate-300 px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                        </td>
+                                        <td class="py-2 text-center">
+                                            <span
+                                                :class="{
+                                                    'bg-emerald-500': grade.color === 'emerald',
+                                                    'bg-blue-500':    grade.color === 'blue',
+                                                    'bg-amber-500':   grade.color === 'amber',
+                                                    'bg-red-500':     grade.color === 'red',
+                                                    'bg-slate-400':   !['emerald','blue','amber','red'].includes(grade.color),
+                                                }"
+                                                class="inline-block h-4 w-4 rounded-full"
+                                                :title="grade.color"
+                                            ></span>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
+                        <button @click="showGradeModal = false"
+                                class="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+                            Batal
+                        </button>
+                        <button @click="saveGradeSettings()" :disabled="saving"
+                                class="rounded-xl bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            <span x-show="!saving">Simpan</span>
+                            <span x-show="saving" class="flex items-center gap-2">
+                                <div class="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
+                                Menyimpan...
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
 
-      init() {
-        this.loadOutlets();
-        this.fetchEmployees();
-        this.fetchData();
-        this.fetchStatistics();
-      },
+    </div>{{-- end x-data root --}}
 
-      async loadOutlets() {
-        try {
-          const response = await fetch('{{ route("finance.outlets.data") }}');
-          const result = await response.json();
-          if (result.success) {
-            this.outlets = result.data;
-            // Set default outlet if form doesn't have one
-            if (!this.form.outlet_id && this.outlets.length > 0) {
-              this.form.outlet_id = this.outlets[0].id_outlet;
-            }
-          }
-        } catch (error) {
-          console.error('Error loading outlets:', error);
-        }
-      },
+    {{-- ─── Alpine.js Component Definition ─────────────────────────────────── --}}
+    <script>
+        function kinerjaDashboard(config) {
+            return {
+                // ── Config ────────────────────────────────────────────────────
+                isSuperAdmin: config.isSuperAdmin,
+                csrfToken:    config.csrfToken,
+                routes:       config.routes,
 
-      async fetchData() {
-        this.loading = true;
-        try {
-          const params = new URLSearchParams({
-            search: this.search,
-            period_filter: this.periodFilter,
-            employee_filter: this.employeeFilter,
-            status_filter: this.statusFilter
-          });
-          
-          const response = await fetch(`{{ route('sdm.kinerja.data') }}?${params}`);
-          const data = await response.json();
-          
-          if (data.success) {
-            this.appraisals = data.data;
-          }
-        } catch (error) {
-          console.error('Error:', error);
-          this.showNotification('Gagal memuat data', 'error');
-        } finally {
-          this.loading = false;
-        }
-      },
+                // ── Loading / Saving states ───────────────────────────────────
+                loading: false,
+                saving:  false,
 
-      async fetchStatistics() {
-        try {
-          const params = new URLSearchParams({
-            period_filter: this.periodFilter
-          });
-          
-          const response = await fetch(`{{ route('sdm.kinerja.statistics') }}?${params}`);
-          const data = await response.json();
-          
-          if (data.success) {
-            this.stats = data.data;
-          }
-        } catch (error) {
-          console.error('Error:', error);
-        }
-      },
+                // ── Notification ─────────────────────────────────────────────
+                notification: { show: false, message: '', type: 'success' },
 
-      async fetchEmployees() {
-        try {
-          const response = await fetch(`{{ route('sdm.kinerja.employees') }}`);
-          const data = await response.json();
-          
-          if (data.success) {
-            this.employees = data.data;
-          }
-        } catch (error) {
-          console.error('Error:', error);
-        }
-      },
+                // ── Super Admin state ─────────────────────────────────────────
+                usersData:       [],    // UserSummaryResponse[]
+                expandedUserId:  null,  // int|null — accordion terbuka
+                expandedJobs:    {},    // Map<userId, { items: [], overall: {} }>
+                loadingExpanded: {},    // Map<userId, bool>
 
-      openCreate() {
-        this.modalTitle = 'Tambah Penilaian Kinerja';
-        this.editId = null;
-        this.resetForm();
-        this.showModal = true;
-      },
+                // ── User Biasa state ──────────────────────────────────────────
+                myJobs:    [],  // JobItemResponse[]
+                myOverall: {},  // OverallResponse
 
-      async openEdit(id) {
-        this.modalTitle = 'Edit Penilaian Kinerja';
-        this.editId = id;
-        
-        try {
-          const response = await fetch(`{{ route('sdm.kinerja.index') }}/${id}`);
-          const data = await response.json();
-          
-          if (data.success) {
-            const item = data.data;
-            this.form = {
-              outlet_id: item.outlet_id,
-              recruitment_id: item.recruitment_id,
-              period: item.period,
-              appraisal_date: item.appraisal_date,
-              discipline_score: item.discipline_score,
-              teamwork_score: item.teamwork_score,
-              work_result_score: item.work_result_score,
-              initiative_score: item.initiative_score,
-              kpi_score: item.kpi_score,
-              evaluator_notes: item.evaluator_notes || '',
-              employee_notes: item.employee_notes || '',
-              improvement_plan: item.improvement_plan || '',
-              status: item.status
+                // ── Modal states ──────────────────────────────────────────────
+                showJobModal:    false,
+                showUpdateModal: false,
+                showGradeModal:  false,
+
+                modalJobForm: {
+                    user_id:            null,
+                    user_name:          '',
+                    id:                 null,
+                    title:              '',
+                    description:        '',
+                    target_percent:     '',
+                    realisasi_percent:  '',
+                    period:             '',
+                },
+
+                modalUpdateForm: {
+                    id:                 null,
+                    title:              '',
+                    target_percent:     0,
+                    realisasi_percent:  0,
+                },
+
+                gradeSettingsForm: [], // JobGradeSetting[]
+
+                // ── Computed: preview progress inside update modal ────────────
+                get previewProgress() {
+                    const target    = parseFloat(this.modalUpdateForm.target_percent) || 0;
+                    const realisasi = parseFloat(this.modalUpdateForm.realisasi_percent) || 0;
+                    if (target <= 0) return 0;
+                    return Math.min(100, Math.round((realisasi / target) * 100 * 10) / 10);
+                },
+
+                // ── Lifecycle ─────────────────────────────────────────────────
+                init() {
+                    if (this.isSuperAdmin) {
+                        this.loadAllUsersProgress();
+                    } else {
+                        this.loadMyJobs();
+                    }
+                },
+
+                // ── Super Admin: Load all users progress ──────────────────────
+                async loadAllUsersProgress() {
+                    this.loading = true;
+                    try {
+                        const response = await fetch(this.routes.allUsers, {
+                            headers: {
+                                'X-CSRF-TOKEN': this.csrfToken,
+                                'Accept': 'application/json',
+                            }
+                        });
+                        const data = await response.json();
+                        if (response.ok && data.success) {
+                            this.usersData = data.data;
+                        } else {
+                            this.handleApiError(data, response.status);
+                        }
+                    } catch (e) {
+                        this.handleApiError(null, 0);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                // ── Super Admin: Toggle accordion expand ──────────────────────
+                toggleExpandUser(userId) {
+                    if (this.expandedUserId === userId) {
+                        this.expandedUserId = null;
+                        return;
+                    }
+                    this.expandedUserId = userId;
+                    if (!this.expandedJobs[userId]) {
+                        this.loadJobsForUser(userId);
+                    }
+                },
+
+                async loadJobsForUser(userId) {
+                    this.loadingExpanded = { ...this.loadingExpanded, [userId]: true };
+                    try {
+                        const response = await fetch(this.routes.data + '?user_id=' + userId, {
+                            headers: {
+                                'X-CSRF-TOKEN': this.csrfToken,
+                                'Accept': 'application/json',
+                            }
+                        });
+                        const data = await response.json();
+                        if (response.ok && data.success) {
+                            this.expandedJobs = { ...this.expandedJobs, [userId]: { items: data.data, overall: data.overall } };
+                        } else {
+                            this.handleApiError(data, response.status);
+                            this.expandedUserId = null;
+                        }
+                    } catch (e) {
+                        this.handleApiError(null, 0);
+                        this.expandedUserId = null;
+                    } finally {
+                        this.loadingExpanded = { ...this.loadingExpanded, [userId]: false };
+                    }
+                },
+
+                // ── Super Admin: Job modal ─────────────────────────────────────
+                openAddJobModal(userId, userName) {
+                    this.modalJobForm = {
+                        user_id: userId,
+                        user_name: userName,
+                        id: null,
+                        title: '',
+                        description: '',
+                        target_percent: '',
+                        realisasi_percent: '',
+                        period: this.currentYearMonth(),
+                    };
+                    this.showJobModal = true;
+                },
+
+                openEditJobModal(job, userId) {
+                    this.modalJobForm = {
+                        user_id: userId ?? job.user_id,
+                        user_name: '',
+                        id: job.id,
+                        title: job.title,
+                        description: job.description ?? '',
+                        target_percent: job.target_percent,
+                        realisasi_percent: job.realisasi_percent,
+                        period: job.period ?? '',
+                    };
+                    this.showJobModal = true;
+                },
+
+                async saveJob() {
+                    this.saving = true;
+                    try {
+                        const isCreate = !this.modalJobForm.id;
+                        const url = isCreate
+                            ? this.routes.store
+                            : this.routes.update + '/' + this.modalJobForm.id;
+                        const method = isCreate ? 'POST' : 'PUT';
+
+                        const response = await fetch(url, {
+                            method,
+                            headers: {
+                                'X-CSRF-TOKEN': this.csrfToken,
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify(this.modalJobForm),
+                        });
+                        const data = await response.json();
+
+                        if (response.ok && data.success) {
+                            this.showNotification(data.message || 'Job berhasil disimpan', 'success');
+                            this.showJobModal = false;
+                            const userId = this.modalJobForm.user_id;
+                            // Invalidate cache and refresh
+                            const newJobs = { ...this.expandedJobs };
+                            delete newJobs[userId];
+                            this.expandedJobs = newJobs;
+                            await this.loadJobsForUser(userId);
+                            await this.loadAllUsersProgress();
+                        } else if (response.status === 422) {
+                            this.handleApiError(data, 422);
+                            // Modal stays open
+                        } else {
+                            this.handleApiError(data, response.status);
+                        }
+                    } catch (e) {
+                        this.handleApiError(null, 0);
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+
+                // ── Super Admin: Delete job ────────────────────────────────────
+                async deleteJob(jobId, userId, jobTitle) {
+                    if (!confirm('Hapus job "' + jobTitle + '"?')) return;
+                    try {
+                        const response = await fetch(this.routes.destroy + '/' + jobId, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': this.csrfToken,
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                            }
+                        });
+                        const data = await response.json();
+                        if (response.ok && data.success) {
+                            this.showNotification(data.message || 'Job berhasil dihapus', 'success');
+                            // Invalidate cache for this user
+                            const newJobs = { ...this.expandedJobs };
+                            delete newJobs[userId];
+                            this.expandedJobs = newJobs;
+                            // Refresh job list and overall table
+                            await this.loadJobsForUser(userId);
+                            await this.loadAllUsersProgress();
+                        } else if (response.status === 403) {
+                            this.handleApiError(data, 403);
+                        } else if (response.status === 404) {
+                            this.showNotification('Data tidak ditemukan', 'error');
+                        } else {
+                            this.handleApiError(data, response.status);
+                        }
+                    } catch (e) {
+                        this.handleApiError(null, 0);
+                    }
+                },
+
+                // ── User Biasa: Load my jobs ───────────────────────────────────
+                async loadMyJobs() {
+                    this.loading = true;
+                    try {
+                        const response = await fetch(this.routes.data, {
+                            headers: {
+                                'X-CSRF-TOKEN': this.csrfToken,
+                                'Accept': 'application/json',
+                            }
+                        });
+                        const data = await response.json();
+                        if (response.ok && data.success) {
+                            this.myJobs = data.data;
+                            this.myOverall = data.overall;
+                        } else {
+                            this.handleApiError(data, response.status);
+                        }
+                    } catch (e) {
+                        this.handleApiError(null, 0);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                // ── User Biasa: Update realisasi modal ────────────────────────
+                openUpdateModal(job) {
+                    this.modalUpdateForm = {
+                        id: job.id,
+                        title: job.title,
+                        target_percent: job.target_percent,
+                        realisasi_percent: job.realisasi_percent,
+                    };
+                    this.showUpdateModal = true;
+                },
+
+                async saveUpdate() {
+                    this.saving = true;
+                    try {
+                        const response = await fetch(this.routes.update + '/' + this.modalUpdateForm.id, {
+                            method: 'PUT',
+                            headers: {
+                                'X-CSRF-TOKEN': this.csrfToken,
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({ realisasi_percent: this.modalUpdateForm.realisasi_percent }),
+                        });
+                        const data = await response.json();
+
+                        if (response.ok && data.success) {
+                            // Reactive patch on the list item
+                            const idx = this.myJobs.findIndex(j => j.id === this.modalUpdateForm.id);
+                            if (idx >= 0) {
+                                this.myJobs[idx] = {
+                                    ...this.myJobs[idx],
+                                    realisasi_percent: data.data.realisasi_percent,
+                                    progress: data.data.progress,
+                                };
+                            }
+                            // Refresh overall and grade from backend
+                            await this.loadMyJobs();
+                            this.showUpdateModal = false;
+                            this.showNotification(data.message || 'Realisasi berhasil diperbarui', 'success');
+                        } else if (response.status === 403) {
+                            this.handleApiError(data, 403);
+                            // Modal stays open
+                        } else if (response.status === 422) {
+                            this.handleApiError(data, 422);
+                            // Modal stays open
+                        } else {
+                            this.handleApiError(data, response.status);
+                        }
+                    } catch (e) {
+                        this.handleApiError(null, 0);
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+
+                // ── Grade Settings ─────────────────────────────────────────────
+                async openGradeModal() {
+                    try {
+                        const response = await fetch(this.routes.gradeSettings, {
+                            headers: {
+                                'X-CSRF-TOKEN': this.csrfToken,
+                                'Accept': 'application/json',
+                            }
+                        });
+                        const data = await response.json();
+                        if (response.ok && data.success) {
+                            this.gradeSettingsForm = data.data;
+                            this.showGradeModal = true;
+                        } else {
+                            this.handleApiError(data, response.status);
+                        }
+                    } catch (e) {
+                        this.handleApiError(null, 0);
+                    }
+                },
+
+                async saveGradeSettings() {
+                    this.saving = true;
+                    try {
+                        const response = await fetch(this.routes.saveGradeSettings, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': this.csrfToken,
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({ grades: this.gradeSettingsForm }),
+                        });
+                        const data = await response.json();
+
+                        if (response.ok && data.success) {
+                            this.showNotification(data.message || 'Pengaturan grade disimpan', 'success');
+                            this.showGradeModal = false;
+                            // Invalidate expanded jobs cache so grades are recalculated
+                            this.expandedJobs = {};
+                            if (this.isSuperAdmin) {
+                                await this.loadAllUsersProgress();
+                            } else {
+                                await this.loadMyJobs();
+                            }
+                        } else if (response.status === 422) {
+                            this.handleApiError(data, 422);
+                            // Modal stays open
+                        } else if (response.status === 403) {
+                            this.handleApiError(data, 403);
+                            // Modal stays open
+                        } else {
+                            this.handleApiError(data, response.status);
+                        }
+                    } catch (e) {
+                        this.handleApiError(null, 0);
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+
+                // ── Utilities ──────────────────────────────────────────────────
+                showNotification(message, type = 'success') {
+                    this.notification = { show: true, message, type };
+                    setTimeout(() => {
+                        this.notification.show = false;
+                    }, 3000);
+                },
+
+                handleApiError(response, status) {
+                    if (status === 403) {
+                        this.showNotification('Anda tidak memiliki akses', 'error');
+                    } else if (status === 422) {
+                        let message = 'Data tidak valid';
+                        if (response && response.errors) {
+                            const firstKey = Object.keys(response.errors)[0];
+                            if (firstKey) {
+                                const firstVal = response.errors[firstKey];
+                                message = Array.isArray(firstVal) ? firstVal[0] : firstVal;
+                            }
+                        }
+                        this.showNotification(message, 'error');
+                    } else if (status === 500) {
+                        this.showNotification(
+                            (response && response.message) ? response.message : 'Terjadi kesalahan server',
+                            'error'
+                        );
+                    } else if (!status || status === 0) {
+                        this.showNotification('Koneksi bermasalah, coba lagi', 'error');
+                    } else {
+                        this.showNotification(
+                            (response && response.message) ? response.message : 'Terjadi kesalahan',
+                            'error'
+                        );
+                    }
+                },
+
+                gradeColorClass(color) {
+                    const map = {
+                        'emerald': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                        'blue':    'bg-blue-100 text-blue-800 border-blue-200',
+                        'amber':   'bg-amber-100 text-amber-800 border-amber-200',
+                        'red':     'bg-red-100 text-red-800 border-red-200',
+                        'gray':    'bg-slate-100 text-slate-600 border-slate-200',
+                    };
+                    return map[color] ?? 'bg-slate-100 text-slate-600 border-slate-200';
+                },
+
+                progressBarColorClass(progress) {
+                    const p = parseFloat(progress) || 0;
+                    if (p >= 90) return 'bg-emerald-500';
+                    if (p >= 75) return 'bg-blue-500';
+                    if (p >= 60) return 'bg-amber-500';
+                    return 'bg-red-500';
+                },
+
+                currentYearMonth() {
+                    return new Date().toISOString().slice(0, 7);
+                },
             };
-            this.showModal = true;
-          }
-        } catch (error) {
-          console.error('Error:', error);
-          this.showNotification('Gagal memuat data', 'error');
         }
-      },
+    </script>
 
-      async saveData() {
-        this.saving = true;
-        
-        try {
-          const url = this.editId 
-            ? `{{ route('sdm.kinerja.index') }}/${this.editId}`
-            : `{{ route('sdm.kinerja.store') }}`;
-          
-          const method = this.editId ? 'PUT' : 'POST';
-          
-          const response = await fetch(url, {
-            method: method,
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify(this.form)
-          });
-          
-          const data = await response.json();
-          
-          if (data.success) {
-            this.showNotification(data.message, 'success');
-            this.closeModal();
-            this.fetchData();
-            this.fetchStatistics();
-          } else {
-            this.showNotification(data.message || 'Terjadi kesalahan', 'error');
-          }
-        } catch (error) {
-          console.error('Error:', error);
-          this.showNotification('Terjadi kesalahan saat menyimpan', 'error');
-        } finally {
-          this.saving = false;
-        }
-      },
-
-      async deleteItem(id) {
-        if (!confirm('Apakah Anda yakin ingin menghapus penilaian ini?')) return;
-        
-        try {
-          const response = await fetch(`{{ route('sdm.kinerja.index') }}/${id}`, {
-            method: 'DELETE',
-            headers: {
-              'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            }
-          });
-          
-          const data = await response.json();
-          
-          if (data.success) {
-            this.showNotification(data.message, 'success');
-            this.fetchData();
-            this.fetchStatistics();
-          } else {
-            this.showNotification(data.message || 'Gagal menghapus data', 'error');
-          }
-        } catch (error) {
-          console.error('Error:', error);
-          this.showNotification('Terjadi kesalahan saat menghapus', 'error');
-        }
-      },
-
-      async viewDetail(id) {
-        try {
-          const response = await fetch(`{{ route('sdm.kinerja.index') }}/${id}`);
-          const data = await response.json();
-          
-          if (data.success) {
-            // Fetch full data with relationships
-            const item = data.data;
-            
-            // Find employee and evaluator names
-            const employee = this.employees.find(e => e.id === item.recruitment_id);
-            
-            this.detailData = {
-              ...item,
-              employee_name: item.employee_name,
-              employee_position: employee ? employee.position : '-',
-              appraisal_date: new Date(item.appraisal_date).toLocaleDateString('id-ID'),
-              evaluator_name: item.evaluator ? item.evaluator.name : '-',
-              grade_label: this.getGradeLabel(item.grade)
-            };
-            
-            this.showDetailModal = true;
-          }
-        } catch (error) {
-          console.error('Error:', error);
-          this.showNotification('Gagal memuat detail', 'error');
-        }
-      },
-
-      viewPdf(id) {
-        this.pdfUrl = `{{ route('sdm.kinerja.export.pdf') }}?id=${id}`;
-        this.showPdfModal = true;
-      },
-
-      exportPdf() {
-        const params = new URLSearchParams({
-          period_filter: this.periodFilter,
-          status_filter: this.statusFilter
-        });
-        this.pdfUrl = `{{ route('sdm.kinerja.export.pdf') }}?${params}`;
-        this.showPdfModal = true;
-      },
-
-      closeDetailModal() {
-        this.showDetailModal = false;
-        this.detailData = null;
-      },
-
-      closePdfModal() {
-        this.showPdfModal = false;
-        this.pdfUrl = '';
-      },
-
-      getGradeLabel(grade) {
-        const labels = {
-          'A': 'Sangat Baik',
-          'B': 'Baik',
-          'C': 'Cukup',
-          'D': 'Kurang',
-          'E': 'Sangat Kurang'
-        };
-        return labels[grade] || '-';
-      },
-
-      closeModal() {
-        this.showModal = false;
-        this.resetForm();
-      },
-
-      resetForm() {
-        this.form = {
-          outlet_id: this.outlets.length > 0 ? this.outlets[0].id_outlet : null,
-          recruitment_id: '',
-          period: new Date().toISOString().slice(0, 7),
-          appraisal_date: new Date().toISOString().slice(0, 10),
-          discipline_score: 0,
-          teamwork_score: 0,
-          work_result_score: 0,
-          initiative_score: 0,
-          kpi_score: 0,
-          evaluator_notes: '',
-          employee_notes: '',
-          improvement_plan: '',
-          status: 'draft'
-        };
-      },
-
-      showNotification(message, type = 'success') {
-        // Simple alert for now, can be replaced with toast notification
-        alert(message);
-      }
-    }
-  }
-  </script>
-  @endpush
 </x-layouts.admin>

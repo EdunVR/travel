@@ -230,15 +230,10 @@
                 <th class="text-center px-4 py-3">Status</th>
                 <th class="text-center px-4 py-3"><i class='bx bx-log-in'></i> Masuk</th>
                 <th class="text-center px-4 py-3"><i class='bx bx-camera'></i> Foto Masuk</th>
-                <th class="text-center px-4 py-3"><i class='bx bx-coffee'></i> Mulai Istirahat</th>
-                <th class="text-center px-4 py-3"><i class='bx bx-coffee'></i> Istirahat Selesai</th>
                 <th class="text-center px-4 py-3"><i class='bx bx-log-out'></i> Keluar</th>
                 <th class="text-center px-4 py-3"><i class='bx bx-camera'></i> Foto Keluar</th>
-                <th class="text-center px-4 py-3"><i class='bx bx-time'></i> Lembur Masuk</th>
-                <th class="text-center px-4 py-3"><i class='bx bx-time'></i> Lembur Keluar</th>
                 <th class="text-center px-4 py-3">Terlambat</th>
                 <th class="text-center px-4 py-3">Pulang Cepat</th>
-                <th class="text-center px-4 py-3">Lembur</th>
                 <th class="text-center px-4 py-3">Total Jam</th>
                 <th class="text-center px-4 py-3 w-32">Aksi</th>
               </tr>
@@ -281,8 +276,6 @@
                       <span class="text-slate-400 text-xs">-</span>
                     </template>
                   </td>
-                  <td class="px-4 py-3 text-center text-slate-600" x-text="item.break_in || '-'"></td>
-                  <td class="px-4 py-3 text-center text-slate-600" x-text="item.break_out || '-'"></td>  
                   <td class="px-4 py-3 text-center font-medium" x-text="item.clock_out || '-'"></td>
                   <td class="px-4 py-3 text-center">
                     <template x-if="item.clock_out_photo">
@@ -295,9 +288,7 @@
                     <template x-if="!item.clock_out_photo">
                       <span class="text-slate-400 text-xs">-</span>
                     </template>
-                  </td> 
-                  <td class="px-4 py-3 text-center text-slate-600" x-text="item.overtime_in || '-'"></td>
-                  <td class="px-4 py-3 text-center text-slate-600" x-text="item.overtime_out || '-'"></td>
+                  </td>
                   
                   <!-- Terlambat -->
                   <td class="px-4 py-3 text-center" 
@@ -310,12 +301,6 @@
                       x-data="{ early: calculateEarlyMinutes(item) }"
                       :class="early > 0 ? 'text-orange-600 font-medium' : 'text-slate-400'" 
                       x-text="early > 0 ? early + ' mnt' : '-'"></td>
-                  
-                  <!-- Lembur -->
-                  <td class="px-4 py-3 text-center" 
-                      x-data="{ overtimeHours: calculateOvertimeHours(item) }"
-                      :class="overtimeHours !== '-' ? 'text-emerald-600 font-medium' : 'text-slate-400'" 
-                      x-text="overtimeHours"></td>
 
                   <!-- Total Jam -->
                   <td class="px-4 py-3 text-center font-medium text-blue-600" 
@@ -342,7 +327,7 @@
                 </tr>
               </template>
               <tr x-show="attendances.length === 0">
-                <td colspan="20" class="px-4 py-8 text-center text-slate-500">Belum ada data / tidak ditemukan.</td>
+                <td colspan="16" class="px-4 py-8 text-center text-slate-500">Belum ada data / tidak ditemukan.</td>
               </tr>
             </tbody>
           </table>
@@ -705,67 +690,16 @@
         <!-- Content - Scrollable -->
         <div class="flex-1 overflow-y-auto">
           <div class="px-5 py-4">
-            <div class="space-y-4">
+            <div class="space-y-5">
               <!-- Info -->
               <div class="p-3 rounded-xl bg-blue-50 border border-blue-200">
                 <div class="flex items-start gap-2 text-sm text-blue-700">
                   <i class='bx bx-info-circle text-lg shrink-0'></i>
                   <div>
-                    <div class="font-medium">Pengaturan Range Waktu untuk RFID</div>
-                    <div class="mt-1">Atur range waktu untuk menentukan aksi otomatis saat tap kartu RFID</div>
-                    <div class="mt-1 text-xs"><strong>Format:</strong> 24 jam (HH:MM) - contoh: 08:00, 14:30, 22:15</div>
+                    <div class="font-medium">Pengaturan Jam Tap RFID</div>
+                    <div class="mt-1">Tentukan rentang waktu kapan karyawan boleh tap untuk masuk dan pulang. Format 24 jam (HH:MM).</div>
                   </div>
                 </div>
-              </div>
-
-              <!-- Time Settings Form -->
-              <div class="grid grid-cols-1 gap-4" x-show="timeSettings.length > 0">
-                <template x-for="(setting, index) in timeSettings" :key="setting.id">
-                  <div class="border border-slate-200 rounded-xl p-4">
-                    <div class="flex items-center justify-between mb-3">
-                      <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded-full" :class="{
-                          'bg-emerald-500': setting.name === 'check_in',
-                          'bg-amber-500': setting.name === 'break',
-                          'bg-blue-500': setting.name === 'check_out',
-                          'bg-purple-500': setting.name === 'overtime'
-                        }"></div>
-                        <h4 class="font-medium" x-text="getTimeSettingTitle(setting.name)"></h4>
-                      </div>
-                      <label class="inline-flex items-center gap-2 cursor-pointer" x-on:click.stop>
-                        <input type="checkbox" x-model="setting.is_active" class="rounded border-slate-300 text-purple-600 focus:ring-purple-200">
-                        <span class="text-sm text-slate-600">Aktif</span>
-                      </label>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-3">
-                      <div>
-                        <label class="text-sm text-slate-600">Jam Mulai (HH:MM)</label>
-                        <input type="time" 
-                               x-model="setting.start_time" 
-                                
-                               class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-purple-200" 
-                               placeholder="HH:MM atau HH:MM:SS (24 jam)" 
-                               pattern="[0-9]{2}:[0-9]{2}(:[0-9]{2})?"
-                               x-on:change="ensureTimeFormat($event.target)"
-                               x-on:blur="ensureTimeFormat($event.target)">
-                      </div>
-                      <div>
-                        <label class="text-sm text-slate-600">Jam Selesai (HH:MM)</label>
-                        <input type="time" 
-                               x-model="setting.end_time" 
-                                
-                               class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-purple-200" 
-                               placeholder="HH:MM atau HH:MM:SS (24 jam)" 
-                               pattern="[0-9]{2}:[0-9]{2}(:[0-9]{2})?"
-                               x-on:change="ensureTimeFormat($event.target)"
-                               x-on:blur="ensureTimeFormat($event.target)">
-                      </div>
-                    </div>
-                    
-                    <div class="mt-2 text-xs text-slate-500" x-text="setting.description"></div>
-                  </div>
-                </template>
               </div>
 
               <!-- Loading State -->
@@ -776,34 +710,71 @@
                 </div>
               </div>
 
-              <!-- Test Time Period -->
-              <div class="border-t border-slate-200 pt-4">
-                <h5 class="font-medium mb-3">Test Periode Waktu</h5>
-                <div class="flex gap-3">
-                  <div class="flex-1">
-                    <input type="time" 
-                           x-model="testTime" 
-                            
-                           placeholder="HH:MM atau HH:MM:SS (24 jam)" 
-                           pattern="[0-9]{2}:[0-9]{2}(:[0-9]{2})?" 
-                           class="w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-purple-200"
-                           x-on:change="ensureTimeFormat($event.target)"
-                           x-on:blur="ensureTimeFormat($event.target)">
+              <!-- Jam Masuk -->
+              <template x-if="!loadingTimeSettings">
+                <div class="space-y-4">
+                  <div class="border border-emerald-200 rounded-xl p-4 bg-emerald-50/40">
+                    <div class="flex items-center gap-2 mb-3">
+                      <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                      <h4 class="font-semibold text-emerald-800"><i class='bx bx-log-in mr-1'></i>Jam Masuk</h4>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-3">Karyawan hanya bisa tap masuk dalam rentang jam ini.</p>
+                    <div class="grid grid-cols-2 gap-3">
+                      <div>
+                        <label class="text-sm font-medium text-slate-700">Mulai</label>
+                        <div class="relative mt-1">
+                          <input type="text" id="rfid_ci_start" readonly
+                                 class="w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 cursor-pointer bg-white"
+                                 placeholder="HH:MM">
+                          <i class='bx bx-time-five absolute right-3 top-2.5 text-slate-400 pointer-events-none'></i>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">Default: 06:00</p>
+                      </div>
+                      <div>
+                        <label class="text-sm font-medium text-slate-700">Sampai</label>
+                        <div class="relative mt-1">
+                          <input type="text" id="rfid_ci_end" readonly
+                                 class="w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 cursor-pointer bg-white"
+                                 placeholder="HH:MM">
+                          <i class='bx bx-time-five absolute right-3 top-2.5 text-slate-400 pointer-events-none'></i>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">Default: 08:30</p>
+                      </div>
+                    </div>
                   </div>
-                  <button x-on:click="testTimePeriod()" :disabled="testingTime" class="rounded-lg bg-slate-600 text-white px-4 py-2 hover:bg-slate-700 disabled:opacity-50">
-                    <span x-show="!testingTime">Test</span>
-                    <span x-show="testingTime" class="inline-flex items-center gap-2">
-                      <i class='bx bx-loader-alt bx-spin'></i> Testing...
-                    </span>
-                  </button>
-                </div>
-                <div x-show="testResult" class="mt-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
-                  <div class="text-sm">
-                    <div><strong>Periode:</strong> <span x-text="testResult?.time_period || 'Diluar jam kerja'"></span></div>
-                    <div><strong>Aksi:</strong> <span x-text="testResult?.action_description || '-'"></span></div>
+
+                  <!-- Jam Pulang -->
+                  <div class="border border-blue-200 rounded-xl p-4 bg-blue-50/40">
+                    <div class="flex items-center gap-2 mb-3">
+                      <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                      <h4 class="font-semibold text-blue-800"><i class='bx bx-log-out mr-1'></i>Jam Pulang</h4>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-3">Karyawan hanya bisa tap pulang dalam rentang jam ini.</p>
+                    <div class="grid grid-cols-2 gap-3">
+                      <div>
+                        <label class="text-sm font-medium text-slate-700">Mulai</label>
+                        <div class="relative mt-1">
+                          <input type="text" id="rfid_co_start" readonly
+                                 class="w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 cursor-pointer bg-white"
+                                 placeholder="HH:MM">
+                          <i class='bx bx-time-five absolute right-3 top-2.5 text-slate-400 pointer-events-none'></i>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">Default: 17:00</p>
+                      </div>
+                      <div>
+                        <label class="text-sm font-medium text-slate-700">Sampai</label>
+                        <div class="relative mt-1">
+                          <input type="text" id="rfid_co_end" readonly
+                                 class="w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 cursor-pointer bg-white"
+                                 placeholder="HH:MM">
+                          <i class='bx bx-time-five absolute right-3 top-2.5 text-slate-400 pointer-events-none'></i>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">Default: 23:59</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </template>
             </div>
           </div>
         </div>
@@ -951,10 +922,14 @@
           apply_to_all: false
         },
         
-        // Time settings
+        // Time settings (simplified: only check_in and check_out windows)
         timeSettings: [],
         loadingTimeSettings: false,
         savingTimeSettings: false,
+        // check_in window
+        rfidCheckIn: { start: '06:00', end: '08:30' },
+        // check_out window
+        rfidCheckOut: { start: '17:00', end: '23:59' },
         testTime: '',
         testResult: null,
         testingTime: false,
@@ -1587,6 +1562,9 @@
         async openTimeSettings() {
           this.showTimeSettingsModal = true;
           await this.loadTimeSettings();
+          // Setelah data dimuat dan x-if sudah render, init flatpickr
+          await this.$nextTick();
+          setTimeout(() => initRfidFlatpickrs(this), 50);
         },
 
         async loadTimeSettings() {
@@ -1596,14 +1574,18 @@
             const result = await response.json();
 
             if (response.ok) {
-              this.timeSettings = result.settings.map(setting => ({
-                id: setting.id,
-                name: setting.name,
-                start_time: setting.start_time.substring(0, 5), // Remove seconds
-                end_time: setting.end_time.substring(0, 5), // Remove seconds
-                description: setting.description,
-                is_active: setting.is_active
-              }));
+              // Map only check_in and check_out from server into the two simplified objects
+              this.timeSettings = result.settings; // keep raw for save
+              const checkIn  = result.settings.find(s => s.name === 'check_in');
+              const checkOut = result.settings.find(s => s.name === 'check_out');
+              if (checkIn) {
+                this.rfidCheckIn.start = checkIn.start_time.substring(0, 5);
+                this.rfidCheckIn.end   = checkIn.end_time.substring(0, 5);
+              }
+              if (checkOut) {
+                this.rfidCheckOut.start = checkOut.start_time.substring(0, 5);
+                this.rfidCheckOut.end   = checkOut.end_time.substring(0, 5);
+              }
             } else {
               this.showToastMessage(result.message || 'Gagal memuat pengaturan waktu', 'error');
             }
@@ -1618,44 +1600,32 @@
         async saveTimeSettings() {
           this.savingTimeSettings = true;
           try {
-            // Ensure all time values are properly formatted before sending
-            const dataToSend = {
-              settings: this.timeSettings.map(setting => {
-                // Ensure time format is HH:MM
-                let startTime = setting.start_time || '';
-                let endTime = setting.end_time || '';
-                
-                // Convert and validate start_time
-                if (startTime) {
-                  startTime = this.formatTimeToHHMM(startTime);
-                }
-                
-                // Convert and validate end_time
-                if (endTime) {
-                  endTime = this.formatTimeToHHMM(endTime);
-                }
-                
-                // Validate that both times are present and valid
-                if (!startTime || !endTime) {
-                  throw new Error(`Pengaturan "${setting.name}" harus memiliki jam mulai dan jam selesai`);
-                }
-                
-                if (!startTime.match(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)) {
-                  throw new Error(`Format jam mulai tidak valid untuk "${setting.name}": ${startTime}`);
-                }
-                
-                if (!endTime.match(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)) {
-                  throw new Error(`Format jam selesai tidak valid untuk "${setting.name}": ${endTime}`);
-                }
-                
-                return {
-                  id: setting.id,
-                  start_time: startTime,
-                  end_time: endTime,
-                  is_active: setting.is_active
-                };
-              })
-            };
+            // Validate format
+            const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+            if (!timeRegex.test(this.rfidCheckIn.start) || !timeRegex.test(this.rfidCheckIn.end)) {
+              throw new Error('Format jam masuk tidak valid (HH:MM)');
+            }
+            if (!timeRegex.test(this.rfidCheckOut.start) || !timeRegex.test(this.rfidCheckOut.end)) {
+              throw new Error('Format jam pulang tidak valid (HH:MM)');
+            }
+
+            // Build payload: only update check_in and check_out rows; keep break/overtime untouched
+            const checkInRow  = this.timeSettings.find(s => s.name === 'check_in');
+            const checkOutRow = this.timeSettings.find(s => s.name === 'check_out');
+            const breakRow    = this.timeSettings.find(s => s.name === 'break');
+            const overtimeRow = this.timeSettings.find(s => s.name === 'overtime');
+
+            if (!checkInRow || !checkOutRow) {
+              throw new Error('Data pengaturan tidak lengkap, coba muat ulang halaman');
+            }
+
+            // Deactivate break and overtime rows — no longer used
+            const settings = [
+              { id: checkInRow.id,  start_time: this.rfidCheckIn.start,  end_time: this.rfidCheckIn.end,  is_active: true },
+              { id: checkOutRow.id, start_time: this.rfidCheckOut.start, end_time: this.rfidCheckOut.end, is_active: true },
+            ];
+            if (breakRow)    settings.push({ id: breakRow.id,    start_time: breakRow.start_time,    end_time: breakRow.end_time,    is_active: false });
+            if (overtimeRow) settings.push({ id: overtimeRow.id, start_time: overtimeRow.start_time, end_time: overtimeRow.end_time, is_active: false });
 
             const response = await fetch('{{ route("sdm.attendance.time.settings.update") }}', {
               method: 'POST',
@@ -1663,7 +1633,7 @@
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
               },
-              body: JSON.stringify(dataToSend)
+              body: JSON.stringify({ settings })
             });
 
             const result = await response.json();
@@ -1677,60 +1647,16 @@
             }
           } catch (error) {
             console.error('❌ Error saving time settings:', error);
-            this.showToastMessage('Gagal menyimpan pengaturan waktu', 'error');
+            this.showToastMessage(error.message || 'Gagal menyimpan pengaturan waktu', 'error');
           } finally {
             this.savingTimeSettings = false;
           }
         },
 
-        async testTimePeriod() {
-          if (!this.testTime) {
-            this.showToastMessage('Masukkan waktu untuk test', 'error');
-            return;
-          }
-
-          this.testingTime = true;
-          this.testResult = null;
-
-          try {
-            const response = await fetch('{{ route("sdm.attendance.test.time.period") }}', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-              },
-              body: JSON.stringify({
-                time: this.testTime
-              })
-            });
-
-            const result = await response.json();
-
-            if (response.ok && result) {
-              // Ensure result has the required properties
-              this.testResult = {
-                time_period: result.time_period || 'Diluar jam kerja',
-                action_description: result.action_description || 'Tidak ada aksi'
-              };
-            } else {
-              this.showToastMessage(result?.message || 'Gagal test periode waktu', 'error');
-              this.testResult = null;
-            }
-          } catch (error) {
-            console.error('Error testing time period:', error);
-            this.showToastMessage('Gagal test periode waktu', 'error');
-            this.testResult = null;
-          } finally {
-            this.testingTime = false;
-          }
-        },
-
         getTimeSettingTitle(name) {
           const titles = {
-            'check_in': 'Jam Masuk (07:00 - 09:00)',
-            'break': 'Jam Istirahat (11:01 - 14:00)',
-            'check_out': 'Jam Pulang (14:01 - 18:00)',
-            'overtime': 'Jam Lembur (18:01 - 03:30)'
+            'check_in':  'Jam Masuk',
+            'check_out': 'Jam Pulang',
           };
           return titles[name] || name;
         },
@@ -2131,4 +2057,42 @@
       content: "" !important;
     }
   </style>
+
+  {{-- Flatpickr: time-only picker 24 jam untuk modal Pengaturan Waktu RFID --}}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script>
+    // Init 4 flatpickr time pickers setelah modal terbuka dan data sudah dimuat
+    // Dipanggil dari openTimeSettings() Alpine setelah loadTimeSettings() selesai
+    function initRfidFlatpickrs(alpineData) {
+      const fields = [
+        { id: 'rfid_ci_start', get: () => alpineData.rfidCheckIn.start,  set: v => alpineData.rfidCheckIn.start  = v },
+        { id: 'rfid_ci_end',   get: () => alpineData.rfidCheckIn.end,    set: v => alpineData.rfidCheckIn.end    = v },
+        { id: 'rfid_co_start', get: () => alpineData.rfidCheckOut.start, set: v => alpineData.rfidCheckOut.start = v },
+        { id: 'rfid_co_end',   get: () => alpineData.rfidCheckOut.end,   set: v => alpineData.rfidCheckOut.end   = v },
+      ];
+
+      fields.forEach(f => {
+        const el = document.getElementById(f.id);
+        if (!el) return;
+
+        // Destroy dulu jika sudah pernah di-init (modal dibuka ulang)
+        if (el._flatpickr) {
+          el._flatpickr.destroy();
+        }
+
+        flatpickr(el, {
+          enableTime:   true,
+          noCalendar:   true,
+          dateFormat:   'H:i',
+          time_24hr:    true,
+          allowInput:   false,
+          defaultDate:  f.get() || undefined,
+          onChange(selectedDates, dateStr) {
+            f.set(dateStr); // sync ke Alpine state
+          }
+        });
+      });
+    }
+  </script>
 </x-layouts.admin>

@@ -84,121 +84,30 @@ class AttendanceTimeSetting extends Model
 
     /**
      * Determine next action based on current attendance and time period
-     * Following the new algorithm logic
+     * Simplified: only check_in and check_out periods
      */
     public static function determineNextAction($attendance, $currentTimePeriod, $currentTime = null)
     {
         switch ($currentTimePeriod) {
             case 'check_in':
-                // RANGE JAM MASUK: Selalu isi clock_in (replace jika sudah ada)
+                // Dalam range jam masuk → selalu clock_in
                 return 'clock_in';
-
-            case 'break':
-                // RANGE JAM ISTIRAHAT
-                // Jika clock_in belum ada, isi clock_in terlebih dahulu
-                if (!$attendance || !$attendance->clock_in) {
-                    return 'clock_in';
-                }
-                
-                // Jika break_in belum ada, isi break_in
-                if (!$attendance->break_in) {
-                    return 'break_in';
-                } else {
-                    // Jika break_in sudah ada, isi break_out (replace jika sudah ada)
-                    return 'break_out';
-                }
 
             case 'check_out':
-                // RANGE JAM PULANG
-                // Jika clock_in belum ada, isi clock_in terlebih dahulu
+                // Dalam range jam pulang
+                // Jika belum clock_in, isi clock_in dulu
                 if (!$attendance || !$attendance->clock_in) {
                     return 'clock_in';
                 }
-                
-                // Jika break_in belum ada, isi break_in
-                if (!$attendance->break_in) {
-                    return 'break_in';
-                }
-                
-                // Jika break_out belum ada, isi break_out
-                if (!$attendance->break_out) {
-                    return 'break_out';
-                }
-                
-                // Semua field sebelumnya sudah terisi, isi clock_out (replace jika sudah ada)
+                // Sudah clock_in → clock_out
                 return 'clock_out';
 
-            case 'overtime':
-                // RANGE JAM LEMBUR
-                // Jika clock_in belum ada, isi clock_in terlebih dahulu
-                if (!$attendance || !$attendance->clock_in) {
-                    return 'clock_in';
-                }
-                
-                // Jika break_in belum ada, isi break_in
-                if (!$attendance->break_in) {
-                    return 'break_in';
-                }
-                
-                // Jika break_out belum ada, isi break_out
-                if (!$attendance->break_out) {
-                    return 'break_out';
-                }
-                
-                // Jika clock_out belum ada, isi clock_out
-                if (!$attendance->clock_out) {
-                    return 'clock_out';
-                }
-                
-                // Jika overtime_in belum ada, isi overtime_in
-                if (!$attendance->overtime_in) {
-                    return 'overtime_in';
-                } else {
-                    // Jika overtime_in sudah ada, isi overtime_out (replace jika sudah ada)
-                    return 'overtime_out';
-                }
-
             default:
-                // Outside defined periods - follow sequential logic
+                // Di luar range yang ditentukan
                 if (!$attendance || !$attendance->clock_in) {
                     return 'clock_in';
                 }
-                
-                // If clock_in exists but break_in doesn't, and it's reasonable time for break
-                if (!$attendance->break_in && $currentTime) {
-                    $currentHour = (int) substr($currentTime, 0, 2);
-                    // If it's between 10 AM and 3 PM, could be break time
-                    if ($currentHour >= 10 && $currentHour <= 15) {
-                        return 'break_in';
-                    }
-                }
-                
-                // If break_in exists but break_out doesn't
-                if ($attendance->break_in && !$attendance->break_out) {
-                    return 'break_out';
-                }
-                
-                // If break is complete but no clock_out
-                if ($attendance->break_in && $attendance->break_out && !$attendance->clock_out) {
-                    return 'clock_out';
-                }
-                
-                // If all basic attendance is complete, could be overtime
-                if ($attendance->clock_out && !$attendance->overtime_in && $currentTime) {
-                    $currentHour = (int) substr($currentTime, 0, 2);
-                    // If it's after 6 PM, could be overtime
-                    if ($currentHour >= 18) {
-                        return 'overtime_in';
-                    }
-                }
-                
-                // If overtime_in exists but overtime_out doesn't
-                if ($attendance->overtime_in && !$attendance->overtime_out) {
-                    return 'overtime_out';
-                }
-                
-                // Default fallback
-                return 'clock_in';
+                return 'clock_out';
         }
     }
 
@@ -208,12 +117,8 @@ class AttendanceTimeSetting extends Model
     public static function getActionDescription($action)
     {
         $descriptions = [
-            'clock_in' => 'Masuk kerja',
+            'clock_in'  => 'Masuk kerja',
             'clock_out' => 'Pulang kerja',
-            'break_in' => 'Mulai istirahat',
-            'break_out' => 'Selesai istirahat',
-            'overtime_in' => 'Mulai lembur',
-            'overtime_out' => 'Selesai lembur'
         ];
 
         return $descriptions[$action] ?? $action;

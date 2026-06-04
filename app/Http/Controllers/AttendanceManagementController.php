@@ -1290,6 +1290,9 @@ class AttendanceManagementController extends Controller
             $attendance->autoCalculate();
             $attendance->save();
 
+            // Hitung late_minutes untuk ditampilkan di mesin RFID
+            $lateMinutes = (int) ($attendance->late_minutes ?? 0);
+
             return response()->json([
                 'success' => true,
                 'message' => "Attendance recorded: {$result['description']}",
@@ -1300,14 +1303,17 @@ class AttendanceManagementController extends Controller
                     'position' => $employee->position
                 ],
                 'attendance' => [
-                    'condition' => $result['condition'],
-                    'time' => $currentTime,
-                    'photo_path' => $photoPath,
+                    'condition'   => $result['condition'],
+                    'time'        => $currentTime,
+                    'photo_path'  => $photoPath,
                     'time_period' => $timePeriod,
-                    'next_action' => $nextAction
+                    'next_action' => $nextAction,
+                    'status'      => $attendance->status ?? 'present',
                 ],
-                'type' => $result['condition'], // check_in, break, check_out, etc
-                'time' => $now->format('H:i')  // Format jam:menit untuk ditampilkan di TFT
+                'type'         => $result['condition'],
+                'time'         => $now->format('H:i'),
+                'late_minutes' => $lateMinutes,            // untuk mesin RFID: deteksi terlambat
+                'status'       => $attendance->status ?? 'present', // present | late
             ]);
 
         } catch (\Exception $e) {
@@ -1404,62 +1410,6 @@ class AttendanceManagementController extends Controller
                         $result = ['condition' => 'pulang', 'description' => 'Clock out recorded'];
                     } else {
                         $result = ['condition' => 'sudah_pulang', 'description' => 'Already clocked out'];
-                    }
-                    break;
-
-                case 'break_in':
-                    // Only update if not set, or if we're in break period (can replace)
-                    $timePeriod = AttendanceTimeSetting::getCurrentTimePeriod($currentTime);
-                    if (!$attendance->break_in || $timePeriod === 'break') {
-                        $attendance->break_in = $currentTime;
-                        if ($photoPath) {
-                            $attendance->break_in_photo = $photoPath;
-                        }
-                        $result = ['condition' => 'mulai_istirahat', 'description' => 'Break start recorded'];
-                    } else {
-                        $result = ['condition' => 'sudah_istirahat', 'description' => 'Break already started'];
-                    }
-                    break;
-
-                case 'break_out':
-                    // Only update if not set, or if we're in break period (can replace)
-                    $timePeriod = AttendanceTimeSetting::getCurrentTimePeriod($currentTime);
-                    if (!$attendance->break_out || $timePeriod === 'break') {
-                        $attendance->break_out = $currentTime;
-                        if ($photoPath) {
-                            $attendance->break_out_photo = $photoPath;
-                        }
-                        $result = ['condition' => 'selesai_istirahat', 'description' => 'Break end recorded'];
-                    } else {
-                        $result = ['condition' => 'istirahat_selesai', 'description' => 'Break already ended'];
-                    }
-                    break;
-
-                case 'overtime_in':
-                    // Only update if not set, or if we're in overtime period (can replace)
-                    $timePeriod = AttendanceTimeSetting::getCurrentTimePeriod($currentTime);
-                    if (!$attendance->overtime_in || $timePeriod === 'overtime') {
-                        $attendance->overtime_in = $currentTime;
-                        if ($photoPath) {
-                            $attendance->overtime_in_photo = $photoPath;
-                        }
-                        $result = ['condition' => 'lembur_masuk', 'description' => 'Overtime start recorded'];
-                    } else {
-                        $result = ['condition' => 'sudah_lembur', 'description' => 'Overtime already started'];
-                    }
-                    break;
-
-                case 'overtime_out':
-                    // Only update if not set, or if we're in overtime period (can replace)
-                    $timePeriod = AttendanceTimeSetting::getCurrentTimePeriod($currentTime);
-                    if (!$attendance->overtime_out || $timePeriod === 'overtime') {
-                        $attendance->overtime_out = $currentTime;
-                        if ($photoPath) {
-                            $attendance->overtime_out_photo = $photoPath;
-                        }
-                        $result = ['condition' => 'lembur_keluar', 'description' => 'Overtime end recorded'];
-                    } else {
-                        $result = ['condition' => 'lembur_selesai', 'description' => 'Overtime already ended'];
                     }
                     break;
 
