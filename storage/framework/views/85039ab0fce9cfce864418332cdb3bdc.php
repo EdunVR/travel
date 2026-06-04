@@ -899,15 +899,15 @@
     <div id="global-loading"
         class="fixed inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-md z-[9999] transition-opacity duration-700 opacity-100">
     <!-- LOGO DENGAN ANIMASI PULSASI -->
-    <div class="relative">
+    <div class="relative flex items-center justify-center">
         <img src="<?php echo e(url(asset('img/logo_xx.png'))); ?>"
-            class="w-20 h-20 animate-bounce drop-shadow-lg" />
+            class="w-20 h-20 animate-bounce drop-shadow-lg relative z-10" />
         <!-- RING CAHAYA INTERAKTIF -->
         <div class="absolute inset-0 rounded-full border-4 border-red-500 animate-ping"></div>
     </div>
 
     <!-- TEKS LOADING DENGAN GRADIENT -->
-    <div class="mt-6 text-lg font-semibold bg-gradient-to-r from-red-600 to-orange-500 bg-clip-text text-transparent animate-pulse">
+    <div class="mt-6 text-lg font-semibold bg-gradient-to-r from-red-600 to-orange-500 bg-clip-text text-transparent animate-pulse text-center">
         Memuat data, mohon tunggu...
     </div>
     </div>
@@ -1087,7 +1087,8 @@
                                 :class="activeTab === tab.id ? 'hover:bg-primary-200' : ''"
                                 title="Refresh Tab"
                             >
-                                <i class='bx bx-refresh text-lg'></i>
+                                <i class='bx bx-refresh text-lg'
+                                   :class="refreshingTabId === tab.id ? 'animate-spin' : ''"></i>
                             </button>
                             
                             
@@ -1253,6 +1254,7 @@ function tabSystem() {
     return {
         tabs: [],
         activeTab: null,
+        refreshingTabId: null,
         tabCounter: 0,
         navigationIntercepted: false,
 
@@ -1828,34 +1830,42 @@ function tabSystem() {
             const id = tabId || this.activeTab;
             const tab = this.tabs.find(t => t.id === id);
             if (!tab) return;
-            
+
             console.log('🔄 Refreshing tab:', id, tab.title);
-            
+
+            // Mulai animasi spin
+            this.refreshingTabId = id;
+
             if (tab.type === 'initial') {
-                // Reload entire page for initial tab
                 window.location.reload();
             } else if (tab.type === 'empty') {
                 // Do nothing for empty tab
                 console.log('⚠️ Cannot refresh empty tab');
+                this.refreshingTabId = null;
                 return;
             } else if (tab.type === 'iframe' && tab.url) {
                 // Reload iframe by updating src
                 const iframe = document.querySelector(`#tab-content-${id} iframe`);
                 if (iframe) {
                     tab.loading = true;
-                    // Force reload by setting src again
                     const currentSrc = iframe.src;
                     iframe.src = 'about:blank';
                     setTimeout(() => {
                         iframe.src = currentSrc;
                         console.log('✅ Iframe reloaded');
+                        // Stop spin setelah iframe mulai load (~1.5 detik)
+                        setTimeout(() => { this.refreshingTabId = null; }, 1500);
                     }, 100);
+                } else {
+                    this.refreshingTabId = null;
                 }
             } else {
                 // Reload content for AJAX tabs
                 tab.loading = true;
                 tab.content = null;
                 this.loadTabContent(tab);
+                // Stop spin setelah konten mulai diload
+                setTimeout(() => { this.refreshingTabId = null; }, 1500);
             }
         },
 

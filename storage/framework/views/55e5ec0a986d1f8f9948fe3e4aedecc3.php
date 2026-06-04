@@ -12,9 +12,16 @@
     <!-- Header -->
     <div class="mb-6">
         <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">Verifikasi Pembayaran</h1>
-                <p class="text-gray-600 mt-1">Verifikasi pembayaran yang masuk dari jamaah</p>
+            <div class="flex items-center gap-3">
+                <button onclick="history.back()"
+                        class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm transition-colors">
+                    <i class="fas fa-arrow-left text-xs"></i>
+                    Kembali
+                </button>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Verifikasi Pembayaran</h1>
+                    <p class="text-gray-600 mt-1">Verifikasi pembayaran yang masuk dari jamaah</p>
+                </div>
             </div>
             <div class="flex items-center gap-3">
                 <div class="bg-amber-100 text-amber-800 px-4 py-2 rounded-lg font-semibold">
@@ -173,10 +180,10 @@
     </div>
 </div>
 
-<!-- Modal untuk melihat bukti transfer -->
-<div id="proofModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
-        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+<!-- Modal untuk melihat bukti transfer — posisi top-center -->
+<div id="proofModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start justify-center p-4 pt-16 overflow-y-auto">
+    <div class="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-auto">
+        <div class="p-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white z-10">
             <h3 class="text-lg font-semibold text-gray-900">Bukti Transfer</h3>
             <button onclick="closeProofModal()" class="text-gray-400 hover:text-gray-600">
                 <i class="fas fa-times text-xl"></i>
@@ -191,17 +198,27 @@
 <?php $__env->startPush('scripts'); ?>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+// Default Swal config — semua dialog muncul di top-center
+const SwalTop = Swal.mixin({
+    position: 'top',
+    customClass: {
+        popup: 'swal2-top-popup',
+    }
+});
+
 function viewProof(imageUrl) {
     document.getElementById('proofImage').src = imageUrl;
     document.getElementById('proofModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
 }
 
 function closeProofModal() {
     document.getElementById('proofModal').classList.add('hidden');
+    document.body.style.overflow = '';
 }
 
 function verifyPayment(paymentId) {
-    Swal.fire({
+    SwalTop.fire({
         title: 'Verifikasi Pembayaran?',
         text: 'Pembayaran akan diverifikasi dan jamaah akan menerima notifikasi',
         icon: 'question',
@@ -212,17 +229,13 @@ function verifyPayment(paymentId) {
         cancelButtonText: 'Batal'
     }).then((result) => {
         if (result.isConfirmed) {
-            // Show loading
-            Swal.fire({
+            SwalTop.fire({
                 title: 'Memproses...',
                 text: 'Mohon tunggu',
                 allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
+                didOpen: () => { Swal.showLoading(); }
             });
 
-            // Submit form
             fetch(`<?php echo e(url('admin/inventaris/travel/payment')); ?>/${paymentId}/verify`, {
                 method: 'POST',
                 headers: {
@@ -230,117 +243,85 @@ function verifyPayment(paymentId) {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 }
             })
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    Swal.fire({
+                    SwalTop.fire({
                         icon: 'success',
                         title: 'Berhasil!',
                         text: 'Pembayaran telah diverifikasi',
                         timer: 2000,
                         showConfirmButton: false
-                    }).then(() => {
-                        window.location.reload();
-                    });
+                    }).then(() => window.location.reload());
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal',
-                        text: data.message || 'Terjadi kesalahan'
-                    });
+                    SwalTop.fire({ icon: 'error', title: 'Gagal', text: data.message || 'Terjadi kesalahan' });
                 }
             })
-            .catch(error => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Terjadi kesalahan saat memproses'
-                });
+            .catch(() => {
+                SwalTop.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan saat memproses' });
             });
         }
     });
 }
 
 function rejectPayment(paymentId) {
-    Swal.fire({
+    SwalTop.fire({
         title: 'Tolak Pembayaran?',
         text: 'Jamaah akan diminta untuk upload ulang bukti transfer',
         icon: 'warning',
         input: 'textarea',
         inputLabel: 'Alasan Penolakan',
         inputPlaceholder: 'Masukkan alasan penolakan...',
-        inputAttributes: {
-            'aria-label': 'Alasan penolakan'
-        },
+        inputAttributes: { 'aria-label': 'Alasan penolakan' },
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         cancelButtonColor: '#6b7280',
         confirmButtonText: 'Ya, Tolak',
         cancelButtonText: 'Batal',
         inputValidator: (value) => {
-            if (!value) {
-                return 'Alasan penolakan harus diisi!';
-            }
+            if (!value) return 'Alasan penolakan harus diisi!';
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            // Show loading
-            Swal.fire({
+            SwalTop.fire({
                 title: 'Memproses...',
                 text: 'Mohon tunggu',
                 allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
+                didOpen: () => { Swal.showLoading(); }
             });
 
-            // Submit form
             fetch(`<?php echo e(url('admin/inventaris/travel/payment')); ?>/${paymentId}/reject`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 },
-                body: JSON.stringify({
-                    rejection_reason: result.value
-                })
+                body: JSON.stringify({ rejection_reason: result.value })
             })
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    Swal.fire({
+                    SwalTop.fire({
                         icon: 'success',
                         title: 'Berhasil!',
                         text: 'Pembayaran telah ditolak',
                         timer: 2000,
                         showConfirmButton: false
-                    }).then(() => {
-                        window.location.reload();
-                    });
+                    }).then(() => window.location.reload());
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal',
-                        text: data.message || 'Terjadi kesalahan'
-                    });
+                    SwalTop.fire({ icon: 'error', title: 'Gagal', text: data.message || 'Terjadi kesalahan' });
                 }
             })
-            .catch(error => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Terjadi kesalahan saat memproses'
-                });
+            .catch(() => {
+                SwalTop.fire({ icon: 'error', title: 'Error', text: 'Terjadi kesalahan saat memproses' });
             });
         }
     });
 }
 
-// Close modal when clicking outside
+// Close proof modal when clicking backdrop
 document.getElementById('proofModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeProofModal();
-    }
+    if (e.target === this) closeProofModal();
 });
 </script>
 <?php $__env->stopPush(); ?>
