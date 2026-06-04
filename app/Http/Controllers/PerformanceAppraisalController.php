@@ -49,13 +49,14 @@ class PerformanceAppraisalController extends Controller
     {
         $userId = $request->get('user_id');
 
-        // User biasa hanya boleh lihat miliknya sendiri
+        // User biasa hanya boleh lihat miliknya sendiri (abaikan user_id dari request)
         if (!$this->isSuperAdmin()) {
             $userId = auth()->id();
         }
 
+        // Super admin tanpa user_id → fallback ke dirinya sendiri
         if (!$userId) {
-            return response()->json(['success' => false, 'message' => 'user_id required'], 422);
+            $userId = auth()->id();
         }
 
         $targets = JobTarget::where('user_id', $userId)
