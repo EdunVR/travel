@@ -283,6 +283,52 @@
                                     </div>
                                 </div>
                             </div>
+
+                            {{-- ── Buat Akun User Akses ─────────────────────────────────── --}}
+                            <div class="md:col-span-2" id="createUserSection">
+                                <div class="border border-slate-200 rounded-xl p-4 bg-slate-50">
+                                    <label class="flex items-center gap-3 cursor-pointer select-none">
+                                        <input type="checkbox" id="create_user" onchange="toggleUserFields(this.checked)"
+                                               class="w-4 h-4 text-primary-600 rounded border-slate-300">
+                                        <span class="font-medium text-slate-700">Buat juga akun user untuk akses aplikasi</span>
+                                    </label>
+
+                                    <div id="userAccessFields" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 mb-2">
+                                                Role / Hak Akses <span class="text-red-500">*</span>
+                                            </label>
+                                            <select id="user_role_id" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                                                <option value="">— Pilih Role —</option>
+                                                @foreach($roles as $role)
+                                                    <option value="{{ $role->id }}">{{ $role->display_name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 mb-2">
+                                                Password <span class="text-red-500">*</span>
+                                            </label>
+                                            <div class="relative">
+                                                <input type="password" id="user_password"
+                                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg pr-10"
+                                                       placeholder="Min. 6 karakter">
+                                                <button type="button" onclick="togglePasswordVisibility()"
+                                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                                    <i class='bx bx-hide' id="passwordEyeIcon"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="md:col-span-2">
+                                            <p class="text-xs text-slate-500 flex items-start gap-1.5">
+                                                <i class='bx bx-info-circle text-blue-400 text-sm mt-0.5'></i>
+                                                Username login menggunakan <strong>Email</strong> karyawan. Pastikan email sudah diisi dan belum terdaftar.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                     <div class="modal-footer border-t border-slate-200 bg-slate-50">
@@ -437,6 +483,10 @@
             $('#employeeForm')[0].reset();
             $('#employeeId').val('');
             resetJobdesk();
+            // Reset user access fields
+            $('#create_user').prop('checked', false);
+            $('#userAccessFields').addClass('hidden');
+            $('#createUserSection').show();
             $('#employeeModal').modal('show');
         }
 
@@ -466,6 +516,11 @@
                     
                     loadJobdesk(emp.jobdesk);
                     
+                    // Sembunyikan section buat user saat edit
+                    $('#create_user').prop('checked', false);
+                    $('#userAccessFields').addClass('hidden');
+                    $('#createUserSection').hide();
+
                     $('#employeeModal').modal('show');
                 }
             } catch (error) {
@@ -484,22 +539,47 @@
                 if (val) jobdesk.push(val);
             });
 
+            const createUser = !id && $('#create_user').is(':checked');
+
+            // Validasi client-side untuk field user akses
+            if (createUser) {
+                if (!$('#email').val().trim()) {
+                    alert('Email wajib diisi untuk membuat akun user.');
+                    $('#email').focus();
+                    return;
+                }
+                if (!$('#user_role_id').val()) {
+                    alert('Pilih Role untuk akun user.');
+                    $('#user_role_id').focus();
+                    return;
+                }
+                if (!$('#user_password').val() || $('#user_password').val().length < 6) {
+                    alert('Password minimal 6 karakter.');
+                    $('#user_password').focus();
+                    return;
+                }
+            }
+
             const data = {
-                outlet_id: $('#outlet_id').val(),
-                name: $('#name').val(),
-                position: $('#position').val(),
-                department: $('#department').val(),
-                status: $('#status').val(),
-                phone: $('#phone').val(),
-                email: $('#email').val(),
-                address: $('#address').val(),
-                salary: $('#salary').val(),
-                hourly_rate: $('#hourly_rate').val(),
-                join_date: $('#join_date').val(),
-                fingerprint_id: $('#fingerprint_id').val(),
-                rfid_uid: $('#rfid_uid').val(),
-                jobdesk: jobdesk,
-                _token: '{{ csrf_token() }}'
+                outlet_id:     $('#outlet_id').val(),
+                name:          $('#name').val(),
+                position:      $('#position').val(),
+                department:    $('#department').val(),
+                status:        $('#status').val(),
+                phone:         $('#phone').val(),
+                email:         $('#email').val(),
+                address:       $('#address').val(),
+                salary:        $('#salary').val(),
+                hourly_rate:   $('#hourly_rate').val(),
+                join_date:     $('#join_date').val(),
+                fingerprint_id:$('#fingerprint_id').val(),
+                rfid_uid:      $('#rfid_uid').val(),
+                jobdesk:       jobdesk,
+                // User akses fields
+                create_user:   createUser,
+                user_role_id:  createUser ? $('#user_role_id').val() : null,
+                user_password: createUser ? $('#user_password').val() : null,
+                _token:        '{{ csrf_token() }}'
             };
 
             try {
@@ -620,6 +700,35 @@
                 department_filter: $('#departmentFilter').val()
             });
             window.location.href = `{{ route('sdm.kepegawaian.export.excel') }}?${params}`;
+        }
+
+        // ── User Access Helper Functions ─────────────────────────────────────────
+        function toggleUserFields(checked) {
+            if (checked) {
+                $('#userAccessFields').removeClass('hidden');
+                // Jika email sudah diisi, fokus ke role
+                if ($('#email').val().trim()) {
+                    $('#user_role_id').focus();
+                } else {
+                    $('#email').focus();
+                }
+            } else {
+                $('#userAccessFields').addClass('hidden');
+                $('#user_role_id').val('');
+                $('#user_password').val('');
+            }
+        }
+
+        function togglePasswordVisibility() {
+            const input = document.getElementById('user_password');
+            const icon  = document.getElementById('passwordEyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'bx bx-show';
+            } else {
+                input.type = 'password';
+                icon.className = 'bx bx-hide';
+            }
         }
 
         // RFID Detection Functions

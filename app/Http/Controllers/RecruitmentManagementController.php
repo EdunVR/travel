@@ -21,7 +21,10 @@ class RecruitmentManagementController extends Controller
     public function index(Request $request)
     {
         $outlets = $this->getUserOutlets();
-        return view('admin.sdm.kepegawaian.index', compact('outlets'));
+        $roles = \App\Models\Role::where('is_active', 1)
+            ->orderBy('display_name')
+            ->get(['id', 'name', 'display_name']);
+        return view('admin.sdm.kepegawaian.index', compact('outlets', 'roles'));
     }
 
     /**
@@ -119,68 +122,98 @@ class RecruitmentManagementController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'outlet_id' => 'required|exists:outlets,id_outlet',
-            'name' => 'required|string|max:255',
-            'position' => 'required|string|max:255',
-            'department' => 'nullable|string|max:255',
-            'status' => 'required|in:active,inactive,resigned',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string',
-            'salary' => 'nullable|numeric|min:0',
-            'hourly_rate' => 'nullable|numeric|min:0',
-            'join_date' => 'nullable|date',
+        $rules = [
+            'outlet_id'    => 'required|exists:outlets,id_outlet',
+            'name'         => 'required|string|max:255',
+            'position'     => 'required|string|max:255',
+            'department'   => 'nullable|string|max:255',
+            'status'       => 'required|in:active,inactive,resigned',
+            'phone'        => 'nullable|string|max:20',
+            'email'        => 'nullable|email|max:255',
+            'address'      => 'nullable|string',
+            'salary'       => 'nullable|numeric|min:0',
+            'hourly_rate'  => 'nullable|numeric|min:0',
+            'join_date'    => 'nullable|date',
             'fingerprint_id' => 'nullable|string|max:50',
-            'rfid_uid' => 'nullable|string|max:50',
-            'jobdesk' => 'nullable|array',
+            'rfid_uid'     => 'nullable|string|max:50',
+            'jobdesk'      => 'nullable|array',
+            // User akses
+            'create_user'  => 'nullable|boolean',
+            'user_role_id' => 'required_if:create_user,true|nullable|exists:roles,id',
+            'user_password'=> 'required_if:create_user,true|nullable|string|min:6',
+        ];
+
+        // Jika buat user, email wajib ada dan harus unik
+        if ($request->boolean('create_user')) {
+            $rules['email'] = 'required|email|max:255|unique:users,email';
+        }
+
+        $validator = Validator::make($request->all(), $rules, [
+            'email.unique'         => 'Email sudah digunakan oleh akun user lain.',
+            'user_role_id.required_if' => 'Role wajib dipilih jika membuat akun user.',
+            'user_password.required_if' => 'Password wajib diisi jika membuat akun user.',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
+                'message' => $validator->errors()->first(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
-        // Validate outlet access
         $this->validateOutletAccess($request->outlet_id);
 
         try {
             DB::beginTransaction();
 
             $data = $request->only([
-                'outlet_id', 'name', 'position', 'department', 'status', 
-                'phone', 'email', 'address', 'salary', 
-                'hourly_rate', 'join_date', 'fingerprint_id', 'rfid_uid', 'jobdesk'
+                'outlet_id', 'name', 'position', 'department', 'status',
+                'phone', 'email', 'address', 'salary',
+                'hourly_rate', 'join_date', 'fingerprint_id', 'rfid_uid', 'jobdesk',
             ]);
 
-            // Normalize rfid_uid ke uppercase
             if (!empty($data['rfid_uid'])) {
                 $data['rfid_uid'] = strtoupper($data['rfid_uid']);
             }
-
-            // Set fingerprint registration status
             $data['is_registered_fingerprint'] = !empty($data['fingerprint_id']);
 
             $employee = Recruitment::create($data);
 
+            // Buat akun user jika dicentang
+            $userCreated = false;
+            if ($request->boolean('create_user')) {
+                \App\Models\User::create([
+                    'name'      => $employee->name,
+                    'email'     => $employee->email,
+                    'password'  => bcrypt($request->user_password),
+                    'role_id'   => $request->user_role_id,
+                    'is_active' => true,
+                    'id_outlet' => $employee->outlet_id,
+                ]);
+                $userCreated = true;
+            }
+
             DB::commit();
+
+            $message = 'Karyawan berhasil ditambahkan';
+            if ($userCreated) {
+                $message .= '. Akun user berhasil dibuat.';
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Karyawan berhasil ditambahkan',
-                'data' => $employee
+                'message' => $message,
+                'data'    => $employee,
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Error creating employee: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat menyimpan data'
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
             ], 500);
         }
     }
