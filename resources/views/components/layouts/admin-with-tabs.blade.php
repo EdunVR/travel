@@ -897,19 +897,23 @@
     
     <!-- GLOBAL LOADING OVERLAY -->
     <div id="global-loading"
-        class="fixed inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-md z-[9999] transition-opacity duration-700 opacity-100">
-    <!-- LOGO DENGAN ANIMASI PULSASI -->
-    <div class="relative flex items-center justify-center">
-        <img src="{{ url(asset('img/logo_xx.png')) }}"
-            class="w-20 h-20 animate-bounce drop-shadow-lg relative z-10" />
-        <!-- RING CAHAYA INTERAKTIF -->
-        <div class="absolute inset-0 rounded-full border-4 border-red-500 animate-ping"></div>
-    </div>
+        style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);z-index:9999;transition:opacity 0.4s ease;"
+        class="transition-opacity duration-700">
+        <!-- LOGO DENGAN ANIMASI PULSASI -->
+        <div style="position:relative;display:flex;align-items:center;justify-content:center;width:80px;height:80px;">
+            <img src="{{ url(asset('img/logo_xx.png')) }}"
+                style="width:80px;height:80px;object-fit:contain;position:relative;z-index:2;"
+                class="animate-bounce drop-shadow-lg" />
+            <!-- RING CAHAYA INTERAKTIF -->
+            <div style="position:absolute;inset:0;border-radius:9999px;border:4px solid #ef4444;"
+                 class="animate-ping"></div>
+        </div>
 
-    <!-- TEKS LOADING DENGAN GRADIENT -->
-    <div class="mt-6 text-lg font-semibold bg-gradient-to-r from-red-600 to-orange-500 bg-clip-text text-transparent animate-pulse text-center">
-        Memuat data, mohon tunggu...
-    </div>
+        <!-- TEKS LOADING -->
+        <div style="margin-top:1.5rem;font-size:1.125rem;font-weight:600;text-align:center;background:linear-gradient(to right,#dc2626,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"
+             class="animate-pulse">
+            Memuat data, mohon tunggu...
+        </div>
     </div>
 
 
