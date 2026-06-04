@@ -7,6 +7,7 @@ use App\Models\JobGradeSetting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PerformanceAppraisalController extends Controller
 {
@@ -231,16 +232,38 @@ class PerformanceAppraisalController extends Controller
             'grades.*.color'        => 'required|string|max:50',
         ]);
 
-        DB::beginTransaction();
         try {
-            JobGradeSetting::truncate();
+            DB::beginTransaction();
+
+            // Gunakan DELETE bukan TRUNCATE — TRUNCATE tidak bisa di-rollback
+            // dan menyebabkan implicit commit di dalam transaction di MySQL
+            JobGradeSetting::query()->delete();
+
+            $now = now();
+            $userId = auth()->id();
+
             foreach ($validated['grades'] as $g) {
-                JobGradeSetting::create(array_merge($g, ['updated_by' => auth()->id()]));
+                JobGradeSetting::create([
+                    'grade'       => $g['grade'],
+                    'min_percent' => $g['min_percent'],
+                    'max_percent' => $g['max_percent'],
+                    'label'       => $g['label'],
+                    'color'       => $g['color'],
+                    'updated_by'  => $userId,
+                ]);
             }
+
             DB::commit();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            Log::error('saveGradeSettings error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'user'  => auth()->id(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan pengaturan: ' . $e->getMessage(),
+            ], 500);
         }
 
         return response()->json(['success' => true, 'message' => 'Pengaturan nilai berhasil disimpan']);
