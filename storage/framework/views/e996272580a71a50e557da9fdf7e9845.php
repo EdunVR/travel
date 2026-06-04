@@ -1948,6 +1948,9 @@
   </script>
 
   <script>
+    // Base URL dari server — tidak pakai prefix hardcoded agar bekerja di semua environment
+    const BOOKING_BASE_URL = '<?php echo e(url("admin/inventaris/travel/booking")); ?>';
+
     function addonManager(bookingId) {
       return {
         bookingId: bookingId,
@@ -1967,7 +1970,7 @@
         async fetchAddons() {
           this.loading = true;
           try {
-            const res = await fetch(`/hm/admin/inventaris/travel/booking/${this.bookingId}/addons`);
+            const res = await fetch(`${BOOKING_BASE_URL}/${this.bookingId}/addons`);
             const data = await res.json();
             this.addons = data.data || [];
           } catch(e) { console.error(e); }
@@ -1989,8 +1992,8 @@
           this.saving = true;
           try {
             const url = this.addonForm.id
-              ? `/hm/admin/inventaris/travel/booking/${this.bookingId}/addons/${this.addonForm.id}`
-              : `/hm/admin/inventaris/travel/booking/${this.bookingId}/addons`;
+              ? `${BOOKING_BASE_URL}/${this.bookingId}/addons/${this.addonForm.id}`
+              : `${BOOKING_BASE_URL}/${this.bookingId}/addons`;
             const method = this.addonForm.id ? 'PUT' : 'POST';
             const res = await fetch(url, {
               method, headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>' },
@@ -2008,7 +2011,7 @@
 
         async deleteAddon(id) {
           if (!confirm('Hapus add-on ini?')) return;
-          const res = await fetch(`/hm/admin/inventaris/travel/booking/${this.bookingId}/addons/${id}`, {
+          const res = await fetch(`${BOOKING_BASE_URL}/${this.bookingId}/addons/${id}`, {
             method: 'DELETE', headers: { 'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>' }
           });
           if (res.ok) await this.fetchAddons();
@@ -2039,7 +2042,7 @@
         async fetchHotels() {
           this.loading = true;
           try {
-            const res = await fetch(`/hm/admin/inventaris/travel/booking/${this.bookingId}/hotel-bookings`);
+            const res = await fetch(`${BOOKING_BASE_URL}/${this.bookingId}/hotel-bookings`);
             const data = await res.json();
             this.hotels = data.data || [];
           } catch(e) { console.error(e); }
@@ -2102,8 +2105,8 @@
           this.saving = true;
           try {
             const url = this.hotelForm.id
-              ? `/hm/admin/inventaris/travel/booking/${this.bookingId}/hotel-bookings/${this.hotelForm.id}`
-              : `/hm/admin/inventaris/travel/booking/${this.bookingId}/hotel-bookings`;
+              ? `${BOOKING_BASE_URL}/${this.bookingId}/hotel-bookings/${this.hotelForm.id}`
+              : `${BOOKING_BASE_URL}/${this.bookingId}/hotel-bookings`;
             const method = this.hotelForm.id ? 'PUT' : 'POST';
             const res = await fetch(url, {
               method, headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>' },
@@ -2118,7 +2121,7 @@
 
         async deleteHotel(id) {
           if (!confirm('Hapus hotel booking ini?')) return;
-          const res = await fetch(`/hm/admin/inventaris/travel/booking/${this.bookingId}/hotel-bookings/${id}`, {
+          const res = await fetch(`${BOOKING_BASE_URL}/${this.bookingId}/hotel-bookings/${id}`, {
             method: 'DELETE', headers: { 'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>' }
           });
           if (res.ok) await this.fetchHotels();
