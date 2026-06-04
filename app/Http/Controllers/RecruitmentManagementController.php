@@ -230,6 +230,7 @@ class RecruitmentManagementController extends Controller
                 'success' => true,
                 'data' => [
                     'id' => $employee->id,
+                    'outlet_id' => $employee->outlet_id,
                     'name' => $employee->name,
                     'position' => $employee->position,
                     'department' => $employee->department,

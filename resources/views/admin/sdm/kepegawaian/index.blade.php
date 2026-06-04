@@ -257,10 +257,11 @@
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-2">Gaji (Rp)</label>
                                 <div class="relative">
-                                    <input type="password" id="salary"
+                                    <input type="text" id="salary" inputmode="numeric"
                                            class="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg"
-                                           min="0" placeholder="Masukkan nominal gaji"
-                                           style="-webkit-text-security: disc;">
+                                           placeholder="Masukkan nominal gaji"
+                                           style="-webkit-text-security: disc; -moz-text-security: disc; text-security: disc;"
+                                           oninput="this.value=this.value.replace(/[^0-9]/g,'')">
                                     <button type="button" onclick="toggleSalaryVisibility()"
                                             class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                                             title="Tampilkan/sembunyikan gaji">
@@ -518,7 +519,10 @@
             $('#createUserSection').show();
             // Reset salary field ke mode tersembunyi
             const salInput = document.getElementById('salary');
-            if (salInput) { salInput.type = 'password'; }
+            if (salInput) {
+                salInput.style.webkitTextSecurity = 'disc';
+                salInput.style.textSecurity = 'disc';
+            }
             const salIcon = document.getElementById('salaryEyeIcon');
             if (salIcon) { salIcon.className = 'bx bx-hide text-lg'; }
             $('#employeeModal').modal('show');
@@ -534,7 +538,8 @@
                     
                     $('#modalTitle').text('Edit Karyawan');
                     $('#employeeId').val(emp.id);
-                    $('#outlet_id').val(emp.outlet_id);
+                    // Pastikan outlet ter-select dengan string comparison
+                    $('#outlet_id').val(String(emp.outlet_id)).trigger('change');
                     $('#name').val(emp.name);
                     $('#position').val(emp.position);
                     $('#department').val(emp.department);
@@ -547,7 +552,16 @@
                     $('#join_date').val(emp.join_date);
                     $('#fingerprint_id').val(emp.fingerprint_id);
                     $('#rfid_uid').val(emp.rfid_uid);
-                    
+
+                    // Reset salary ke mode tersembunyi
+                    const salInput = document.getElementById('salary');
+                    if (salInput) {
+                        salInput.style.webkitTextSecurity = 'disc';
+                        salInput.style.textSecurity = 'disc';
+                    }
+                    const salIcon = document.getElementById('salaryEyeIcon');
+                    if (salIcon) { salIcon.className = 'bx bx-hide text-lg'; }
+
                     loadJobdesk(emp.jobdesk);
                     
                     // Sembunyikan section buat user saat edit
@@ -743,11 +757,14 @@
             const input = document.getElementById('salary');
             const icon  = document.getElementById('salaryEyeIcon');
             if (!input || !icon) return;
-            if (input.type === 'password') {
-                input.type = 'number';
+            const isHidden = input.style.webkitTextSecurity !== 'none';
+            if (isHidden) {
+                input.style.webkitTextSecurity = 'none';
+                input.style.textSecurity = 'none';
                 icon.className = 'bx bx-show text-lg';
             } else {
-                input.type = 'password';
+                input.style.webkitTextSecurity = 'disc';
+                input.style.textSecurity = 'disc';
                 icon.className = 'bx bx-hide text-lg';
             }
         }
