@@ -1047,9 +1047,10 @@
                                 class="ml-1 p-0.5 rounded hover:bg-slate-200 transition-colors"
                                 :class="activeTab === tab.id ? 'hover:bg-primary-200' : ''"
                                 title="Refresh Tab"
+                                :id="'refresh-btn-' + tab.id"
                             >
                                 <i class='bx bx-refresh text-lg'
-                                   :class="refreshingTabId === tab.id ? 'animate-spin' : ''"></i>
+                                   :id="'refresh-icon-' + tab.id"></i>
                             </button>
                             
                             {{-- Close Button --}}
@@ -1755,18 +1756,24 @@ function tabSystem() {
 
             console.log('🔄 Refreshing tab:', id, tab.title);
 
-            // Mulai animasi spin
-            this.refreshingTabId = id;
+            // Mulai animasi spin pada icon (DOM manipulation — lebih reliable dari Alpine binding)
+            const icon = document.getElementById('refresh-icon-' + id);
+            if (icon) {
+                icon.classList.add('animate-spin');
+            }
+
+            const stopSpin = () => {
+                if (icon) icon.classList.remove('animate-spin');
+                this.refreshingTabId = null;
+            };
 
             if (tab.type === 'initial') {
                 window.location.reload();
             } else if (tab.type === 'empty') {
-                // Do nothing for empty tab
                 console.log('⚠️ Cannot refresh empty tab');
-                this.refreshingTabId = null;
+                stopSpin();
                 return;
             } else if (tab.type === 'iframe' && tab.url) {
-                // Reload iframe by updating src
                 const iframe = document.querySelector(`#tab-content-${id} iframe`);
                 if (iframe) {
                     tab.loading = true;
@@ -1775,19 +1782,16 @@ function tabSystem() {
                     setTimeout(() => {
                         iframe.src = currentSrc;
                         console.log('✅ Iframe reloaded');
-                        // Stop spin setelah iframe mulai load (~1.5 detik)
-                        setTimeout(() => { this.refreshingTabId = null; }, 1500);
+                        setTimeout(stopSpin, 1500);
                     }, 100);
                 } else {
-                    this.refreshingTabId = null;
+                    stopSpin();
                 }
             } else {
-                // Reload content for AJAX tabs
                 tab.loading = true;
                 tab.content = null;
                 this.loadTabContent(tab);
-                // Stop spin setelah konten mulai diload
-                setTimeout(() => { this.refreshingTabId = null; }, 1500);
+                setTimeout(stopSpin, 1500);
             }
         },
 
@@ -1922,23 +1926,29 @@ function tabSystem() {
 </script>
 
 <script>
-  // Optimized loading - hide immediately when DOM ready
-  document.addEventListener('DOMContentLoaded', () => {
+  // Loading overlay — muncul selama page load, hilang saat fully loaded
+  (function() {
     const overlay = document.getElementById("global-loading");
-    if (overlay) {
+    if (!overlay) return;
+
+    function hideOverlay() {
       overlay.classList.add("opacity-0");
-      setTimeout(() => overlay.style.display = "none", 300);
+      setTimeout(() => { overlay.style.display = "none"; }, 400);
     }
-  });
-  
-  // Fallback: hide after max 2 seconds
-  setTimeout(() => {
-    const overlay = document.getElementById("global-loading");
-    if (overlay && overlay.style.display !== "none") {
-      overlay.classList.add("opacity-0");
-      setTimeout(() => overlay.style.display = "none", 300);
+
+    // Sembunyikan setelah window fully loaded (semua asset selesai)
+    if (document.readyState === "complete") {
+      // Sudah complete — beri sedikit delay agar animasi terlihat
+      setTimeout(hideOverlay, 300);
+    } else {
+      window.addEventListener("load", function() {
+        setTimeout(hideOverlay, 300);
+      });
     }
-  }, 2000);
+
+    // Hard fallback: maksimal 4 detik
+    setTimeout(hideOverlay, 4000);
+  })();
 </script>
 
 {{-- Profile Modal --}}
