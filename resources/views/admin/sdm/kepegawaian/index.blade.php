@@ -793,6 +793,8 @@
 
         // ── User Access Helper Functions ─────────────────────────────────────────
         function toggleUserFields(checked) {
+            if (checked) {
+                $('#userAccessFields').removeClass('hidden');
                 // Jika email sudah diisi, fokus ke role
                 if ($('#email').val().trim()) {
                     $('#user_role_id').focus();
