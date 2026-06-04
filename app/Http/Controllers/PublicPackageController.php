@@ -996,69 +996,93 @@ class PublicPackageController extends Controller
 
             // 3b. Auto-create hotel bookings from package hotels (include paket)
             $roomType = $validated['price_variant'] ?? $validated['room_type'] ?? 'double';
-            
+
             // Hotel Madinah
             if ($package->id_hotel_madinah) {
-                $madinahNights = ($package->madinah_check_in && $package->madinah_check_out) 
+                $madinahNights = ($package->madinah_check_in && $package->madinah_check_out)
                     ? $package->madinah_check_in->diffInDays($package->madinah_check_out) : 0;
                 \App\Models\JamaahHotelBooking::create([
                     'id_jamaah_booking' => $booking->id,
-                    'id_hotel' => $package->id_hotel_madinah,
-                    'city_type' => 'madinah',
-                    'room_type' => $roomType,
-                    'check_in_date' => $package->madinah_check_in,
-                    'check_out_date' => $package->madinah_check_out,
-                    'nights' => $madinahNights,
-                    'price_per_night' => 0,
-                    'is_charged' => false, // Include paket
-                    'notes' => 'Include paket',
-                    'sort_order' => 1,
+                    'id_hotel'          => $package->id_hotel_madinah,
+                    'city_type'         => 'madinah',
+                    'room_type'         => $roomType,
+                    'check_in_date'     => $package->madinah_check_in,
+                    'check_out_date'    => $package->madinah_check_out,
+                    'nights'            => $madinahNights,
+                    'price_per_night'   => 0,
+                    'is_charged'        => false,
+                    'notes'             => 'Include paket',
+                    'sort_order'        => 1,
                 ]);
             }
-            
+
             // Hotel Makkah
             if ($package->id_hotel_makkah) {
-                $makkahNights = ($package->makkah_check_in && $package->makkah_check_out) 
+                $makkahNights = ($package->makkah_check_in && $package->makkah_check_out)
                     ? $package->makkah_check_in->diffInDays($package->makkah_check_out) : 0;
                 \App\Models\JamaahHotelBooking::create([
                     'id_jamaah_booking' => $booking->id,
-                    'id_hotel' => $package->id_hotel_makkah,
-                    'city_type' => 'makkah',
-                    'room_type' => $roomType,
-                    'check_in_date' => $package->makkah_check_in,
-                    'check_out_date' => $package->makkah_check_out,
-                    'nights' => $makkahNights,
-                    'price_per_night' => 0,
-                    'is_charged' => false, // Include paket
-                    'notes' => 'Include paket',
-                    'sort_order' => 2,
+                    'id_hotel'          => $package->id_hotel_makkah,
+                    'city_type'         => 'makkah',
+                    'room_type'         => $roomType,
+                    'check_in_date'     => $package->makkah_check_in,
+                    'check_out_date'    => $package->makkah_check_out,
+                    'nights'            => $makkahNights,
+                    'price_per_night'   => 0,
+                    'is_charged'        => false,
+                    'notes'             => 'Include paket',
+                    'sort_order'        => 2,
                 ]);
             }
-            
+
             // Hotel Tambahan (dari JSON field 'hotels' di paket)
             $additionalHotels = $package->hotels;
-            if (is_string($additionalHotels)) $additionalHotels = json_decode($additionalHotels, true);
+            if (is_string($additionalHotels)) {
+                $additionalHotels = json_decode($additionalHotels, true);
+            }
             if (is_array($additionalHotels) && count($additionalHotels) > 0) {
                 $sortOrder = 3;
                 foreach ($additionalHotels as $addHotel) {
                     $hotelId = $addHotel['id_hotel'] ?? $addHotel['id'] ?? null;
+
+                    // Skip jika id_hotel tidak valid — FK constraint akan gagal
+                    if (!$hotelId) {
+                        \Log::warning('submitBooking: skipped additional hotel with no id_hotel', [
+                            'booking_id' => $booking->id,
+                            'hotel_data' => $addHotel,
+                        ]);
+                        continue;
+                    }
+
+                    // Verifikasi hotel benar-benar ada di tabel hotels
+                    $hotelExists = \App\Models\Hotel::where('id', $hotelId)->exists();
+                    if (!$hotelExists) {
+                        \Log::warning('submitBooking: skipped additional hotel — id not found in hotels table', [
+                            'booking_id' => $booking->id,
+                            'id_hotel'   => $hotelId,
+                        ]);
+                        continue;
+                    }
+
                     $cityType = strtolower($addHotel['city'] ?? $addHotel['city_type'] ?? 'other');
-                    $checkIn = !empty($addHotel['check_in']) ? $addHotel['check_in'] : null;
+                    $checkIn  = !empty($addHotel['check_in'])  ? $addHotel['check_in']  : null;
                     $checkOut = !empty($addHotel['check_out']) ? $addHotel['check_out'] : null;
-                    $nights = ($checkIn && $checkOut) ? \Carbon\Carbon::parse($checkIn)->diffInDays(\Carbon\Carbon::parse($checkOut)) : 0;
-                    
+                    $nights   = ($checkIn && $checkOut)
+                        ? \Carbon\Carbon::parse($checkIn)->diffInDays(\Carbon\Carbon::parse($checkOut))
+                        : 0;
+
                     \App\Models\JamaahHotelBooking::create([
                         'id_jamaah_booking' => $booking->id,
-                        'id_hotel' => $hotelId,
-                        'city_type' => $cityType,
-                        'room_type' => $roomType,
-                        'check_in_date' => $checkIn,
-                        'check_out_date' => $checkOut,
-                        'nights' => $nights,
-                        'price_per_night' => 0,
-                        'is_charged' => false, // Include paket
-                        'notes' => 'Include paket - ' . ($addHotel['hotel_name'] ?? ''),
-                        'sort_order' => $sortOrder,
+                        'id_hotel'          => $hotelId,
+                        'city_type'         => $cityType,
+                        'room_type'         => $roomType,
+                        'check_in_date'     => $checkIn,
+                        'check_out_date'    => $checkOut,
+                        'nights'            => $nights,
+                        'price_per_night'   => 0,
+                        'is_charged'        => false,
+                        'notes'             => 'Include paket - ' . ($addHotel['hotel_name'] ?? ''),
+                        'sort_order'        => $sortOrder,
                     ]);
                     $sortOrder++;
                 }
@@ -1275,13 +1299,16 @@ class PublicPackageController extends Controller
                 ]);
             }
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \DB::rollBack();
-            \Log::error('Failed to submit booking: ' . $e->getMessage());
+            \Log::error('submitBooking failed: ' . $e->getMessage(), [
+                'file'  => $e->getFile() . ':' . $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
+                'message' => $e->getMessage(),
+            ], 500);
         }
     }
 
