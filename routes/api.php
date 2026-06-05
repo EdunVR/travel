@@ -263,3 +263,19 @@ Route::get('/detected-rfid-uid', function() {
         'uid' => null
     ]);
 });
+
+
+// ─── Mobile Attendance API (Flutter App) ──────────────────────────────────────
+Route::prefix('mobile/v1')->group(function () {
+    // Public — tidak perlu auth
+    Route::post('/login', [\App\Http\Controllers\Api\MobileAttendanceController::class, 'login']);
+
+    // Protected — butuh Sanctum token
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout',        [\App\Http\Controllers\Api\MobileAttendanceController::class, 'logout']);
+        Route::get('/attendance/today',  [\App\Http\Controllers\Api\MobileAttendanceController::class, 'todayStatus']);
+        Route::post('/attendance/clock-in',  [\App\Http\Controllers\Api\MobileAttendanceController::class, 'clockIn']);
+        Route::post('/attendance/clock-out', [\App\Http\Controllers\Api\MobileAttendanceController::class, 'clockOut']);
+        Route::get('/attendance/history',    [\App\Http\Controllers\Api\MobileAttendanceController::class, 'history']);
+    });
+});

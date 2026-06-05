@@ -297,6 +297,15 @@
                       
                   <td class="px-4 py-3">
                     <div class="flex gap-2 justify-center">
+                      {{-- Tombol lokasi — hanya muncul untuk absen online dengan GPS --}}
+                      <template x-if="item.source === 'online' && item.latitude && item.longitude">
+                        <button
+                          @click="viewLocation(item)"
+                          class="inline-flex items-center gap-1 rounded-lg border border-green-200 text-green-700 px-3 py-1.5 hover:bg-green-50"
+                          title="Lihat Lokasi Absen">
+                          <i class='bx bx-map-pin'></i>
+                        </button>
+                      </template>
                       @hasPermission('hrm.absensi.edit')
                       <button 
                         x-on:click="openEdit(item.id)" 
@@ -794,6 +803,98 @@
       </div>
     </div>
 
+    <!-- Location View Modal -->
+    <div x-show="showLocationModal" x-transition.opacity class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-3" x-cloak style="display: none;">
+      <div x-on:click.outside="showLocationModal = false" class="w-full max-w-2xl bg-white rounded-2xl shadow-float overflow-hidden">
+        <div class="px-5 py-3 bg-green-600 text-white flex items-center justify-between">
+          <div class="font-semibold flex items-center gap-2">
+            <i class='bx bx-map-pin text-xl'></i>
+            <span>Lokasi Absensi</span>
+          </div>
+          <button class="p-2 -m-2 hover:bg-green-700 rounded-lg" x-on:click="showLocationModal = false">
+            <i class='bx bx-x text-xl'></i>
+          </button>
+        </div>
+
+        <div class="p-5">
+          <!-- Employee Info -->
+          <div class="mb-4 p-3 rounded-xl bg-slate-50 border border-slate-200">
+            <div class="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <div class="text-slate-600">Nama Karyawan</div>
+                <div class="font-medium" x-text="locationData.employee_name || '-'"></div>
+              </div>
+              <div>
+                <div class="text-slate-600">Tanggal</div>
+                <div class="font-medium" x-text="locationData.date || '-'"></div>
+              </div>
+              <div>
+                <div class="text-slate-600">Waktu Clock-In</div>
+                <div class="font-medium" x-text="locationData.clock_in || '-'"></div>
+              </div>
+              <div>
+                <div class="text-slate-600">Device Info</div>
+                <div class="font-medium text-xs" x-text="locationData.device_info || '-'"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Location Details -->
+          <div class="mb-4 space-y-2">
+            <div class="flex items-start gap-2 text-sm">
+              <i class='bx bx-current-location text-blue-600 text-lg shrink-0'></i>
+              <div>
+                <div class="font-medium text-slate-700">Koordinat GPS</div>
+                <div class="text-slate-600" x-text="`${locationData.latitude || '-'}, ${locationData.longitude || '-'}`"></div>
+              </div>
+            </div>
+            <div class="flex items-start gap-2 text-sm" x-show="locationData.location_address">
+              <i class='bx bx-map text-blue-600 text-lg shrink-0'></i>
+              <div>
+                <div class="font-medium text-slate-700">Alamat</div>
+                <div class="text-slate-600" x-text="locationData.location_address || '-'"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Google Maps Embed -->
+          <div class="rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
+            <template x-if="locationData.latitude && locationData.longitude">
+              <iframe 
+                :src="`https://www.google.com/maps?q=${locationData.latitude},${locationData.longitude}&z=15&output=embed&key=YOUR_GOOGLE_MAPS_API_KEY_HERE`"
+                width="100%" 
+                height="400" 
+                style="border:0;" 
+                allowfullscreen="" 
+                loading="lazy" 
+                referrerpolicy="no-referrer-when-downgrade">
+              </iframe>
+            </template>
+            <template x-if="!locationData.latitude || !locationData.longitude">
+              <div class="flex items-center justify-center h-64 text-slate-500">
+                <div class="text-center">
+                  <i class='bx bx-map-alt text-4xl mb-2'></i>
+                  <div>Lokasi GPS tidak tersedia</div>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Info Note -->
+          <div class="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200">
+            <div class="flex items-start gap-2 text-sm text-amber-700">
+              <i class='bx bx-info-circle text-lg shrink-0'></i>
+              <span>Untuk menampilkan peta, Anda perlu mengganti <code class="px-1 py-0.5 rounded bg-amber-100 text-xs">YOUR_GOOGLE_MAPS_API_KEY_HERE</code> dengan Google Maps API key yang valid.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="px-5 py-3 border-t border-slate-100 flex items-center justify-end gap-2">
+          <button class="rounded-xl bg-slate-600 text-white px-4 py-2 hover:bg-slate-700" x-on:click="showLocationModal = false">Tutup</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Delete Confirmation Modal -->
     <div x-show="showDeleteModal" x-transition.opacity class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-3" x-cloak style="display: none;">
       <div x-on:click.outside="showDeleteModal = false" class="w-full max-w-md rounded-2xl bg-white shadow-float overflow-hidden">
@@ -872,6 +973,18 @@
         showWorkHoursModal: false,
         showTimeSettingsModal: false,
         showDeleteModal: false,
+        showLocationModal: false,
+        
+        // Location data
+        locationData: {
+          employee_name: '',
+          date: '',
+          clock_in: '',
+          device_info: '',
+          latitude: null,
+          longitude: null,
+          location_address: ''
+        },
         
         // Form data
         form: {
@@ -1683,6 +1796,20 @@
             console.warn('⚠️ Invalid time format, returning original:', value);
             return timeValue; // Return original if can't format
           }
+        },
+
+        viewLocation(item) {
+          this.locationData = {
+            employee_name: item.employee_name || '-',
+            date: item.date || '-',
+            clock_in: item.clock_in || '-',
+            device_info: item.device_info || '-',
+            latitude: item.latitude || null,
+            longitude: item.longitude || null,
+            location_address: item.location_address || ''
+          };
+          this.showLocationModal = true;
+          console.log('Viewing location for:', this.locationData);
         },
 
         confirmDelete(id) {

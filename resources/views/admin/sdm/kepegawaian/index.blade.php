@@ -176,23 +176,14 @@
                             <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Departemen</th>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Status</th>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Telepon</th>
-                            <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">
-                                <div class="flex items-center gap-1">
-                                    Gaji
-                                    <button onclick="toggleAllSalary(this)" title="Tampilkan/sembunyikan semua gaji"
-                                            class="text-slate-400 hover:text-slate-600 transition-colors ml-1"
-                                            data-visible="false">
-                                        <i class='bx bx-hide text-base' id="globalSalaryEyeIcon"></i>
-                                    </button>
-                                </div>
-                            </th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Tgl Bergabung</th>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-slate-700">Tgl Bergabung</th>
                             <th class="px-4 py-3 text-center text-sm font-semibold text-slate-700">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="employeeTableBody">
                         <tr>
-                            <td colspan="9" class="px-4 py-8 text-center text-slate-500">
+                            <td colspan="8" class="px-4 py-8 text-center text-slate-500">
                                 <i class='bx bx-loader-alt bx-spin text-3xl'></i>
                                 <p class="mt-2">Memuat data...</p>
                             </td>
@@ -463,17 +454,7 @@
                             </span>
                         </td>
                         <td class="px-4 py-3 text-slate-700">${emp.phone}</td>
-                        <td class="px-4 py-3 text-slate-700">
-                            <div class="flex items-center gap-1.5">
-                                <span class="salary-value" data-real="${emp.salary_formatted}">
-                                    <span class="salary-display">••••••</span>
-                                </span>
-                                <button onclick="toggleRowSalary(this)" title="Tampilkan gaji"
-                                        class="text-slate-400 hover:text-slate-600 transition-colors shrink-0">
-                                    <i class='bx bx-hide text-sm salary-eye-icon'></i>
-                                </button>
-                            </div>
-                        </td>
+                        <td class="px-4 py-3 text-slate-700">${emp.join_date}</td>
                         <td class="px-4 py-3 text-slate-700">${emp.join_date}</td>
                         <td class="px-4 py-3 text-center">
                             @hasPermission('hrm.karyawan.edit')
