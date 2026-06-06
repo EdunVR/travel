@@ -401,92 +401,26 @@ Route::get('/health', function () {
     ]);
 })->middleware('web');
 
-// ── TEMPORARY: Fix personal_access_tokens AUTO_INCREMENT ──────────────────
-// Akses: https://hmtourtravel.com/fix-pat-autoincrement
+// ── TEMPORARY: Tambah kolom GPS clock-out ─────────────────────────────────
+// Akses: https://hmtourtravel.com/add-clockout-gps-columns
 // HAPUS ROUTE INI SETELAH DIJALANKAN!
-Route::get('/fix-pat-autoincrement', function () {
+Route::get('/add-clockout-gps-columns', function () {
     $results = [];
-
-    try {
-        // 1. Cek & fix personal_access_tokens.id
-        $tableExists = \DB::select("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personal_access_tokens'");
-
-        if (($tableExists[0]->cnt ?? 0) == 0) {
-            // Buat tabel dari awal
-            \DB::statement("CREATE TABLE `personal_access_tokens` (
-                `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-                `tokenable_type` VARCHAR(255) NOT NULL,
-                `tokenable_id` BIGINT UNSIGNED NOT NULL,
-                `name` VARCHAR(255) NOT NULL,
-                `token` VARCHAR(64) NOT NULL UNIQUE,
-                `abilities` TEXT NULL,
-                `last_used_at` TIMESTAMP NULL,
-                `expires_at` TIMESTAMP NULL,
-                `created_at` TIMESTAMP NULL,
-                `updated_at` TIMESTAMP NULL,
-                PRIMARY KEY (`id`),
-                INDEX `pat_tokenable_index` (`tokenable_type`, `tokenable_id`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            $results[] = ['status' => 'ok', 'msg' => 'Tabel personal_access_tokens dibuat baru dengan AUTO_INCREMENT'];
+    $cols = [
+        'clock_out_latitude'  => 'DECIMAL(10,7) NULL',
+        'clock_out_longitude' => 'DECIMAL(10,7) NULL',
+        'clock_out_address'   => 'VARCHAR(500) NULL',
+    ];
+    foreach ($cols as $col => $def) {
+        $exists = \DB::select("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'attendances' AND COLUMN_NAME = ?", [$col]);
+        if (($exists[0]->cnt ?? 0) == 0) {
+            \DB::statement("ALTER TABLE `attendances` ADD COLUMN `$col` $def");
+            $results[] = ['status' => 'ok', 'msg' => "Kolom $col berhasil ditambahkan"];
         } else {
-            $col = \DB::select("SELECT EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personal_access_tokens' AND COLUMN_NAME = 'id'");
-            $extra = strtolower($col[0]->EXTRA ?? '');
-
-            if (strpos($extra, 'auto_increment') === false) {
-                // Cek apakah sudah ada PRIMARY KEY
-                $pk = \DB::select("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personal_access_tokens' AND CONSTRAINT_TYPE = 'PRIMARY KEY'");
-                $hasPk = ($pk[0]->cnt ?? 0) > 0;
-
-                if ($hasPk) {
-                    // DROP primary key dulu, lalu ALTER COLUMN, lalu tambahkan kembali
-                    \DB::statement("ALTER TABLE `personal_access_tokens` DROP PRIMARY KEY");
-                    \DB::statement("ALTER TABLE `personal_access_tokens` MODIFY COLUMN `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY");
-                } else {
-                    // Tidak ada PK — langsung set AUTO_INCREMENT + PRIMARY KEY sekaligus
-                    \DB::statement("ALTER TABLE `personal_access_tokens` MODIFY COLUMN `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, ADD PRIMARY KEY (`id`)");
-                }
-                $results[] = ['status' => 'ok', 'msg' => 'AUTO_INCREMENT berhasil ditambahkan ke personal_access_tokens.id'];
-            } else {
-                $results[] = ['status' => 'skip', 'msg' => 'personal_access_tokens.id sudah AUTO_INCREMENT'];
-            }
+            $results[] = ['status' => 'skip', 'msg' => "Kolom $col sudah ada"];
         }
-
-        // 2. Tambah kolom GPS ke attendances jika belum ada
-        $gpsCols = [
-            'source'           => "VARCHAR(20) NOT NULL DEFAULT 'fingerprint'",
-            'latitude'         => 'DECIMAL(10,7) NULL',
-            'longitude'        => 'DECIMAL(10,7) NULL',
-            'location_address' => 'VARCHAR(500) NULL',
-            'device_info'      => 'VARCHAR(255) NULL',
-        ];
-
-        foreach ($gpsCols as $col => $def) {
-            $exists = \DB::select("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'attendances' AND COLUMN_NAME = ?", [$col]);
-            if (($exists[0]->cnt ?? 0) == 0) {
-                \DB::statement("ALTER TABLE `attendances` ADD COLUMN `$col` $def");
-                $results[] = ['status' => 'ok', 'msg' => "Kolom attendances.$col berhasil ditambahkan"];
-            } else {
-                $results[] = ['status' => 'skip', 'msg' => "Kolom attendances.$col sudah ada"];
-            }
-        }
-
-        // 3. Catat di tabel migrations agar tidak dijalankan lagi
-        $migName = '2026_06_06_100000_fix_personal_access_tokens_id_auto_increment';
-        $migExists = \DB::table('migrations')->where('migration', $migName)->exists();
-        if (!$migExists) {
-            \DB::table('migrations')->insert(['migration' => $migName, 'batch' => 99]);
-        }
-
-    } catch (\Exception $e) {
-        $results[] = ['status' => 'error', 'msg' => $e->getMessage()];
     }
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Fix selesai. Coba login Flutter kembali.',
-        'results' => $results,
-        'note' => 'HAPUS route ini dari web.php setelah berhasil!'
-    ]);
+    return response()->json(['success' => true, 'results' => $results, 'note' => 'HAPUS route ini setelah selesai!']);
 });
 
 // Handle any other methods on root URL

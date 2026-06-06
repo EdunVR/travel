@@ -268,6 +268,10 @@
         if (method === 'PUT') {
             formData.append('_method', 'PUT');
         }
+
+        // Checkbox unchecked tidak masuk FormData — set eksplisit
+        formData.delete('is_active');
+        formData.append('is_active', $('#is_active').is(':checked') ? '1' : '0');
         
         $.ajax({
             url: url,

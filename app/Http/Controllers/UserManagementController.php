@@ -201,11 +201,12 @@ class UserManagementController extends Controller
             }
 
             $updateData = [
-                'name' => $request->name,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'role_id' => $request->role_id,
-                'is_active' => $request->is_active ?? true
+                'name'      => $request->name,
+                'email'     => $request->email,
+                'phone'     => $request->phone,
+                'role_id'   => $request->role_id,
+                // Gunakan boolean() agar false dikirim saat checkbox tidak tercentang
+                'is_active' => $request->boolean('is_active'),
             ];
 
             if ($request->filled('password')) {
@@ -234,10 +235,8 @@ class UserManagementController extends Controller
 
             $user->update($updateData);
 
-            // Sync outlets
-            if ($request->has('outlet_ids')) {
-                $user->outlets()->sync($request->outlet_ids);
-            }
+            // Sync outlets — selalu sync, meski kosong (uncheck semua = hapus semua)
+            $user->outlets()->sync($request->input('outlet_ids', []));
 
             UserActivityLog::log('update', "Updated user: {$user->name}", 'sistem.users', ['user_id' => $user->id]);
 

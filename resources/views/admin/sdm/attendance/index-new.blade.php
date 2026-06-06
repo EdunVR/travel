@@ -266,10 +266,36 @@
                       x-text="getStatusLabel(item.status)">
                     </span>
                   </td>
-                  <td class="px-4 py-3 text-center font-medium" x-text="item.clock_in || '-'"></td>
+                  <!-- Jam Masuk + tombol map jika online -->
+                  <td class="px-4 py-3 text-center font-medium">
+                    <div class="inline-flex items-center gap-1 justify-center">
+                      <span x-text="item.clock_in || '-'"></span>
+                      <template x-if="item.source === 'online' && item.latitude && item.longitude && item.clock_in">
+                        <button
+                          @click="viewLocation(item, 'in')"
+                          class="inline-flex items-center justify-center w-5 h-5 rounded text-green-600 hover:bg-green-100"
+                          title="Lihat Lokasi Masuk">
+                          <i class='bx bx-map-pin text-sm'></i>
+                        </button>
+                      </template>
+                    </div>
+                  </td>
                   <td class="px-4 py-3 text-center text-slate-600" x-text="item.break_in || '-'"></td>
-                  <td class="px-4 py-3 text-center text-slate-600" x-text="item.break_out || '-'"></td>  
-                  <td class="px-4 py-3 text-center font-medium" x-text="item.clock_out || '-'"></td> 
+                  <td class="px-4 py-3 text-center text-slate-600" x-text="item.break_out || '-'"></td>
+                  <!-- Jam Keluar + tombol map jika online -->
+                  <td class="px-4 py-3 text-center font-medium">
+                    <div class="inline-flex items-center gap-1 justify-center">
+                      <span x-text="item.clock_out || '-'"></span>
+                      <template x-if="item.source === 'online' && item.latitude && item.longitude && item.clock_out">
+                        <button
+                          @click="viewLocation(item, 'out')"
+                          class="inline-flex items-center justify-center w-5 h-5 rounded text-orange-600 hover:bg-orange-100"
+                          title="Lihat Lokasi Keluar">
+                          <i class='bx bx-map-pin text-sm'></i>
+                        </button>
+                      </template>
+                    </div>
+                  </td>
                   <td class="px-4 py-3 text-center text-slate-600" x-text="item.overtime_in || '-'"></td>
                   <td class="px-4 py-3 text-center text-slate-600" x-text="item.overtime_out || '-'"></td>
                   
@@ -297,15 +323,6 @@
                       
                   <td class="px-4 py-3">
                     <div class="flex gap-2 justify-center">
-                      {{-- Tombol lokasi — hanya muncul untuk absen online dengan GPS --}}
-                      <template x-if="item.source === 'online' && item.latitude && item.longitude">
-                        <button
-                          @click="viewLocation(item)"
-                          class="inline-flex items-center gap-1 rounded-lg border border-green-200 text-green-700 px-3 py-1.5 hover:bg-green-50"
-                          title="Lihat Lokasi Absen">
-                          <i class='bx bx-map-pin'></i>
-                        </button>
-                      </template>
                       @hasPermission('hrm.absensi.edit')
                       <button 
                         x-on:click="openEdit(item.id)" 
@@ -806,12 +823,15 @@
     <!-- Location View Modal -->
     <div x-show="showLocationModal" x-transition.opacity class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-3" x-cloak style="display: none;">
       <div x-on:click.outside="showLocationModal = false" class="w-full max-w-2xl bg-white rounded-2xl shadow-float overflow-hidden">
-        <div class="px-5 py-3 bg-green-600 text-white flex items-center justify-between">
+        
+        <!-- Header — warna berbeda untuk masuk (hijau) vs keluar (orange) -->
+        <div class="px-5 py-3 text-white flex items-center justify-between"
+             :class="locationData.clock_label === 'Keluar/Pulang' ? 'bg-orange-500' : 'bg-green-600'">
           <div class="font-semibold flex items-center gap-2">
             <i class='bx bx-map-pin text-xl'></i>
-            <span>Lokasi Absensi</span>
+            <span>Lokasi Absen <span x-text="locationData.clock_label || 'Masuk'"></span></span>
           </div>
-          <button class="p-2 -m-2 hover:bg-green-700 rounded-lg" x-on:click="showLocationModal = false">
+          <button class="p-2 -m-2 hover:bg-black/20 rounded-lg" x-on:click="showLocationModal = false">
             <i class='bx bx-x text-xl'></i>
           </button>
         </div>
@@ -821,35 +841,38 @@
           <div class="mb-4 p-3 rounded-xl bg-slate-50 border border-slate-200">
             <div class="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <div class="text-slate-600">Nama Karyawan</div>
-                <div class="font-medium" x-text="locationData.employee_name || '-'"></div>
+                <div class="text-slate-500 text-xs uppercase font-medium">Karyawan</div>
+                <div class="font-semibold text-slate-800" x-text="locationData.employee_name || '-'"></div>
               </div>
               <div>
-                <div class="text-slate-600">Tanggal</div>
-                <div class="font-medium" x-text="locationData.date || '-'"></div>
+                <div class="text-slate-500 text-xs uppercase font-medium">Tanggal</div>
+                <div class="font-semibold text-slate-800" x-text="locationData.date || '-'"></div>
               </div>
               <div>
-                <div class="text-slate-600">Waktu Clock-In</div>
-                <div class="font-medium" x-text="locationData.clock_in || '-'"></div>
+                <div class="text-slate-500 text-xs uppercase font-medium">Waktu Absen</div>
+                <div class="font-semibold" 
+                     :class="locationData.clock_label === 'Keluar/Pulang' ? 'text-orange-600' : 'text-green-600'"
+                     x-text="(locationData.clock_label || 'Masuk') + ': ' + (locationData.clock_in || '-')"></div>
               </div>
               <div>
-                <div class="text-slate-600">Device Info</div>
-                <div class="font-medium text-xs" x-text="locationData.device_info || '-'"></div>
+                <div class="text-slate-500 text-xs uppercase font-medium">Perangkat</div>
+                <div class="text-slate-600 text-xs" x-text="locationData.device_info || '-'"></div>
               </div>
             </div>
           </div>
 
-          <!-- Location Details -->
+          <!-- Koordinat & Alamat -->
           <div class="mb-4 space-y-2">
             <div class="flex items-start gap-2 text-sm">
-              <i class='bx bx-current-location text-blue-600 text-lg shrink-0'></i>
+              <i class='bx bx-current-location text-blue-600 text-lg shrink-0 mt-0.5'></i>
               <div>
                 <div class="font-medium text-slate-700">Koordinat GPS</div>
-                <div class="text-slate-600" x-text="`${locationData.latitude || '-'}, ${locationData.longitude || '-'}`"></div>
+                <div class="text-slate-600 font-mono text-xs" 
+                     x-text="locationData.latitude && locationData.longitude ? `${locationData.latitude}, ${locationData.longitude}` : 'Tidak tersedia'"></div>
               </div>
             </div>
             <div class="flex items-start gap-2 text-sm" x-show="locationData.location_address">
-              <i class='bx bx-map text-blue-600 text-lg shrink-0'></i>
+              <i class='bx bx-map text-blue-600 text-lg shrink-0 mt-0.5'></i>
               <div>
                 <div class="font-medium text-slate-700">Alamat</div>
                 <div class="text-slate-600" x-text="locationData.location_address || '-'"></div>
@@ -857,44 +880,43 @@
             </div>
           </div>
 
-          <!-- Google Maps Embed -->
+          <!-- Google Maps Embed — pakai maps URL tanpa API key (embed gratis) -->
           <div class="rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
             <template x-if="locationData.latitude && locationData.longitude">
-              <iframe 
-                :src="`https://www.google.com/maps?q=${locationData.latitude},${locationData.longitude}&z=15&output=embed&key=YOUR_GOOGLE_MAPS_API_KEY_HERE`"
-                width="100%" 
-                height="400" 
-                style="border:0;" 
-                allowfullscreen="" 
-                loading="lazy" 
+              <iframe
+                :src="`https://maps.google.com/maps?q=${locationData.latitude},${locationData.longitude}&z=16&output=embed`"
+                width="100%"
+                height="380"
+                style="border:0;"
+                allowfullscreen=""
+                loading="lazy"
                 referrerpolicy="no-referrer-when-downgrade">
               </iframe>
             </template>
             <template x-if="!locationData.latitude || !locationData.longitude">
-              <div class="flex items-center justify-center h-64 text-slate-500">
-                <div class="text-center">
-                  <i class='bx bx-map-alt text-4xl mb-2'></i>
-                  <div>Lokasi GPS tidak tersedia</div>
-                </div>
+              <div class="flex flex-col items-center justify-center h-48 text-slate-500 gap-2">
+                <i class='bx bx-map-alt text-4xl'></i>
+                <span class="text-sm">Koordinat GPS tidak tersedia</span>
               </div>
             </template>
           </div>
 
-          <!-- Info Note -->
-          <div class="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200">
-            <div class="flex items-start gap-2 text-sm text-amber-700">
-              <i class='bx bx-info-circle text-lg shrink-0'></i>
-              <span>Untuk menampilkan peta, Anda perlu mengganti <code class="px-1 py-0.5 rounded bg-amber-100 text-xs">YOUR_GOOGLE_MAPS_API_KEY_HERE</code> dengan Google Maps API key yang valid.</span>
-            </div>
+          <!-- Link buka di Google Maps -->
+          <div class="mt-3 text-center" x-show="locationData.latitude && locationData.longitude">
+            <a :href="`https://www.google.com/maps?q=${locationData.latitude},${locationData.longitude}`"
+               target="_blank"
+               class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline">
+              <i class='bx bx-link-external'></i>
+              Buka di Google Maps
+            </a>
           </div>
         </div>
 
         <div class="px-5 py-3 border-t border-slate-100 flex items-center justify-end gap-2">
-          <button class="rounded-xl bg-slate-600 text-white px-4 py-2 hover:bg-slate-700" x-on:click="showLocationModal = false">Tutup</button>
+          <button class="rounded-xl bg-slate-600 text-white px-4 py-2 hover:bg-slate-700 text-sm" x-on:click="showLocationModal = false">Tutup</button>
         </div>
       </div>
     </div>
-
     <!-- Delete Confirmation Modal -->
     <div x-show="showDeleteModal" x-transition.opacity class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-3" x-cloak style="display: none;">
       <div x-on:click.outside="showDeleteModal = false" class="w-full max-w-md rounded-2xl bg-white shadow-float overflow-hidden">
@@ -980,10 +1002,14 @@
           employee_name: '',
           date: '',
           clock_in: '',
+          clock_label: 'Masuk',
           device_info: '',
           latitude: null,
           longitude: null,
-          location_address: ''
+          location_address: '',
+          clock_out_latitude: null,
+          clock_out_longitude: null,
+          clock_out_address: ''
         },
         
         // Form data
@@ -1798,18 +1824,24 @@
           }
         },
 
-        viewLocation(item) {
+        viewLocation(item, type) {
+          const label = type === 'out' ? 'Keluar/Pulang' : 'Masuk';
+          const lat  = type === 'out' ? (item.clock_out_latitude  || item.latitude)  : item.latitude;
+          const lng  = type === 'out' ? (item.clock_out_longitude || item.longitude) : item.longitude;
+          const addr = type === 'out' ? (item.clock_out_address   || item.location_address) : item.location_address;
+          const time = type === 'out' ? (item.clock_out || '-') : (item.clock_in || '-');
+
           this.locationData = {
             employee_name: item.employee_name || '-',
             date: item.date || '-',
-            clock_in: item.clock_in || '-',
+            clock_in: time,
+            clock_label: label,
             device_info: item.device_info || '-',
-            latitude: item.latitude || null,
-            longitude: item.longitude || null,
-            location_address: item.location_address || ''
+            latitude: lat || null,
+            longitude: lng || null,
+            location_address: addr || ''
           };
           this.showLocationModal = true;
-          console.log('Viewing location for:', this.locationData);
         },
 
         confirmDelete(id) {

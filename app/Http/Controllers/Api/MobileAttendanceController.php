@@ -208,6 +208,10 @@ class MobileAttendanceController extends Controller
             'clock_out'    => $now->format('H:i:s'),
             'hours_worked' => $workHours,
             'work_hours'   => $workHours,
+            // GPS clock-out disimpan di kolom terpisah
+            'clock_out_latitude'  => $request->latitude,
+            'clock_out_longitude' => $request->longitude,
+            'clock_out_address'   => $request->address,
         ]);
 
         Log::info('Mobile clock-out', [
@@ -298,10 +302,15 @@ class MobileAttendanceController extends Controller
             'late_minutes'     => (int)($a->late_minutes ?? 0),
             'notes'            => $a->notes,
             'source'           => $a->source ?? 'fingerprint',
+            // GPS clock-in
             'latitude'         => $a->latitude  ? (float)$a->latitude  : null,
             'longitude'        => $a->longitude ? (float)$a->longitude : null,
             'location_address' => $a->location_address,
             'device_info'      => $a->device_info,
+            // GPS clock-out
+            'clock_out_latitude'  => $a->clock_out_latitude  ? (float)$a->clock_out_latitude  : null,
+            'clock_out_longitude' => $a->clock_out_longitude ? (float)$a->clock_out_longitude : null,
+            'clock_out_address'   => $a->clock_out_address,
         ];
     }
 }

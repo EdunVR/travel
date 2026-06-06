@@ -464,6 +464,16 @@ class AttendanceManagementController extends Controller
                     'overtime_minutes' => $attendance->overtime_minutes ?? 0,
                     'hours_worked' => $attendance->hours_worked ?? 0,
                     'notes' => $attendance->notes ?? null,
+                    // GPS / online attendance fields
+                    'source'           => $attendance->source ?? 'fingerprint',
+                    'latitude'         => $attendance->latitude ?? null,
+                    'longitude'        => $attendance->longitude ?? null,
+                    'location_address' => $attendance->location_address ?? null,
+                    'device_info'      => $attendance->device_info ?? null,
+                    // GPS clock-out
+                    'clock_out_latitude'  => $attendance->clock_out_latitude  ?? null,
+                    'clock_out_longitude' => $attendance->clock_out_longitude ?? null,
+                    'clock_out_address'   => $attendance->clock_out_address   ?? null,
                 ];
             }
 
