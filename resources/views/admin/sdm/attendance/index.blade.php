@@ -923,18 +923,19 @@
           </div>
 
           <!-- Google Maps embed -->
-          <div class="rounded-xl overflow-hidden border border-slate-200" style="height: 450px;">
+          <div class="rounded-xl overflow-hidden border border-slate-200">
             <iframe
               x-show="locationData.latitude && locationData.longitude"
               :src="locationData.latitude && locationData.longitude ? 'https://maps.google.com/maps?q=' + locationData.latitude + ',' + locationData.longitude + '&z=16&output=embed' : ''"
               width="100%"
-              height="100%"
-              style="border:0; display:block; width:100%; height:100%;"
+              height="450"
+              style="border:0; display:block; min-height:450px;"
               loading="lazy"
               allowfullscreen>
             </iframe>
             <div x-show="!locationData.latitude || !locationData.longitude"
-                 class="h-full flex items-center justify-center text-slate-400 bg-slate-100">
+                 style="height:450px;"
+                 class="flex items-center justify-center text-slate-400 bg-slate-100">
               <div class="text-center">
                 <i class='bx bx-map-alt text-4xl block mb-2'></i>
                 <span class="text-sm">Koordinat GPS tidak tersedia</span>
