@@ -131,6 +131,56 @@
                                         }
                                     }
                                     
+                                    // Travel Management special mappings
+                                    if ($item['route'] === 'admin.inventaris.airline.index') {
+                                        $menuIdentifier = 'airline';
+                                    }
+                                    if ($item['route'] === 'admin.inventaris.airport.index') {
+                                        $menuIdentifier = 'airport';
+                                    }
+                                    if ($item['route'] === 'admin.inventaris.flight.index') {
+                                        $menuIdentifier = 'flight';
+                                    }
+                                    if ($item['route'] === 'admin.inventaris.hotel.index') {
+                                        $menuIdentifier = 'hotel';
+                                    }
+                                    if ($item['route'] === 'admin.inventaris.transport.index') {
+                                        $menuIdentifier = 'transport';
+                                    }
+                                    if ($item['route'] === 'admin.inventaris.travel.package.index') {
+                                        $menuIdentifier = 'package';
+                                    }
+                                    if ($item['route'] === 'admin.inventaris.travel.catalog.index') {
+                                        $menuIdentifier = 'catalog';
+                                    }
+                                    if ($item['route'] === 'admin.inventaris.booking.index') {
+                                        $menuIdentifier = 'booking';
+                                    }
+                                    if ($item['route'] === 'admin.inventaris.travel.tasks.index') {
+                                        $menuIdentifier = 'task';
+                                    }
+                                    if ($item['route'] === 'admin.inventaris.travel.tasks.my-tasks') {
+                                        $menuIdentifier = 'task'; // skip, same as tasks.index
+                                    }
+                                    if ($item['route'] === 'admin.inventaris.travel.communication.index') {
+                                        $menuIdentifier = 'communication';
+                                    }
+                                    if ($item['route'] === 'admin.inventaris.travel.report.index') {
+                                        $menuIdentifier = 'report';
+                                    }
+                                    if ($item['route'] === 'admin.inventaris.travel.payment-reminder.index') {
+                                        $menuIdentifier = 'payment-reminder';
+                                    }
+                                    if ($item['route'] === 'admin.inventaris.affiliate.index') {
+                                        $menuIdentifier = 'affiliate';
+                                    }
+                                    if ($item['route'] === 'admin.inventaris.affiliate.payouts') {
+                                        $menuIdentifier = 'affiliate'; // skip duplicate
+                                    }
+                                    if ($item['route'] === 'admin.inventaris.affiliate.settings') {
+                                        $menuIdentifier = 'affiliate'; // skip duplicate
+                                    }
+                                    
                                     // Find permissions for this submenu
                                     $submenuPerms = [];
                                     if (isset($permissionsByModuleMenu[$module])) {

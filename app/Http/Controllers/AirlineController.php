@@ -7,6 +7,14 @@ use Illuminate\Http\Request;
 
 class AirlineController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:travel.airline.view')->only(['index', 'getData', 'list']);
+        $this->middleware('permission:travel.airline.create')->only(['store']);
+        $this->middleware('permission:travel.airline.update')->only(['update']);
+        $this->middleware('permission:travel.airline.delete')->only(['destroy']);
+    }
+
     public function index()
     {
         return view('admin.inventaris.airline.index');

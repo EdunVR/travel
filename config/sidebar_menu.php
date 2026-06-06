@@ -25,8 +25,8 @@ return [
         'icon' => 'plane-departure',
         'items' => [
             // Master Data
-            ['name' => 'Maskapai', 'route' => 'admin.inventaris.airline.index', 'permissions' => []],
-            ['name' => 'Bandara', 'route' => 'admin.inventaris.airport.index', 'permissions' => []],
+            ['name' => 'Maskapai', 'route' => 'admin.inventaris.airline.index', 'permissions' => ['travel.airline.view']],
+            ['name' => 'Bandara', 'route' => 'admin.inventaris.airport.index', 'permissions' => ['travel.airport.view']],
             ['name' => 'Penerbangan', 'route' => 'admin.inventaris.flight.index', 'permissions' => ['travel.flight.view']],
             ['name' => 'Hotel', 'route' => 'admin.inventaris.hotel.index', 'permissions' => ['travel.hotel.view']],
             ['name' => 'Transportasi Saudi', 'route' => 'admin.inventaris.transport.index', 'permissions' => ['travel.transport.view']],
@@ -45,12 +45,12 @@ return [
             // Communication & Reporting
             ['name' => 'Komunikasi', 'route' => 'admin.inventaris.travel.communication.index', 'permissions' => ['travel.communication.view']],
             ['name' => 'Laporan', 'route' => 'admin.inventaris.travel.report.index', 'permissions' => ['travel.report.view']],
-            ['name' => 'Pengingat Pembayaran', 'route' => 'admin.inventaris.travel.payment-reminder.index', 'permissions' => ['travel.booking.view']],
+            ['name' => 'Pengingat Pembayaran', 'route' => 'admin.inventaris.travel.payment-reminder.index', 'permissions' => ['travel.payment-reminder.view']],
 
             // Affiliate
             ['name' => 'Mitra', 'route' => 'admin.inventaris.affiliate.index', 'permissions' => ['travel.affiliate.view']],
-            ['name' => 'Withdraw Mitra', 'route' => 'admin.inventaris.affiliate.payouts', 'permissions' => ['travel.affiliate.view']],
-            ['name' => 'Pengaturan Affiliate', 'route' => 'admin.inventaris.affiliate.settings', 'permissions' => ['travel.affiliate.view']],
+            ['name' => 'Withdraw Mitra', 'route' => 'admin.inventaris.affiliate.payouts', 'permissions' => ['travel.affiliate.payout']],
+            ['name' => 'Pengaturan Affiliate', 'route' => 'admin.inventaris.affiliate.settings', 'permissions' => ['travel.affiliate.settings']],
         ]
     ],
 

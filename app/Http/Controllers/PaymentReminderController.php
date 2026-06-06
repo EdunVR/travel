@@ -11,6 +11,13 @@ use Carbon\Carbon;
 
 class PaymentReminderController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:travel.payment-reminder.view')->only(['index', 'getData']);
+        $this->middleware('permission:travel.payment-reminder.update')->only(['updateSettings']);
+        $this->middleware('permission:travel.payment-reminder.send')->only(['triggerManual']);
+    }
+
     /**
      * Show the monitoring & settings page
      */
