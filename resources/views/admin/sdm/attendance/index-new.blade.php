@@ -1306,11 +1306,17 @@
             console.log('=== ATTENDANCE DATA DEBUG ===');
             console.log('Daily attendance sample:', this.attendances[0]);
             console.log('Available fields:', Object.keys(this.attendances[0]));
-            console.log('--- CALCULATED FIELDS ---');
-            console.log('hours_worked:', this.attendances[0].hours_worked, '(Type:', typeof this.attendances[0].hours_worked, ')');
-            console.log('late_minutes:', this.attendances[0].late_minutes, '(Type:', typeof this.attendances[0].late_minutes, ')');
-            console.log('early_minutes:', this.attendances[0].early_minutes, '(Type:', typeof this.attendances[0].early_minutes, ')');
-            console.log('overtime_minutes:', this.attendances[0].overtime_minutes, '(Type:', typeof this.attendances[0].overtime_minutes, ')');
+            console.log('--- GPS FIELDS ---');
+            console.log('source:', this.attendances[0].source);
+            console.log('latitude:', this.attendances[0].latitude, '(type:', typeof this.attendances[0].latitude, ')');
+            console.log('longitude:', this.attendances[0].longitude, '(type:', typeof this.attendances[0].longitude, ')');
+            console.log('clock_in:', this.attendances[0].clock_in);
+            // Log semua item yang punya GPS
+            const gpsItems = this.attendances.filter(a => a.latitude !== null && a.latitude !== undefined);
+            console.log('Items with GPS:', gpsItems.length, 'of', this.attendances.length);
+            if (gpsItems.length > 0) {
+              console.log('GPS item sample:', gpsItems[0]);
+            }
             console.log('========================');
           }
         },
