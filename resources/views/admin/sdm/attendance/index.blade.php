@@ -867,9 +867,9 @@
 
     <!-- Location Modal -->
     <div x-show="showLocationModal" x-transition.opacity class="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-3 overflow-y-auto" x-cloak style="display: none;">
-      <div x-on:click.outside="showLocationModal = false" class="w-full max-w-2xl bg-white rounded-2xl shadow-float overflow-hidden my-4">
+      <div x-on:click.outside="showLocationModal = false" class="w-full max-w-2xl bg-white rounded-2xl shadow-float my-4">
         <!-- Header -->
-        <div class="px-5 py-3 text-white flex items-center justify-between"
+        <div class="px-5 py-3 text-white flex items-center justify-between rounded-t-2xl"
              :class="locationData.clock_label === 'Keluar/Pulang' ? 'bg-orange-500' : 'bg-green-600'">
           <div class="font-semibold flex items-center gap-2">
             <i class='bx bx-map-pin text-xl'></i>
@@ -922,30 +922,28 @@
             </div>
           </div>
 
-          <!-- Google Maps embed (gratis, tanpa API key) -->
-          <div class="rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
-            <template x-if="locationData.latitude && locationData.longitude">
-              <iframe
-                :src="'https://maps.google.com/maps?q=' + locationData.latitude + ',' + locationData.longitude + '&z=16&output=embed'"
-                width="100%"
-                height="480"
-                style="border:0; display:block;"
-                loading="lazy"
-                allowfullscreen>
-              </iframe>
-            </template>
-            <template x-if="!locationData.latitude || !locationData.longitude">
-              <div class="h-40 flex items-center justify-center text-slate-400">
-                <div class="text-center">
-                  <i class='bx bx-map-alt text-4xl block mb-2'></i>
-                  <span class="text-sm">Koordinat GPS tidak tersedia</span>
-                </div>
+          <!-- Google Maps embed -->
+          <div class="rounded-xl overflow-hidden border border-slate-200" style="height: 450px;">
+            <iframe
+              x-show="locationData.latitude && locationData.longitude"
+              :src="locationData.latitude && locationData.longitude ? 'https://maps.google.com/maps?q=' + locationData.latitude + ',' + locationData.longitude + '&z=16&output=embed' : ''"
+              width="100%"
+              height="100%"
+              style="border:0; display:block; width:100%; height:100%;"
+              loading="lazy"
+              allowfullscreen>
+            </iframe>
+            <div x-show="!locationData.latitude || !locationData.longitude"
+                 class="h-full flex items-center justify-center text-slate-400 bg-slate-100">
+              <div class="text-center">
+                <i class='bx bx-map-alt text-4xl block mb-2'></i>
+                <span class="text-sm">Koordinat GPS tidak tersedia</span>
               </div>
-            </template>
+            </div>
           </div>
         </div>
 
-        <div class="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
+        <div class="px-5 py-3 border-t border-slate-100 flex items-center justify-between rounded-b-2xl">
           <a :href="'https://www.google.com/maps?q=' + locationData.latitude + ',' + locationData.longitude"
              target="_blank"
              class="inline-flex items-center gap-2 rounded-xl border border-blue-200 text-blue-700 px-4 py-2 hover:bg-blue-50 text-sm"
