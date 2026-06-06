@@ -922,25 +922,10 @@
             </div>
           </div>
 
-          <!-- Map embed via OpenStreetMap (tidak butuh API key, render konsisten) -->
-          <div class="rounded-xl overflow-hidden border border-slate-200">
-            <div x-show="locationData.latitude && locationData.longitude">
-              <iframe
-                :src="locationData.latitude && locationData.longitude
-                  ? 'https://www.openstreetmap.org/export/embed.html?bbox=' + (parseFloat(locationData.longitude)-0.005) + '%2C' + (parseFloat(locationData.latitude)-0.005) + '%2C' + (parseFloat(locationData.longitude)+0.005) + '%2C' + (parseFloat(locationData.latitude)+0.005) + '&layer=mapnik&marker=' + locationData.latitude + '%2C' + locationData.longitude
-                  : 'about:blank'"
-                style="border:0; display:block; width:100%; height:450px;"
-                loading="lazy"
-                allowfullscreen>
-              </iframe>
-            </div>
-            <div x-show="!locationData.latitude || !locationData.longitude"
-                 style="height:450px;"
-                 class="flex items-center justify-center text-slate-400 bg-slate-100">
-              <div class="text-center">
-                <i class='bx bx-map-alt text-4xl block mb-2'></i>
-                <span class="text-sm">Koordinat GPS tidak tersedia</span>
-              </div>
+          <!-- Map embed — di-render dinamis agar tinggi terbaca dengan benar -->
+          <div id="map-container" class="rounded-xl overflow-hidden border border-slate-200 bg-slate-100" style="height:450px;">
+            <div class="h-full flex items-center justify-center text-slate-400">
+              <i class='bx bx-loader-alt bx-spin text-2xl'></i>
             </div>
           </div>
         </div>
@@ -2041,6 +2026,22 @@
             device_info:   item.device_info || null,
           };
           this.showLocationModal = true;
+
+          // Inject iframe ke DOM setelah modal visible agar dimensi container sudah benar
+          this.$nextTick(() => {
+            setTimeout(() => {
+              const container = document.getElementById('map-container');
+              if (!container) return;
+              // Bersihkan isi lama
+              container.innerHTML = '';
+              const iframe = document.createElement('iframe');
+              iframe.src = `https://maps.google.com/maps?q=${lat},${lng}&z=16&output=embed`;
+              iframe.style.cssText = 'border:0; display:block; width:100%; height:450px;';
+              iframe.setAttribute('allowfullscreen', '');
+              iframe.setAttribute('loading', 'lazy');
+              container.appendChild(iframe);
+            }, 50);
+          });
         },
 
         closePhotoModal() {
