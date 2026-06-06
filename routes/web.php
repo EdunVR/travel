@@ -433,7 +433,18 @@ Route::get('/fix-pat-autoincrement', function () {
             $extra = strtolower($col[0]->EXTRA ?? '');
 
             if (strpos($extra, 'auto_increment') === false) {
-                \DB::statement("ALTER TABLE `personal_access_tokens` MODIFY COLUMN `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT");
+                // Cek apakah sudah ada PRIMARY KEY
+                $pk = \DB::select("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personal_access_tokens' AND CONSTRAINT_TYPE = 'PRIMARY KEY'");
+                $hasPk = ($pk[0]->cnt ?? 0) > 0;
+
+                if ($hasPk) {
+                    // DROP primary key dulu, lalu ALTER COLUMN, lalu tambahkan kembali
+                    \DB::statement("ALTER TABLE `personal_access_tokens` DROP PRIMARY KEY");
+                    \DB::statement("ALTER TABLE `personal_access_tokens` MODIFY COLUMN `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY");
+                } else {
+                    // Tidak ada PK — langsung set AUTO_INCREMENT + PRIMARY KEY sekaligus
+                    \DB::statement("ALTER TABLE `personal_access_tokens` MODIFY COLUMN `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, ADD PRIMARY KEY (`id`)");
+                }
                 $results[] = ['status' => 'ok', 'msg' => 'AUTO_INCREMENT berhasil ditambahkan ke personal_access_tokens.id'];
             } else {
                 $results[] = ['status' => 'skip', 'msg' => 'personal_access_tokens.id sudah AUTO_INCREMENT'];
