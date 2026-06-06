@@ -228,10 +228,10 @@
                 <th class="text-center px-4 py-3">Jadwal Masuk</th>
                 <th class="text-center px-4 py-3">Jadwal Pulang</th>
                 <th class="text-center px-4 py-3">Status</th>
-                <th class="text-center px-4 py-3"><i class='bx bx-log-in'></i> Masuk</th>
+                <th class="text-center px-4 py-3"><i class='bx bx-log-in'></i> Masuk <span class="text-xs text-slate-400 block font-normal">foto/lokasi</span></th>
                 <th class="text-center px-4 py-3"><i class='bx bx-coffee'></i> Mulai Istirahat</th>
                 <th class="text-center px-4 py-3"><i class='bx bx-coffee'></i> Istirahat Selesai</th>
-                <th class="text-center px-4 py-3"><i class='bx bx-log-out'></i> Keluar</th>
+                <th class="text-center px-4 py-3"><i class='bx bx-log-out'></i> Keluar <span class="text-xs text-slate-400 block font-normal">foto/lokasi</span></th>
                 <th class="text-center px-4 py-3"><i class='bx bx-time'></i> Lembur Masuk</th>
                 <th class="text-center px-4 py-3"><i class='bx bx-time'></i> Lembur Keluar</th>
                 <th class="text-center px-4 py-3">Terlambat</th>
@@ -266,34 +266,58 @@
                       x-text="getStatusLabel(item.status)">
                     </span>
                   </td>
-                  <!-- Jam Masuk + tombol map jika ada koordinat GPS -->
+                  <!-- Jam Masuk + tombol foto & lokasi -->
                   <td class="px-4 py-3 text-center font-medium">
-                    <div class="inline-flex items-center gap-1 justify-center">
+                    <div class="flex flex-col items-center gap-1">
                       <span x-text="item.clock_in || '-'"></span>
-                      <template x-if="item.latitude && item.longitude && item.clock_in">
-                        <button
-                          @click="viewLocation(item, 'in')"
-                          class="inline-flex items-center justify-center w-5 h-5 rounded text-green-600 hover:bg-green-100"
-                          title="Lihat Lokasi Masuk">
-                          <i class='bx bx-map-pin text-sm'></i>
-                        </button>
-                      </template>
+                      <div class="flex gap-1" x-show="item.clock_in">
+                        {{-- Tombol foto masuk --}}
+                        <template x-if="item.clock_in_photo">
+                          <button
+                            @click="$dispatch('open-photo', { url: item.clock_in_photo, label: 'Foto Masuk' })"
+                            class="inline-flex items-center justify-center w-6 h-6 rounded bg-blue-50 text-blue-600 hover:bg-blue-100"
+                            title="Lihat Foto Masuk">
+                            <i class='bx bx-camera text-xs'></i>
+                          </button>
+                        </template>
+                        {{-- Tombol lokasi masuk — selalu tampil jika ada GPS --}}
+                        <template x-if="item.latitude && item.longitude">
+                          <button
+                            @click="viewLocation(item, 'in')"
+                            class="inline-flex items-center justify-center w-6 h-6 rounded bg-green-50 text-green-600 hover:bg-green-100"
+                            title="Lihat Lokasi Masuk">
+                            <i class='bx bx-map-pin text-xs'></i>
+                          </button>
+                        </template>
+                      </div>
                     </div>
                   </td>
                   <td class="px-4 py-3 text-center text-slate-600" x-text="item.break_in || '-'"></td>
                   <td class="px-4 py-3 text-center text-slate-600" x-text="item.break_out || '-'"></td>
-                  <!-- Jam Keluar + tombol map jika ada koordinat GPS -->
+                  <!-- Jam Keluar + tombol foto & lokasi -->
                   <td class="px-4 py-3 text-center font-medium">
-                    <div class="inline-flex items-center gap-1 justify-center">
+                    <div class="flex flex-col items-center gap-1">
                       <span x-text="item.clock_out || '-'"></span>
-                      <template x-if="(item.clock_out_latitude || item.latitude) && (item.clock_out_longitude || item.longitude) && item.clock_out">
-                        <button
-                          @click="viewLocation(item, 'out')"
-                          class="inline-flex items-center justify-center w-5 h-5 rounded text-orange-600 hover:bg-orange-100"
-                          title="Lihat Lokasi Keluar">
-                          <i class='bx bx-map-pin text-sm'></i>
-                        </button>
-                      </template>
+                      <div class="flex gap-1" x-show="item.clock_out">
+                        {{-- Tombol foto keluar --}}
+                        <template x-if="item.clock_out_photo">
+                          <button
+                            @click="$dispatch('open-photo', { url: item.clock_out_photo, label: 'Foto Keluar' })"
+                            class="inline-flex items-center justify-center w-6 h-6 rounded bg-blue-50 text-blue-600 hover:bg-blue-100"
+                            title="Lihat Foto Keluar">
+                            <i class='bx bx-camera text-xs'></i>
+                          </button>
+                        </template>
+                        {{-- Tombol lokasi keluar --}}
+                        <template x-if="item.clock_out_latitude || item.latitude">
+                          <button
+                            @click="viewLocation(item, 'out')"
+                            class="inline-flex items-center justify-center w-6 h-6 rounded bg-orange-50 text-orange-600 hover:bg-orange-100"
+                            title="Lihat Lokasi Keluar">
+                            <i class='bx bx-map-pin text-xs'></i>
+                          </button>
+                        </template>
+                      </div>
                     </div>
                   </td>
                   <td class="px-4 py-3 text-center text-slate-600" x-text="item.overtime_in || '-'"></td>
@@ -820,6 +844,29 @@
       </div>
     </div>
 
+    <!-- Photo View Modal -->
+    <div x-show="showPhotoModal" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3" x-cloak style="display: none;">
+      <div x-on:click.outside="showPhotoModal = false" class="w-full max-w-lg bg-white rounded-2xl shadow-float overflow-hidden">
+        <div class="px-5 py-3 bg-slate-800 text-white flex items-center justify-between">
+          <div class="font-semibold flex items-center gap-2">
+            <i class='bx bx-camera text-xl'></i>
+            <span x-text="photoModalData.label || 'Foto Absensi'"></span>
+          </div>
+          <button class="p-2 -m-2 hover:bg-white/20 rounded-lg" x-on:click="showPhotoModal = false">
+            <i class='bx bx-x text-xl'></i>
+          </button>
+        </div>
+        <div class="p-4 text-center bg-slate-900">
+          <img :src="photoModalData.url" alt="Foto Absensi"
+               class="max-w-full max-h-96 object-contain mx-auto rounded-lg"
+               x-on:error="showPhotoModal = false">
+        </div>
+        <div class="px-5 py-3 border-t border-slate-100 flex justify-end">
+          <button class="rounded-xl bg-slate-600 text-white px-4 py-2 hover:bg-slate-700 text-sm" x-on:click="showPhotoModal = false">Tutup</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Location View Modal -->
     <div x-show="showLocationModal" x-transition.opacity class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-3" x-cloak style="display: none;">
       <div x-on:click.outside="showLocationModal = false" class="w-full max-w-2xl bg-white rounded-2xl shadow-float overflow-hidden">
@@ -996,6 +1043,8 @@
         showTimeSettingsModal: false,
         showDeleteModal: false,
         showLocationModal: false,
+        showPhotoModal: false,
+        photoModalData: { url: '', label: '' },
         
         // Location data
         locationData: {
@@ -1059,6 +1108,12 @@
             this.fetchStatistics(),
             this.fetchData()
           ]);
+
+          // Listener untuk event open-photo dari tombol foto
+          window.addEventListener('open-photo', (e) => {
+            this.photoModalData = e.detail;
+            this.showPhotoModal = true;
+          });
         },
 
         async loadOutlets() {

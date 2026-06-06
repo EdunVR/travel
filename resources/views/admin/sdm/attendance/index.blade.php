@@ -264,30 +264,58 @@
                     </span>
                   </td>
                   <td class="px-4 py-3 text-center font-medium" x-text="item.clock_in || '-'"></td>
+                  <!-- Foto/Lokasi Masuk -->
                   <td class="px-4 py-3 text-center">
-                    <template x-if="item.clock_in_photo">
-                      <button x-on:click="showPhotoModal(item.clock_in_photo, 'Foto Masuk - ' + item.employee_name)" 
-                              class="inline-flex items-center gap-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 px-2 py-1 hover:bg-blue-100">
-                        <i class='bx bx-camera text-sm'></i>
-                        <span class="text-xs">Lihat</span>
-                      </button>
-                    </template>
-                    <template x-if="!item.clock_in_photo">
-                      <span class="text-slate-400 text-xs">-</span>
-                    </template>
+                    <div class="flex flex-col items-center gap-1">
+                      <!-- Tombol foto masuk (hanya jika ada foto) -->
+                      <template x-if="item.clock_in_photo">
+                        <button x-on:click="showPhotoModal(item.clock_in_photo, 'Foto Masuk - ' + item.employee_name)" 
+                                class="inline-flex items-center gap-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 px-2 py-1 hover:bg-blue-100">
+                          <i class='bx bx-camera text-sm'></i>
+                          <span class="text-xs">Foto</span>
+                        </button>
+                      </template>
+                      <!-- Tombol lokasi masuk (hanya jika ada GPS dari Flutter) -->
+                      <template x-if="item.source === 'online' && item.latitude && item.longitude">
+                        <button x-on:click="viewLocation(item, 'in')"
+                                class="inline-flex items-center gap-1 rounded-lg bg-green-50 border border-green-200 text-green-700 px-2 py-1 hover:bg-green-100"
+                                title="Lihat Lokasi Masuk">
+                          <i class='bx bx-map-pin text-sm'></i>
+                          <span class="text-xs">Lokasi</span>
+                        </button>
+                      </template>
+                      <!-- Fallback jika tidak ada foto maupun GPS -->
+                      <template x-if="!item.clock_in_photo && !(item.source === 'online' && item.latitude && item.longitude)">
+                        <span class="text-slate-400 text-xs">-</span>
+                      </template>
+                    </div>
                   </td>
                   <td class="px-4 py-3 text-center font-medium" x-text="item.clock_out || '-'"></td>
+                  <!-- Foto/Lokasi Keluar -->
                   <td class="px-4 py-3 text-center">
-                    <template x-if="item.clock_out_photo">
-                      <button x-on:click="showPhotoModal(item.clock_out_photo, 'Foto Keluar - ' + item.employee_name)" 
-                              class="inline-flex items-center gap-1 rounded-lg bg-green-50 border border-green-200 text-green-700 px-2 py-1 hover:bg-green-100">
-                        <i class='bx bx-camera text-sm'></i>
-                        <span class="text-xs">Lihat</span>
-                      </button>
-                    </template>
-                    <template x-if="!item.clock_out_photo">
-                      <span class="text-slate-400 text-xs">-</span>
-                    </template>
+                    <div class="flex flex-col items-center gap-1">
+                      <!-- Tombol foto keluar (hanya jika ada foto) -->
+                      <template x-if="item.clock_out_photo">
+                        <button x-on:click="showPhotoModal(item.clock_out_photo, 'Foto Keluar - ' + item.employee_name)" 
+                                class="inline-flex items-center gap-1 rounded-lg bg-green-50 border border-green-200 text-green-700 px-2 py-1 hover:bg-green-100">
+                          <i class='bx bx-camera text-sm'></i>
+                          <span class="text-xs">Foto</span>
+                        </button>
+                      </template>
+                      <!-- Tombol lokasi keluar (hanya jika ada GPS dari Flutter) -->
+                      <template x-if="item.source === 'online' && (item.clock_out_latitude || item.latitude)">
+                        <button x-on:click="viewLocation(item, 'out')"
+                                class="inline-flex items-center gap-1 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 px-2 py-1 hover:bg-orange-100"
+                                title="Lihat Lokasi Keluar">
+                          <i class='bx bx-map-pin text-sm'></i>
+                          <span class="text-xs">Lokasi</span>
+                        </button>
+                      </template>
+                      <!-- Fallback -->
+                      <template x-if="!item.clock_out_photo && !(item.source === 'online' && (item.clock_out_latitude || item.latitude))">
+                        <span class="text-slate-400 text-xs">-</span>
+                      </template>
+                    </div>
                   </td>
                   
                   <!-- Terlambat -->
@@ -837,6 +865,98 @@
       </div>
     </div>
 
+    <!-- Location Modal -->
+    <div x-show="showLocationModal" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3" x-cloak style="display: none;">
+      <div x-on:click.outside="showLocationModal = false" class="w-full max-w-2xl bg-white rounded-2xl shadow-float overflow-hidden">
+        <!-- Header -->
+        <div class="px-5 py-3 text-white flex items-center justify-between"
+             :class="locationData.clock_label === 'Keluar/Pulang' ? 'bg-orange-500' : 'bg-green-600'">
+          <div class="font-semibold flex items-center gap-2">
+            <i class='bx bx-map-pin text-xl'></i>
+            <span>Lokasi Absen <span x-text="locationData.clock_label || 'Masuk'"></span></span>
+          </div>
+          <button class="p-2 -m-2 hover:bg-black/20 rounded-lg" x-on:click="showLocationModal = false">
+            <i class='bx bx-x text-xl'></i>
+          </button>
+        </div>
+
+        <div class="p-5">
+          <!-- Info baris atas -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <div>
+              <div class="text-slate-500 text-xs uppercase font-medium">Karyawan</div>
+              <div class="font-semibold text-slate-800 text-sm" x-text="locationData.employee_name || '-'"></div>
+            </div>
+            <div>
+              <div class="text-slate-500 text-xs uppercase font-medium">Tanggal</div>
+              <div class="font-semibold text-slate-800 text-sm" x-text="locationData.date || '-'"></div>
+            </div>
+            <div>
+              <div class="text-slate-500 text-xs uppercase font-medium">Waktu</div>
+              <div class="font-semibold text-sm"
+                   :class="locationData.clock_label === 'Keluar/Pulang' ? 'text-orange-600' : 'text-green-600'"
+                   x-text="(locationData.clock_label || 'Masuk') + ': ' + (locationData.clock_in || '-')"></div>
+            </div>
+            <div>
+              <div class="text-slate-500 text-xs uppercase font-medium">Perangkat</div>
+              <div class="text-slate-600 text-xs" x-text="locationData.device_info || '-'"></div>
+            </div>
+          </div>
+
+          <!-- Koordinat & Alamat -->
+          <div class="mb-4 space-y-2">
+            <div class="flex items-start gap-2 text-sm">
+              <i class='bx bx-current-location text-blue-600 text-lg shrink-0 mt-0.5'></i>
+              <div>
+                <div class="font-medium text-slate-700">Koordinat GPS</div>
+                <div class="text-slate-600 font-mono text-xs"
+                     x-text="locationData.latitude && locationData.longitude ? locationData.latitude + ', ' + locationData.longitude : 'Tidak tersedia'"></div>
+              </div>
+            </div>
+            <div class="flex items-start gap-2 text-sm" x-show="locationData.location_address">
+              <i class='bx bx-map text-blue-600 text-lg shrink-0 mt-0.5'></i>
+              <div>
+                <div class="font-medium text-slate-700">Alamat</div>
+                <div class="text-slate-600 text-sm" x-text="locationData.location_address || '-'"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Google Maps embed (gratis, tanpa API key) -->
+          <div class="rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
+            <template x-if="locationData.latitude && locationData.longitude">
+              <iframe
+                :src="'https://maps.google.com/maps?q=' + locationData.latitude + ',' + locationData.longitude + '&z=16&output=embed'"
+                width="100%"
+                height="340"
+                style="border:0;"
+                loading="lazy"
+                allowfullscreen>
+              </iframe>
+            </template>
+            <template x-if="!locationData.latitude || !locationData.longitude">
+              <div class="h-40 flex items-center justify-center text-slate-400">
+                <div class="text-center">
+                  <i class='bx bx-map-alt text-4xl block mb-2'></i>
+                  <span class="text-sm">Koordinat GPS tidak tersedia</span>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <div class="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
+          <a :href="'https://www.google.com/maps?q=' + locationData.latitude + ',' + locationData.longitude"
+             target="_blank"
+             class="inline-flex items-center gap-2 rounded-xl border border-blue-200 text-blue-700 px-4 py-2 hover:bg-blue-50 text-sm"
+             x-show="locationData.latitude && locationData.longitude">
+            <i class='bx bx-link-external'></i> Buka di Google Maps
+          </a>
+          <button class="rounded-xl bg-slate-600 text-white px-4 py-2 hover:bg-slate-700 text-sm ml-auto" x-on:click="showLocationModal = false">Tutup</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Toast Notification -->
     <div x-show="showToast" x-transition.opacity class="fixed top-4 right-4 z-50" x-cloak style="display: none;">
       <div :class="toastType === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'" 
@@ -940,6 +1060,10 @@
         // Photo Modal
         photoModalSrc: '',
         photoModalTitle: '',
+
+        // Location Modal
+        showLocationModal: false,
+        locationData: {},
         
         // Toast
         showToast: false,
@@ -1893,6 +2017,30 @@
           this.photoModalSrc = '{{ asset("storage") }}/' + photoPath;
           this.photoModalTitle = title;
           this.showPhotoModalDialog = true;
+        },
+
+        viewLocation(item, type) {
+          const isOut = type === 'out';
+          const lat  = isOut ? (item.clock_out_latitude  || item.latitude)  : item.latitude;
+          const lng  = isOut ? (item.clock_out_longitude || item.longitude) : item.longitude;
+          const addr = isOut ? (item.clock_out_address   || item.location_address) : item.location_address;
+
+          if (!lat || !lng) {
+            this.showToastMessage('Koordinat GPS tidak tersedia', 'error');
+            return;
+          }
+
+          this.locationData = {
+            employee_name: item.employee_name,
+            date:          item.date || this.filterDate,
+            clock_label:   isOut ? 'Keluar/Pulang' : 'Masuk',
+            clock_in:      isOut ? (item.clock_out || '-') : (item.clock_in || '-'),
+            latitude:      lat,
+            longitude:     lng,
+            location_address: addr || null,
+            device_info:   item.device_info || null,
+          };
+          this.showLocationModal = true;
         },
 
         closePhotoModal() {
