@@ -301,7 +301,7 @@
                                     <label class="flex items-center gap-3 cursor-pointer select-none">
                                         <input type="checkbox" id="create_user" onchange="toggleUserFields(this.checked)"
                                                class="w-4 h-4 text-primary-600 rounded border-slate-300">
-                                        <span class="font-medium text-slate-700">Buat juga akun user untuk akses aplikasi</span>
+                                        <span class="font-medium text-slate-700" id="userSectionLabel">Buat juga akun user untuk akses aplikasi</span>
                                     </label>
 
                                     <div id="userAccessFields" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
@@ -318,7 +318,7 @@
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium text-slate-700 mb-2">
-                                                Password <span class="text-red-500">*</span>
+                                                Password <span class="text-red-500" id="passwordRequiredMark">*</span>
                                             </label>
                                             <div class="relative">
                                                 <input type="password" id="user_password"
@@ -331,7 +331,7 @@
                                             </div>
                                         </div>
                                         <div class="md:col-span-2">
-                                            <p class="text-xs text-slate-500 flex items-start gap-1.5">
+                                            <p class="text-xs text-slate-500 flex items-start gap-1.5" id="passwordHint">
                                                 <i class='bx bx-info-circle text-blue-400 text-sm mt-0.5'></i>
                                                 Username login menggunakan <strong>Email</strong> karyawan. Pastikan email sudah diisi dan belum terdaftar.
                                             </p>
@@ -498,6 +498,11 @@
             $('#create_user').prop('checked', false);
             $('#userAccessFields').addClass('hidden');
             $('#createUserSection').show();
+            $('#userSectionLabel').text('Buat juga akun user untuk akses aplikasi');
+            $('#passwordHint').html('<i class="bx bx-info-circle text-blue-400 text-sm mt-0.5"></i> Username login menggunakan <strong>Email</strong> karyawan. Pastikan email sudah diisi dan belum terdaftar.');
+            $('#user_password').attr('placeholder', 'Min. 6 karakter');
+            $('#passwordRequiredMark').show();
+            $('#employeeModal').data('had-user', false);
             // Reset salary field ke mode tersembunyi
             const salInput = document.getElementById('salary');
             if (salInput) {
@@ -545,10 +550,31 @@
 
                     loadJobdesk(emp.jobdesk);
                     
-                    // Sembunyikan section buat user saat edit
-                    $('#create_user').prop('checked', false);
-                    $('#userAccessFields').addClass('hidden');
-                    $('#createUserSection').hide();
+                    // ── Tampilkan section user akses di mode edit ──────────────
+                    $('#createUserSection').show();
+                    
+                    if (emp.has_user_account) {
+                        // Sudah punya akun — centang checkbox, tampilkan form
+                        $('#create_user').prop('checked', true);
+                        $('#userAccessFields').removeClass('hidden');
+                        // Set role yang sudah ada
+                        $('#user_role_id').val(emp.user_role_id || '');
+                        // Kosongkan password (opsional update)
+                        $('#user_password').val('');
+                        // Ganti label tombol
+                        $('#userSectionLabel').text('Akun user sudah ada — centang untuk update / uncheck untuk hapus');
+                        $('#passwordHint').html('<i class="bx bx-info-circle text-blue-400 text-sm mt-0.5"></i> Kosongkan password jika tidak ingin mengubah. Centang untuk update role/password, uncheck untuk <strong class="text-red-600">hapus akun user</strong>.');
+                    } else {
+                        // Belum punya akun
+                        $('#create_user').prop('checked', false);
+                        $('#userAccessFields').addClass('hidden');
+                        $('#user_role_id').val('');
+                        $('#user_password').val('');
+                        $('#userSectionLabel').text('Buat juga akun user untuk akses aplikasi');
+                        $('#passwordHint').html('<i class="bx bx-info-circle text-blue-400 text-sm mt-0.5"></i> Username login menggunakan <strong>Email</strong> karyawan. Pastikan email sudah diisi dan belum terdaftar.');
+                    }
+                    // Store original user state untuk detect perubahan saat submit
+                    $('#employeeModal').data('had-user', emp.has_user_account);
 
                     $('#employeeModal').modal('show');
                 }
@@ -562,61 +588,73 @@
             e.preventDefault();
 
             const id = $('#employeeId').val();
+            const isEdit = !!id;
             const jobdesk = [];
             $('.jobdesk-item').each(function() {
                 const val = $(this).val().trim();
                 if (val) jobdesk.push(val);
             });
 
-            const createUser = !id && $('#create_user').is(':checked');
+            const userChecked  = $('#create_user').is(':checked');
+            const hadUser      = $('#employeeModal').data('had-user') || false;
 
-            // Validasi client-side untuk field user akses
-            if (createUser) {
+            // Mode tambah: create_user = centang
+            // Mode edit: manage_user = centang (buat baru / update)
+            //            delete_user = sebelumnya ada akun, sekarang uncheck
+            const createUser  = !isEdit && userChecked;
+            const manageUser  = isEdit  && userChecked;
+            const deleteUser  = isEdit  && hadUser && !userChecked;
+
+            // ── Validasi client-side ────────────────────────────────────────
+            if (createUser || (manageUser && !hadUser)) {
+                // Buat akun baru: semua field wajib
                 if (!$('#email').val().trim()) {
                     alert('Email wajib diisi untuk membuat akun user.');
-                    $('#email').focus();
-                    return;
+                    $('#email').focus(); return;
                 }
                 if (!$('#user_role_id').val()) {
                     alert('Pilih Role untuk akun user.');
-                    $('#user_role_id').focus();
-                    return;
+                    $('#user_role_id').focus(); return;
                 }
                 if (!$('#user_password').val() || $('#user_password').val().length < 6) {
                     alert('Password minimal 6 karakter.');
-                    $('#user_password').focus();
-                    return;
+                    $('#user_password').focus(); return;
                 }
             }
 
+            if (deleteUser) {
+                if (!confirm('Akun user karyawan ini akan dihapus. Lanjutkan?')) return;
+            }
+
             const data = {
-                outlet_id:     $('#outlet_id').val(),
-                name:          $('#name').val(),
-                position:      $('#position').val(),
-                department:    $('#department').val(),
-                status:        $('#status').val(),
-                phone:         $('#phone').val(),
-                email:         $('#email').val(),
-                address:       $('#address').val(),
-                salary:        $('#salary').val(),
-                hourly_rate:   $('#hourly_rate').val(),
-                join_date:     $('#join_date').val(),
-                fingerprint_id:$('#fingerprint_id').val(),
-                rfid_uid:      $('#rfid_uid').val(),
-                jobdesk:       jobdesk,
-                // User akses fields
-                create_user:   createUser,
-                user_role_id:  createUser ? $('#user_role_id').val() : null,
-                user_password: createUser ? $('#user_password').val() : null,
-                _token:        '{{ csrf_token() }}'
+                outlet_id:      $('#outlet_id').val(),
+                name:           $('#name').val(),
+                position:       $('#position').val(),
+                department:     $('#department').val(),
+                status:         $('#status').val(),
+                phone:          $('#phone').val(),
+                email:          $('#email').val(),
+                address:        $('#address').val(),
+                salary:         $('#salary').val(),
+                hourly_rate:    $('#hourly_rate').val(),
+                join_date:      $('#join_date').val(),
+                fingerprint_id: $('#fingerprint_id').val(),
+                rfid_uid:       $('#rfid_uid').val(),
+                jobdesk:        jobdesk,
+                // Tambah mode
+                create_user:    createUser,
+                manage_user:    manageUser,
+                delete_user:    deleteUser,
+                user_role_id:   (createUser || manageUser) ? $('#user_role_id').val() : null,
+                user_password:  (createUser || manageUser) ? $('#user_password').val() : null,
+                _token:         '{{ csrf_token() }}'
             };
 
             try {
-                const url = id 
+                const url    = isEdit
                     ? `{{ route('sdm.kepegawaian.index') }}/${id}`
                     : `{{ route('sdm.kepegawaian.store') }}`;
-                
-                const method = id ? 'PUT' : 'POST';
+                const method = isEdit ? 'PUT' : 'POST';
 
                 const response = await fetch(url, {
                     method: method,
@@ -791,9 +829,26 @@
 
         // ── User Access Helper Functions ─────────────────────────────────────────
         function toggleUserFields(checked) {
+            const isEdit   = !!$('#employeeId').val();
+            const hadUser  = $('#employeeModal').data('had-user') || false;
+
             if (checked) {
                 $('#userAccessFields').removeClass('hidden');
-                // Jika email sudah diisi, fokus ke role
+
+                if (isEdit && hadUser) {
+                    // Edit & sudah punya akun → mode update
+                    $('#userSectionLabel').text('Update akun user untuk akses aplikasi');
+                    $('#passwordHint').html('<i class="bx bx-info-circle text-blue-400 text-sm mt-0.5"></i> Kosongkan password jika tidak ingin mengubah. Uncheck untuk <strong class="text-red-600">hapus akun user</strong>.');
+                    $('#user_password').attr('placeholder', 'Kosongkan jika tidak diubah');
+                    $('#passwordRequiredMark').hide();
+                } else {
+                    // Tambah baru atau edit tanpa akun sebelumnya
+                    $('#userSectionLabel').text('Buat juga akun user untuk akses aplikasi');
+                    $('#passwordHint').html('<i class="bx bx-info-circle text-blue-400 text-sm mt-0.5"></i> Username login menggunakan <strong>Email</strong> karyawan. Pastikan email sudah diisi dan belum terdaftar.');
+                    $('#user_password').attr('placeholder', 'Min. 6 karakter');
+                    $('#passwordRequiredMark').show();
+                }
+
                 if ($('#email').val().trim()) {
                     $('#user_role_id').focus();
                 } else {
@@ -803,6 +858,13 @@
                 $('#userAccessFields').addClass('hidden');
                 $('#user_role_id').val('');
                 $('#user_password').val('');
+
+                if (isEdit && hadUser) {
+                    // User akan dihapus
+                    $('#userSectionLabel').html('Buat juga akun user untuk akses aplikasi <span class="text-xs text-amber-600 font-normal ml-1">(akun akan dihapus saat simpan)</span>');
+                } else {
+                    $('#userSectionLabel').text('Buat juga akun user untuk akses aplikasi');
+                }
             }
         }
 

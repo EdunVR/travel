@@ -226,26 +226,36 @@ class RecruitmentManagementController extends Controller
         try {
             $employee = Recruitment::findOrFail($id);
 
+            // Cek apakah sudah punya akun user berdasarkan email
+            $existingUser = null;
+            if ($employee->email) {
+                $existingUser = \App\Models\User::where('email', $employee->email)->first();
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'id' => $employee->id,
-                    'outlet_id' => $employee->outlet_id,
-                    'name' => $employee->name,
-                    'position' => $employee->position,
-                    'department' => $employee->department,
-                    'status' => $employee->status,
-                    'phone' => $employee->phone,
-                    'email' => $employee->email,
-                    'address' => $employee->address,
-                    'salary' => $employee->salary,
-                    'hourly_rate' => $employee->hourly_rate,
-                    'join_date' => $employee->join_date,
-                    'resign_date' => $employee->resign_date,
-                    'fingerprint_id' => $employee->fingerprint_id,
-                    'rfid_uid' => $employee->rfid_uid,
-                    'is_registered_fingerprint' => $employee->is_registered_fingerprint,
-                    'jobdesk' => $employee->jobdesk ?? [],
+                    'id'                       => $employee->id,
+                    'outlet_id'                => $employee->outlet_id,
+                    'name'                     => $employee->name,
+                    'position'                 => $employee->position,
+                    'department'               => $employee->department,
+                    'status'                   => $employee->status,
+                    'phone'                    => $employee->phone,
+                    'email'                    => $employee->email,
+                    'address'                  => $employee->address,
+                    'salary'                   => $employee->salary,
+                    'hourly_rate'              => $employee->hourly_rate,
+                    'join_date'                => $employee->join_date,
+                    'resign_date'              => $employee->resign_date,
+                    'fingerprint_id'           => $employee->fingerprint_id,
+                    'rfid_uid'                 => $employee->rfid_uid,
+                    'is_registered_fingerprint'=> $employee->is_registered_fingerprint,
+                    'jobdesk'                  => $employee->jobdesk ?? [],
+                    // Info akun user
+                    'has_user_account'  => $existingUser !== null,
+                    'user_id'           => $existingUser?->id,
+                    'user_role_id'      => $existingUser?->role_id,
                 ]
             ]);
 
@@ -262,29 +272,39 @@ class RecruitmentManagementController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'outlet_id' => 'required|exists:outlets,id_outlet',
-            'name' => 'required|string|max:255',
-            'position' => 'required|string|max:255',
-            'department' => 'nullable|string|max:255',
-            'status' => 'required|in:active,inactive,resigned',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string',
-            'salary' => 'nullable|numeric|min:0',
-            'hourly_rate' => 'nullable|numeric|min:0',
-            'join_date' => 'nullable|date',
-            'resign_date' => 'nullable|date',
-            'fingerprint_id' => 'nullable|string|max:50',
-            'rfid_uid' => 'nullable|string|max:50',
-            'jobdesk' => 'nullable|array',
+        $rules = [
+            'outlet_id'     => 'required|exists:outlets,id_outlet',
+            'name'          => 'required|string|max:255',
+            'position'      => 'required|string|max:255',
+            'department'    => 'nullable|string|max:255',
+            'status'        => 'required|in:active,inactive,resigned',
+            'phone'         => 'nullable|string|max:20',
+            'email'         => 'nullable|email|max:255',
+            'address'       => 'nullable|string',
+            'salary'        => 'nullable|numeric|min:0',
+            'hourly_rate'   => 'nullable|numeric|min:0',
+            'join_date'     => 'nullable|date',
+            'resign_date'   => 'nullable|date',
+            'fingerprint_id'=> 'nullable|string|max:50',
+            'rfid_uid'      => 'nullable|string|max:50',
+            'jobdesk'       => 'nullable|array',
+            // User akses (untuk edit)
+            'manage_user'   => 'nullable|boolean',  // true = buat/update, false = hapus
+            'user_role_id'  => 'nullable|exists:roles,id',
+            'user_password' => 'nullable|string|min:6',
+        ];
+
+        // Jika manage_user true & email baru (belum punya akun), password wajib
+        $validator = Validator::make($request->all(), $rules, [
+            'user_role_id.required_if' => 'Role wajib dipilih jika membuat akun user.',
+            'user_password.min'        => 'Password minimal 6 karakter.',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
+                'errors'  => $validator->errors()
             ], 422);
         }
 
@@ -295,14 +315,12 @@ class RecruitmentManagementController extends Controller
             DB::beginTransaction();
 
             $employee = Recruitment::findOrFail($id);
-
-            // Validate user has access to this employee's outlet
             $this->validateOutletAccess($employee->outlet_id);
 
             $data = $request->only([
-                'outlet_id', 'name', 'position', 'department', 'status', 
-                'phone', 'email', 'address', 'salary', 
-                'hourly_rate', 'join_date', 'resign_date', 
+                'outlet_id', 'name', 'position', 'department', 'status',
+                'phone', 'email', 'address', 'salary',
+                'hourly_rate', 'join_date', 'resign_date',
                 'fingerprint_id', 'rfid_uid', 'jobdesk'
             ]);
 
@@ -311,13 +329,11 @@ class RecruitmentManagementController extends Controller
                 $data['rfid_uid'] = strtoupper($data['rfid_uid']);
             }
 
-            // Update fingerprint registration status
             $data['is_registered_fingerprint'] = !empty($data['fingerprint_id']);
 
             $employee->update($data);
 
-            // Jika rfid_uid diupdate, reset mode RFID ke attendance
-            // agar mesin absensi kembali ke mode deteksi setelah register
+            // Reset RFID mode jika uid diupdate
             if (!empty($data['rfid_uid'])) {
                 \DB::table('rfid_settings')->updateOrInsert(
                     ['key' => 'mode'],
@@ -327,10 +343,73 @@ class RecruitmentManagementController extends Controller
                     ['key' => 'detected_uid'],
                     ['value' => null, 'updated_at' => now()]
                 );
-                \Log::info('RFID UID assigned to employee, mode reset to attendance', [
-                    'employee_id' => $employee->id,
-                    'rfid_uid' => $data['rfid_uid']
-                ]);
+            }
+
+            // ── Handle user account ──────────────────────────────────────────
+            $manageUser  = $request->boolean('manage_user');
+            $deleteUser  = $request->boolean('delete_user');
+            $email       = $employee->email;
+            $existingUser = $email ? \App\Models\User::where('email', $email)->first() : null;
+
+            if ($deleteUser) {
+                // Uncheck: hapus akun user jika ada
+                if ($existingUser) {
+                    $existingUser->tokens()->delete(); // Hapus Sanctum tokens
+                    $existingUser->delete();
+                    \Log::info('User account deleted for employee', ['employee_id' => $employee->id, 'email' => $email]);
+                }
+            } elseif ($manageUser) {
+                if (!$email) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Email karyawan wajib diisi untuk membuat akun user.'
+                    ], 422);
+                }
+
+                if ($existingUser) {
+                    // Update akun user yang sudah ada
+                    $updateData = ['role_id' => $request->user_role_id];
+                    if ($request->user_password) {
+                        $updateData['password'] = bcrypt($request->user_password);
+                    }
+                    $existingUser->update($updateData);
+                    \Log::info('User account updated for employee', ['employee_id' => $employee->id]);
+                } else {
+                    // Validasi tambahan: password wajib untuk user baru
+                    if (!$request->user_password || strlen($request->user_password) < 6) {
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Password minimal 6 karakter untuk membuat akun user baru.'
+                        ], 422);
+                    }
+                    if (!$request->user_role_id) {
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Role wajib dipilih untuk membuat akun user.'
+                        ], 422);
+                    }
+                    // Cek email belum dipakai user lain
+                    if (\App\Models\User::where('email', $email)->exists()) {
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Email sudah digunakan oleh akun user lain.'
+                        ], 422);
+                    }
+
+                    \App\Models\User::create([
+                        'name'      => $employee->name,
+                        'email'     => $email,
+                        'password'  => bcrypt($request->user_password),
+                        'role_id'   => $request->user_role_id,
+                        'is_active' => true,
+                        'id_outlet' => $employee->outlet_id,
+                    ]);
+                    \Log::info('User account created for employee via edit', ['employee_id' => $employee->id]);
+                }
             }
 
             DB::commit();
@@ -338,13 +417,13 @@ class RecruitmentManagementController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Data karyawan berhasil diupdate',
-                'data' => $employee
+                'data'    => $employee
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Error updating employee: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat mengupdate data'
