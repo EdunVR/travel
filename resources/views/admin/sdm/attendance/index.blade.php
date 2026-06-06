@@ -922,17 +922,18 @@
             </div>
           </div>
 
-          <!-- Google Maps embed -->
+          <!-- Map embed via OpenStreetMap (tidak butuh API key, render konsisten) -->
           <div class="rounded-xl overflow-hidden border border-slate-200">
-            <iframe
-              x-show="locationData.latitude && locationData.longitude"
-              :src="locationData.latitude && locationData.longitude ? 'https://maps.google.com/maps?q=' + locationData.latitude + ',' + locationData.longitude + '&z=16&output=embed' : ''"
-              width="100%"
-              height="450"
-              style="border:0; display:block; min-height:450px;"
-              loading="lazy"
-              allowfullscreen>
-            </iframe>
+            <div x-show="locationData.latitude && locationData.longitude">
+              <iframe
+                :src="locationData.latitude && locationData.longitude
+                  ? 'https://www.openstreetmap.org/export/embed.html?bbox=' + (parseFloat(locationData.longitude)-0.005) + '%2C' + (parseFloat(locationData.latitude)-0.005) + '%2C' + (parseFloat(locationData.longitude)+0.005) + '%2C' + (parseFloat(locationData.latitude)+0.005) + '&layer=mapnik&marker=' + locationData.latitude + '%2C' + locationData.longitude
+                  : 'about:blank'"
+                style="border:0; display:block; width:100%; height:450px;"
+                loading="lazy"
+                allowfullscreen>
+              </iframe>
+            </div>
             <div x-show="!locationData.latitude || !locationData.longitude"
                  style="height:450px;"
                  class="flex items-center justify-center text-slate-400 bg-slate-100">
