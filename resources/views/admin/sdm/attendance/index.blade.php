@@ -866,8 +866,8 @@
     </div>
 
     <!-- Location Modal -->
-    <div x-show="showLocationModal" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3" x-cloak style="display: none;">
-      <div x-on:click.outside="showLocationModal = false" class="w-full max-w-2xl bg-white rounded-2xl shadow-float overflow-hidden">
+    <div x-show="showLocationModal" x-transition.opacity class="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-3 overflow-y-auto" x-cloak style="display: none;">
+      <div x-on:click.outside="showLocationModal = false" class="w-full max-w-2xl bg-white rounded-2xl shadow-float overflow-hidden my-4">
         <!-- Header -->
         <div class="px-5 py-3 text-white flex items-center justify-between"
              :class="locationData.clock_label === 'Keluar/Pulang' ? 'bg-orange-500' : 'bg-green-600'">
@@ -928,8 +928,8 @@
               <iframe
                 :src="'https://maps.google.com/maps?q=' + locationData.latitude + ',' + locationData.longitude + '&z=16&output=embed'"
                 width="100%"
-                height="340"
-                style="border:0;"
+                height="480"
+                style="border:0; display:block;"
                 loading="lazy"
                 allowfullscreen>
               </iframe>
