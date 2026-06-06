@@ -405,34 +405,93 @@ Route::get('/health', function () {
 // Akses: https://hmtourtravel.com/check-attendance-gps
 // HAPUS ROUTE INI SETELAH SELESAI!
 Route::get('/check-attendance-gps', function () {
-    // Test: ambil data attendance hari ini via query langsung
-    // Ini mensimulasikan apa yang seharusnya dikembalikan getDailyTable
-    $today = date('Y-m-d');
-    $record = \DB::table('attendances')
-        ->whereNotNull('latitude')
-        ->latest('id')
-        ->first();
+    $record = \DB::table('attendances')->whereNotNull('latitude')->latest('id')->first();
+    return response()->json([
+        'gps_records_in_db' => \DB::table('attendances')->whereNotNull('latitude')->count(),
+        'sample_record'     => $record,
+        'note'              => 'Jika sample_record ada latitude, controller perlu di-patch',
+    ]);
+});
 
-    if (!$record) {
-        return response()->json(['error' => 'No GPS attendance records found']);
+// ── TEMPORARY: Patch controller GPS ────────────────────────────────────────
+// Akses: https://hmtourtravel.com/patch-gps-controller
+// HAPUS ROUTE INI SETELAH SELESAI!
+Route::get('/patch-gps-controller', function () {
+    $paths = [
+        base_path('app/Http/Controllers/AttendanceManagementController.php'),
+    ];
+
+    $controllerPath = null;
+    foreach ($paths as $p) {
+        if (file_exists($p)) { $controllerPath = $p; break; }
     }
 
-    // Simulasi response dari getDailyTable
+    if (!$controllerPath) {
+        return response()->json(['error' => 'Controller not found', 'base_path' => base_path()]);
+    }
+
+    $content = file_get_contents($controllerPath);
+
+    // Cek apakah sudah di-patch
+    if (strpos($content, 'GPS / online attendance fields') !== false) {
+        // Sudah di-patch — clear cache saja
+        \Artisan::call('cache:clear');
+        \Artisan::call('view:clear');
+        if (function_exists('opcache_reset')) opcache_reset();
+        return response()->json([
+            'status'  => 'already_patched',
+            'message' => 'Controller sudah punya GPS fields. Cache sudah dihapus. Refresh halaman admin absensi.',
+        ]);
+    }
+
+    // Cari pattern untuk patch
+    $searchPattern = "'notes' => \$attendance->notes ?? null,";
+    if (strpos($content, $searchPattern) === false) {
+        // Coba pattern alternatif
+        $searchPattern = "'notes' => \$attendance->notes,";
+    }
+    if (strpos($content, $searchPattern) === false) {
+        return response()->json([
+            'error'   => 'Pattern not found',
+            'snippet' => substr($content, strpos($content, 'getDailyTable'), 500),
+        ]);
+    }
+
+    $gpsAddition = "\n                    // GPS / online attendance fields\n" .
+        "                    'source'           => \$attendance->source ?? 'fingerprint',\n" .
+        "                    'latitude'         => \$attendance->latitude ?? null,\n" .
+        "                    'longitude'        => \$attendance->longitude ?? null,\n" .
+        "                    'location_address' => \$attendance->location_address ?? null,\n" .
+        "                    'device_info'      => \$attendance->device_info ?? null,\n" .
+        "                    // GPS clock-out\n" .
+        "                    'clock_out_latitude'  => \$attendance->clock_out_latitude  ?? null,\n" .
+        "                    'clock_out_longitude' => \$attendance->clock_out_longitude ?? null,\n" .
+        "                    'clock_out_address'   => \$attendance->clock_out_address   ?? null,";
+
+    // Replace hanya occurrence pertama
+    $pos     = strpos($content, $searchPattern);
+    $patched = substr($content, 0, $pos + strlen($searchPattern))
+             . $gpsAddition
+             . substr($content, $pos + strlen($searchPattern));
+
+    // Backup & tulis
+    file_put_contents($controllerPath . '.bak', $content);
+    $written = file_put_contents($controllerPath, $patched);
+
+    if ($written === false) {
+        return response()->json(['error' => 'Failed to write. Check file permissions.']);
+    }
+
+    // Clear semua cache
+    \Artisan::call('cache:clear');
+    \Artisan::call('view:clear');
+    if (function_exists('opcache_invalidate')) opcache_invalidate($controllerPath, true);
+    if (function_exists('opcache_reset')) opcache_reset();
+
     return response()->json([
-        'controller_file_check' => [
-            'has_gps_in_local_controller' => true, // selalu true karena ini route baru
-            'db_has_latitude'             => !empty($record->latitude),
-            'db_latitude_value'           => $record->latitude,
-        ],
-        'test_record' => [
-            'id'               => $record->id,
-            'clock_in'         => $record->clock_in,
-            'source'           => $record->source,
-            'latitude'         => $record->latitude,
-            'longitude'        => $record->longitude,
-            'location_address' => $record->location_address,
-        ],
-        'action_needed' => 'Upload file app/Http/Controllers/AttendanceManagementController.php ke Hostinger',
+        'status'  => 'patched',
+        'message' => 'Controller berhasil di-patch dan cache dihapus! Refresh halaman admin absensi.',
+        'bytes'   => $written,
     ]);
 });
 
