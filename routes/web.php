@@ -401,26 +401,28 @@ Route::get('/health', function () {
     ]);
 })->middleware('web');
 
-// ── TEMPORARY: Tambah kolom GPS clock-out ─────────────────────────────────
-// Akses: https://hmtourtravel.com/add-clockout-gps-columns
-// HAPUS ROUTE INI SETELAH DIJALANKAN!
-Route::get('/add-clockout-gps-columns', function () {
-    $results = [];
-    $cols = [
-        'clock_out_latitude'  => 'DECIMAL(10,7) NULL',
-        'clock_out_longitude' => 'DECIMAL(10,7) NULL',
-        'clock_out_address'   => 'VARCHAR(500) NULL',
-    ];
-    foreach ($cols as $col => $def) {
-        $exists = \DB::select("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'attendances' AND COLUMN_NAME = ?", [$col]);
-        if (($exists[0]->cnt ?? 0) == 0) {
-            \DB::statement("ALTER TABLE `attendances` ADD COLUMN `$col` $def");
-            $results[] = ['status' => 'ok', 'msg' => "Kolom $col berhasil ditambahkan"];
-        } else {
-            $results[] = ['status' => 'skip', 'msg' => "Kolom $col sudah ada"];
-        }
-    }
-    return response()->json(['success' => true, 'results' => $results, 'note' => 'HAPUS route ini setelah selesai!']);
+// ── TEMPORARY: Cek apakah kolom GPS attendance sudah ada & data sudah terisi ──
+// Akses: https://hmtourtravel.com/check-attendance-gps
+// HAPUS ROUTE INI SETELAH SELESAI!
+Route::get('/check-attendance-gps', function () {
+    // Ambil 5 record attendance terbaru yang source = online
+    $records = \DB::table('attendances')
+        ->where('source', 'online')
+        ->orWhereNotNull('latitude')
+        ->orderByDesc('id')
+        ->limit(5)
+        ->select('id', 'date', 'clock_in', 'clock_out', 'source', 'latitude', 'longitude', 'location_address', 'clock_out_latitude', 'clock_out_longitude')
+        ->get();
+
+    // Cek apakah kolom clock_out_latitude sudah ada
+    $hasClockOutCols = \Schema::hasColumn('attendances', 'clock_out_latitude');
+
+    return response()->json([
+        'has_clock_out_gps_columns' => $hasClockOutCols,
+        'online_records_count' => \DB::table('attendances')->where('source', 'online')->count(),
+        'gps_records_count' => \DB::table('attendances')->whereNotNull('latitude')->count(),
+        'latest_gps_records' => $records,
+    ]);
 });
 
 // Handle any other methods on root URL

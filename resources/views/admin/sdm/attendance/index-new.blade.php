@@ -266,11 +266,11 @@
                       x-text="getStatusLabel(item.status)">
                     </span>
                   </td>
-                  <!-- Jam Masuk + tombol map jika online -->
+                  <!-- Jam Masuk + tombol map jika ada koordinat GPS -->
                   <td class="px-4 py-3 text-center font-medium">
                     <div class="inline-flex items-center gap-1 justify-center">
                       <span x-text="item.clock_in || '-'"></span>
-                      <template x-if="item.source === 'online' && item.latitude && item.longitude && item.clock_in">
+                      <template x-if="item.latitude && item.longitude && item.clock_in">
                         <button
                           @click="viewLocation(item, 'in')"
                           class="inline-flex items-center justify-center w-5 h-5 rounded text-green-600 hover:bg-green-100"
@@ -282,11 +282,11 @@
                   </td>
                   <td class="px-4 py-3 text-center text-slate-600" x-text="item.break_in || '-'"></td>
                   <td class="px-4 py-3 text-center text-slate-600" x-text="item.break_out || '-'"></td>
-                  <!-- Jam Keluar + tombol map jika online -->
+                  <!-- Jam Keluar + tombol map jika ada koordinat GPS -->
                   <td class="px-4 py-3 text-center font-medium">
                     <div class="inline-flex items-center gap-1 justify-center">
                       <span x-text="item.clock_out || '-'"></span>
-                      <template x-if="item.source === 'online' && item.latitude && item.longitude && item.clock_out">
+                      <template x-if="(item.clock_out_latitude || item.latitude) && (item.clock_out_longitude || item.longitude) && item.clock_out">
                         <button
                           @click="viewLocation(item, 'out')"
                           class="inline-flex items-center justify-center w-5 h-5 rounded text-orange-600 hover:bg-orange-100"
