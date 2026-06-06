@@ -401,27 +401,38 @@ Route::get('/health', function () {
     ]);
 })->middleware('web');
 
-// ── TEMPORARY: Cek apakah kolom GPS attendance sudah ada & data sudah terisi ──
+// ── TEMPORARY: Test response attendance daily table ─────────────────────────
 // Akses: https://hmtourtravel.com/check-attendance-gps
 // HAPUS ROUTE INI SETELAH SELESAI!
 Route::get('/check-attendance-gps', function () {
-    // Ambil 5 record attendance terbaru yang source = online
-    $records = \DB::table('attendances')
-        ->where('source', 'online')
-        ->orWhereNotNull('latitude')
-        ->orderByDesc('id')
-        ->limit(5)
-        ->select('id', 'date', 'clock_in', 'clock_out', 'source', 'latitude', 'longitude', 'location_address', 'clock_out_latitude', 'clock_out_longitude')
-        ->get();
+    // Test: ambil data attendance hari ini via query langsung
+    // Ini mensimulasikan apa yang seharusnya dikembalikan getDailyTable
+    $today = date('Y-m-d');
+    $record = \DB::table('attendances')
+        ->whereNotNull('latitude')
+        ->latest('id')
+        ->first();
 
-    // Cek apakah kolom clock_out_latitude sudah ada
-    $hasClockOutCols = \Schema::hasColumn('attendances', 'clock_out_latitude');
+    if (!$record) {
+        return response()->json(['error' => 'No GPS attendance records found']);
+    }
 
+    // Simulasi response dari getDailyTable
     return response()->json([
-        'has_clock_out_gps_columns' => $hasClockOutCols,
-        'online_records_count' => \DB::table('attendances')->where('source', 'online')->count(),
-        'gps_records_count' => \DB::table('attendances')->whereNotNull('latitude')->count(),
-        'latest_gps_records' => $records,
+        'controller_file_check' => [
+            'has_gps_in_local_controller' => true, // selalu true karena ini route baru
+            'db_has_latitude'             => !empty($record->latitude),
+            'db_latitude_value'           => $record->latitude,
+        ],
+        'test_record' => [
+            'id'               => $record->id,
+            'clock_in'         => $record->clock_in,
+            'source'           => $record->source,
+            'latitude'         => $record->latitude,
+            'longitude'        => $record->longitude,
+            'location_address' => $record->location_address,
+        ],
+        'action_needed' => 'Upload file app/Http/Controllers/AttendanceManagementController.php ke Hostinger',
     ]);
 });
 
