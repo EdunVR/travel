@@ -401,15 +401,51 @@ Route::get('/health', function () {
     ]);
 })->middleware('web');
 
-// ── TEMPORARY: Test response attendance daily table ─────────────────────────
-// Akses: https://hmtourtravel.com/check-attendance-gps
+// ── TEMPORARY: Debug attendance API response ────────────────────────────────
+// Akses: https://hmtourtravel.com/debug-attendance-api
 // HAPUS ROUTE INI SETELAH SELESAI!
-Route::get('/check-attendance-gps', function () {
-    $record = \DB::table('attendances')->whereNotNull('latitude')->latest('id')->first();
+Route::get('/debug-attendance-api', function (\Illuminate\Http\Request $request) {
+    // Ambil data dari controller langsung
+    $controller = app(\App\Http\Controllers\AttendanceManagementController::class);
+    
+    // Simulasi request ke getDailyTable dengan date hari ini
+    $fakeRequest = \Illuminate\Http\Request::create('/admin/sdm/attendance/daily-table', 'GET', [
+        'date'       => date('Y-m-d'),
+        'outlet_ids' => [],
+    ]);
+    
+    $response = $controller->getDailyTable($fakeRequest);
+    $data     = json_decode($response->getContent(), true);
+    
+    // Cek apakah GPS fields ada
+    $sampleItem  = $data['data'][0] ?? null;
+    $hasGps      = $sampleItem && isset($sampleItem['latitude']);
+    $hasSource   = $sampleItem && isset($sampleItem['source']);
+    
+    // Cek view file di server
+    $viewPath    = resource_path('views/admin/sdm/attendance/index-new.blade.php');
+    $viewContent = file_exists($viewPath) ? file_get_contents($viewPath) : 'NOT FOUND';
+    $viewHasMapBtn = strpos($viewContent, 'Jam Masuk + tombol map') !== false
+                  || strpos($viewContent, 'viewLocation') !== false;
+    $viewHasLatCondition = strpos($viewContent, 'item.latitude && item.longitude') !== false;
+
     return response()->json([
-        'gps_records_in_db' => \DB::table('attendances')->whereNotNull('latitude')->count(),
-        'sample_record'     => $record,
-        'note'              => 'Jika sample_record ada latitude, controller perlu di-patch',
+        'api_response' => [
+            'has_gps_fields_in_response' => $hasGps,
+            'has_source_field'           => $hasSource,
+            'sample_latitude'            => $sampleItem['latitude'] ?? 'NOT IN RESPONSE',
+            'sample_source'              => $sampleItem['source']   ?? 'NOT IN RESPONSE',
+            'total_employees'            => count($data['data'] ?? []),
+        ],
+        'view_file' => [
+            'exists'              => file_exists($viewPath),
+            'has_map_button_code' => $viewHasMapBtn,
+            'has_lat_condition'   => $viewHasLatCondition,
+            'path'                => $viewPath,
+        ],
+        'action' => $viewHasMapBtn 
+            ? 'View sudah benar. Masalah di Alpine.js atau data GPS null untuk employee ini.'
+            : 'View BELUM diupdate. Upload index-new.blade.php ke Hostinger!',
     ]);
 });
 
