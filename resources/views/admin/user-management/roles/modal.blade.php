@@ -160,7 +160,9 @@
                                         $menuIdentifier = 'task';
                                     }
                                     if ($item['route'] === 'admin.inventaris.tasks.my-tasks') {
-                                        $menuIdentifier = 'task'; // skip, same as tasks.index
+                                        // My Tasks uses same permission as Task Management — skip rendering
+                                        // to avoid duplicate checkbox entries in the permission modal
+                                        continue;
                                     }
                                     if ($item['route'] === 'admin.inventaris.travel.communication.index') {
                                         $menuIdentifier = 'communication';

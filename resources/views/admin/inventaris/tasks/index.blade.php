@@ -40,7 +40,22 @@
     </div>
 
     {{-- ── Stats Cards ─────────────────────────────────────────────────────────── --}}
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        {{-- Overall Progress --}}
+        <div class="rounded-2xl border border-primary-200 bg-primary-50 p-4 shadow-card col-span-2 sm:col-span-3 lg:col-span-1">
+            <div class="flex items-center justify-between mb-2">
+                <p class="text-xs font-medium text-primary-600 uppercase tracking-wide">Avg Progress</p>
+                <div class="h-8 w-8 rounded-xl bg-primary-100 flex items-center justify-center">
+                    <i class="bx bx-trending-up text-primary-600 text-base"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-black text-primary-700" x-text="overallProgress + '%'"></p>
+            <div class="mt-2 bg-primary-100 rounded-full h-1.5 overflow-hidden">
+                <div class="h-1.5 rounded-full bg-primary-500 transition-all duration-500"
+                     :style="'width:' + overallProgress + '%'"></div>
+            </div>
+            <p class="text-xs text-primary-400 mt-1" x-text="tasks.length + ' task'"></p>
+        </div>
         {{-- Total --}}
         <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
             <div class="flex items-center justify-between mb-2">
@@ -82,7 +97,7 @@
             <p class="text-2xl font-black text-emerald-700" x-text="stats.done ?? 0"></p>
         </div>
         {{-- Overdue --}}
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-card col-span-2 sm:col-span-1">
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
             <div class="flex items-center justify-between mb-2">
                 <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Overdue</p>
                 <div class="h-8 w-8 rounded-xl bg-red-50 flex items-center justify-center">
@@ -306,6 +321,31 @@
                             </div>
                         </div>
 
+                        {{-- Progress bar realisasi --}}
+                        <div class="mt-3">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-slate-400">Realisasi</span>
+                                <span class="text-xs font-bold"
+                                      :class="{
+                                          'text-emerald-600': (task.realisasi_pct ?? 0) >= 90,
+                                          'text-blue-600':    (task.realisasi_pct ?? 0) >= 60 && (task.realisasi_pct ?? 0) < 90,
+                                          'text-amber-500':   (task.realisasi_pct ?? 0) >= 30 && (task.realisasi_pct ?? 0) < 60,
+                                          'text-red-500':     (task.realisasi_pct ?? 0) < 30,
+                                      }"
+                                      x-text="(task.realisasi_pct ?? 0) + '%'"></span>
+                            </div>
+                            <div class="bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                <div class="h-1.5 rounded-full transition-all duration-500"
+                                     :class="{
+                                         'bg-emerald-500': (task.realisasi_pct ?? 0) >= 90,
+                                         'bg-blue-500':    (task.realisasi_pct ?? 0) >= 60 && (task.realisasi_pct ?? 0) < 90,
+                                         'bg-amber-400':   (task.realisasi_pct ?? 0) >= 30 && (task.realisasi_pct ?? 0) < 60,
+                                         'bg-red-400':     (task.realisasi_pct ?? 0) < 30,
+                                     }"
+                                     :style="'width:' + Math.min(task.realisasi_pct ?? 0, 100) + '%'"></div>
+                            </div>
+                        </div>
+
                         {{-- Actions --}}
                         <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                             <button @click="openEditModal(task)"
@@ -443,6 +483,13 @@ function taskDashboard() {
         tasks: [],
         users: [],
         stats: { total: 0, todo: 0, in_progress: 0, done: 0, overdue: 0 },
+
+        // Overall progress — rata-rata realisasi_pct dari filtered tasks
+        get overallProgress() {
+            if (!this.tasks || this.tasks.length === 0) return 0;
+            const sum = this.tasks.reduce((a, t) => a + (parseFloat(t.realisasi_pct) || 0), 0);
+            return Math.round(sum / this.tasks.length);
+        },
 
         selectedIds: [],
 

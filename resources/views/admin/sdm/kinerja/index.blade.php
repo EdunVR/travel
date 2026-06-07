@@ -252,23 +252,31 @@
 
                             {{-- Task Summary Card (sync dari Task Management) --}}
                             <div x-show="expandedUserId === user.user_id && taskSummary.total > 0" class="mt-4">
-                                <div class="rounded-xl border border-blue-100 bg-blue-50/30 p-4">
+                                <div class="rounded-xl border border-blue-100 bg-white p-4">
                                     <div class="flex items-center justify-between mb-3">
                                         <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                            <i class="bx bx-task mr-1 text-blue-500"></i>Task Progress (dari Task Management)
+                                            <i class="bx bx-task mr-1 text-blue-500"></i>Task Progress
                                         </h4>
                                         <a :href="'/admin/inventaris/travel/tasks?assigned_to=' + user.user_id"
                                            class="text-xs text-blue-600 hover:underline" target="_blank">
-                                            Lihat semua →
+                                            Kelola task →
                                         </a>
                                     </div>
-                                    {{-- Overall progress bar --}}
-                                    <div class="mb-3">
-                                        <div class="flex justify-between text-xs text-slate-500 mb-1">
+
+                                    {{-- Overall progress --}}
+                                    <div class="mb-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
+                                        <div class="flex justify-between text-xs text-slate-500 mb-1.5">
                                             <span>Rata-rata realisasi</span>
-                                            <span class="font-bold text-slate-700" x-text="taskSummary.avg_realisasi + '%'"></span>
+                                            <span class="font-bold"
+                                                  :class="{
+                                                      'text-emerald-600': taskSummary.avg_realisasi >= 80,
+                                                      'text-blue-600':    taskSummary.avg_realisasi >= 50 && taskSummary.avg_realisasi < 80,
+                                                      'text-amber-600':   taskSummary.avg_realisasi >= 20 && taskSummary.avg_realisasi < 50,
+                                                      'text-red-500':     taskSummary.avg_realisasi < 20,
+                                                  }"
+                                                  x-text="taskSummary.avg_realisasi + '%'"></span>
                                         </div>
-                                        <div class="bg-slate-100 rounded-full h-2 overflow-hidden">
+                                        <div class="bg-slate-200 rounded-full h-2 overflow-hidden">
                                             <div class="h-2 rounded-full transition-all duration-500"
                                                  :class="{
                                                      'bg-emerald-500': taskSummary.avg_realisasi >= 80,
@@ -278,25 +286,73 @@
                                                  }"
                                                  :style="'width:' + taskSummary.avg_realisasi + '%'"></div>
                                         </div>
+                                        {{-- counts --}}
+                                        <div class="grid grid-cols-4 gap-1.5 mt-2 text-center text-xs">
+                                            <div>
+                                                <span class="font-black text-slate-700" x-text="taskSummary.total"></span>
+                                                <span class="text-slate-400 block">total</span>
+                                            </div>
+                                            <div>
+                                                <span class="font-black text-blue-600" x-text="taskSummary.in_progress"></span>
+                                                <span class="text-slate-400 block">proses</span>
+                                            </div>
+                                            <div>
+                                                <span class="font-black text-emerald-600" x-text="taskSummary.done"></span>
+                                                <span class="text-slate-400 block">selesai</span>
+                                            </div>
+                                            <div>
+                                                <span class="font-black text-red-500" x-text="taskSummary.overdue"></span>
+                                                <span class="text-slate-400 block">overdue</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    {{-- Task counts --}}
-                                    <div class="grid grid-cols-4 gap-2 text-center text-xs">
-                                        <div class="rounded-lg bg-white border border-slate-100 px-2 py-1.5">
-                                            <p class="font-black text-slate-700" x-text="taskSummary.total"></p>
-                                            <p class="text-slate-400">Total</p>
-                                        </div>
-                                        <div class="rounded-lg bg-white border border-slate-100 px-2 py-1.5">
-                                            <p class="font-black text-blue-600" x-text="taskSummary.in_progress"></p>
-                                            <p class="text-slate-400">Proses</p>
-                                        </div>
-                                        <div class="rounded-lg bg-white border border-slate-100 px-2 py-1.5">
-                                            <p class="font-black text-emerald-600" x-text="taskSummary.done"></p>
-                                            <p class="text-slate-400">Selesai</p>
-                                        </div>
-                                        <div class="rounded-lg bg-white border border-red-100 px-2 py-1.5">
-                                            <p class="font-black text-red-500" x-text="taskSummary.overdue"></p>
-                                            <p class="text-slate-400">Overdue</p>
-                                        </div>
+
+                                    {{-- Task list --}}
+                                    <div class="space-y-2">
+                                        <template x-for="t in taskSummary.tasks" :key="t.id">
+                                            <div class="rounded-lg border p-2.5"
+                                                 :class="t.is_overdue ? 'border-red-100 bg-red-50/30' : 'border-slate-100 bg-slate-50/50'">
+                                                <div class="flex items-start justify-between gap-2 mb-1.5">
+                                                    <div class="flex-1 min-w-0">
+                                                        <p class="text-xs font-semibold text-slate-800 truncate" x-text="t.title"></p>
+                                                        <div class="flex items-center gap-2 mt-0.5">
+                                                            <span class="text-xs rounded px-1.5 py-0.5 font-medium"
+                                                                  :class="{
+                                                                      'bg-slate-100 text-slate-600': t.status === 'todo',
+                                                                      'bg-blue-100 text-blue-700':   t.status === 'in_progress',
+                                                                      'bg-yellow-100 text-yellow-700': t.status === 'review',
+                                                                      'bg-emerald-100 text-emerald-700': t.status === 'done',
+                                                                  }"
+                                                                  x-text="{'todo':'Todo','in_progress':'Proses','review':'Review','done':'Selesai'}[t.status] ?? t.status"></span>
+                                                            <span x-show="t.is_overdue"
+                                                                  class="text-xs text-red-500 font-semibold">
+                                                                <i class="bx bx-error text-xs"></i> Overdue
+                                                            </span>
+                                                            <span x-show="t.due_date" class="text-xs text-slate-400"
+                                                                  x-text="t.due_date_formatted"></span>
+                                                        </div>
+                                                    </div>
+                                                    <span class="text-xs font-bold shrink-0"
+                                                          :class="{
+                                                              'text-emerald-600': t.realisasi_pct >= 90,
+                                                              'text-blue-600':    t.realisasi_pct >= 60 && t.realisasi_pct < 90,
+                                                              'text-amber-600':   t.realisasi_pct >= 30 && t.realisasi_pct < 60,
+                                                              'text-red-500':     t.realisasi_pct < 30,
+                                                          }"
+                                                          x-text="t.realisasi_pct + '%'"></span>
+                                                </div>
+                                                <div class="bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                                    <div class="h-1.5 rounded-full transition-all duration-500"
+                                                         :class="{
+                                                             'bg-emerald-500': t.realisasi_pct >= 90,
+                                                             'bg-blue-500':    t.realisasi_pct >= 60 && t.realisasi_pct < 90,
+                                                             'bg-amber-400':   t.realisasi_pct >= 30 && t.realisasi_pct < 60,
+                                                             'bg-red-400':     t.realisasi_pct < 30,
+                                                         }"
+                                                         :style="'width:' + Math.min(t.realisasi_pct, 100) + '%'"></div>
+                                                </div>
+                                            </div>
+                                        </template>
                                     </div>
                                 </div>
                             </div>
