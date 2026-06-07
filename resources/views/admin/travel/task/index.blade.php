@@ -7,7 +7,7 @@
         <p class="text-slate-600 text-sm">Kelola dan pantau tugas tim untuk paket perjalanan.</p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <a href="{{ route('admin.inventaris.travel.tasks.my-tasks') }}" class="inline-flex items-center gap-2 rounded-xl bg-primary-600 text-white px-4 py-2 hover:bg-primary-700">
+        <a href="{{ route('admin.inventaris.tasks.my-tasks') }}" class="inline-flex items-center gap-2 rounded-xl bg-primary-600 text-white px-4 py-2 hover:bg-primary-700">
           <i class='bx bx-user text-lg'></i> My Tasks
         </a>
       </div>
@@ -185,7 +185,7 @@
           processing: true,
           serverSide: true,
           ajax: {
-            url: '{{ route("admin.inventaris.travel.tasks.data") }}',
+            url: '{{ route("admin.inventaris.tasks.data") }}',
             data: function(d) {
               d.team = $('#teamFilter').val();
               d.status = $('#statusFilter').val();
@@ -233,7 +233,7 @@
       // Update statistics
       function updateStats() {
         $.ajax({
-          url: '{{ route("admin.inventaris.travel.tasks.data") }}',
+          url: '{{ route("admin.inventaris.tasks.data") }}',
           data: {
             team: $('#teamFilter').val(),
             length: -1
@@ -382,3 +382,4 @@
   </script>
   @endpush
 </x-layouts.admin>
+

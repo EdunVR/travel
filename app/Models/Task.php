@@ -23,6 +23,7 @@ class Task extends Model
         'assigned_to',
         'category',
         'attachment_notes',
+        'realisasi_pct',
         'created_by',
     ];
 
@@ -32,7 +33,8 @@ class Task extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'due_date' => 'date',
+        'due_date'      => 'date',
+        'realisasi_pct' => 'float',
     ];
 
     // -------------------------------------------------------------------------

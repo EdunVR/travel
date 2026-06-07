@@ -7,7 +7,7 @@
         <p class="text-slate-600 text-sm">Tugas yang ditugaskan kepada Anda.</p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <a href="{{ route('admin.inventaris.travel.tasks.index') }}" class="inline-flex items-center gap-2 rounded-xl bg-slate-600 text-white px-4 py-2 hover:bg-slate-700">
+        <a href="{{ route('admin.inventaris.tasks.index') }}" class="inline-flex items-center gap-2 rounded-xl bg-slate-600 text-white px-4 py-2 hover:bg-slate-700">
           <i class='bx bx-arrow-back text-lg'></i> All Tasks
         </a>
       </div>
@@ -166,7 +166,7 @@
           processing: true,
           serverSide: true,
           ajax: {
-            url: '{{ route("admin.inventaris.travel.tasks.data") }}',
+            url: '{{ route("admin.inventaris.tasks.data") }}',
             data: function(d) {
               d.user = userId;
               d.status = $('#statusFilter').val();
@@ -242,7 +242,7 @@
       // Update statistics
       function updateStats() {
         $.ajax({
-          url: '{{ route("admin.inventaris.travel.tasks.data") }}',
+          url: '{{ route("admin.inventaris.tasks.data") }}',
           data: {
             user: userId,
             length: -1
@@ -328,3 +328,4 @@
   </script>
   @endpush
 </x-layouts.admin>
+

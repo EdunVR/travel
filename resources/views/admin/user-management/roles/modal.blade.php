@@ -156,10 +156,10 @@
                                     if ($item['route'] === 'admin.inventaris.booking.index') {
                                         $menuIdentifier = 'booking';
                                     }
-                                    if ($item['route'] === 'admin.inventaris.travel.tasks.index') {
+                                    if ($item['route'] === 'admin.inventaris.tasks.index') {
                                         $menuIdentifier = 'task';
                                     }
-                                    if ($item['route'] === 'admin.inventaris.travel.tasks.my-tasks') {
+                                    if ($item['route'] === 'admin.inventaris.tasks.my-tasks') {
                                         $menuIdentifier = 'task'; // skip, same as tasks.index
                                     }
                                     if ($item['route'] === 'admin.inventaris.travel.communication.index') {

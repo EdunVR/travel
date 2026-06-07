@@ -96,6 +96,7 @@ class NewTaskController extends Controller
                 'assignee_name'      => $task->assignedUser ? $task->assignedUser->name : null,
                 'category'           => $task->category,
                 'attachment_notes'   => $task->attachment_notes,
+                'realisasi_pct'      => (float) ($task->realisasi_pct ?? 0),
                 'is_overdue'         => $isOverdue,
                 'created_at'         => $task->created_at,
                 'updated_at'         => $task->updated_at,
@@ -284,6 +285,7 @@ class NewTaskController extends Controller
                 'attachment_notes'  => $task->attachment_notes,
                 'created_by'        => $task->created_by,
                 'is_overdue'        => $isOverdue,
+                'realisasi_pct'     => (float) ($task->realisasi_pct ?? 0),
                 'created_at'        => $task->created_at,
                 'updated_at'        => $task->updated_at,
             ];
@@ -302,7 +304,7 @@ class NewTaskController extends Controller
         $task = Task::findOrFail($id);
 
         // 9.4 / 9.5: karyawan hanya boleh update task miliknya sendiri
-        if ($task->assigned_to !== auth()->id()) {
+        if ((int) $task->assigned_to !== (int) auth()->id()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Forbidden: you are not the assignee of this task.',
@@ -317,6 +319,97 @@ class NewTaskController extends Controller
 
         $task->status           = $validated['status'];
         $task->attachment_notes = $validated['attachment_notes'] ?? $task->attachment_notes;
+        $task->save();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $task->fresh(),
+        ]);
+    }
+
+    // ─── API: ringkasan task progress untuk satu user (dipakai kinerja) ─────────
+    public function getTasksSummaryForUser(Request $request)
+    {
+        $userId = $request->get('user_id', auth()->id());
+
+        $tasks = Task::where('assigned_to', $userId)->get();
+
+        if ($tasks->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'total'           => 0,
+                    'done'            => 0,
+                    'in_progress'     => 0,
+                    'todo'            => 0,
+                    'overdue'         => 0,
+                    'avg_realisasi'   => 0,
+                    'tasks'           => [],
+                ],
+            ]);
+        }
+
+        $today = today();
+
+        $taskData = $tasks->map(function (Task $t) use ($today) {
+            $isOverdue = $t->due_date && $t->due_date->lt($today) && $t->status !== 'done';
+            return [
+                'id'            => $t->id,
+                'title'         => $t->title,
+                'status'        => $t->status,
+                'realisasi_pct' => (float) ($t->realisasi_pct ?? 0),
+                'due_date'      => $t->due_date ? $t->due_date->format('Y-m-d') : null,
+                'due_date_formatted' => $t->due_date ? $t->due_date->format('d M Y') : null,
+                'is_overdue'    => $isOverdue,
+                'priority'      => $t->priority,
+                'category'      => $t->category,
+            ];
+        });
+
+        $avgRealisasi = round($tasks->avg(fn($t) => (float) ($t->realisasi_pct ?? 0)), 1);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'total'         => $tasks->count(),
+                'done'          => $tasks->where('status', 'done')->count(),
+                'in_progress'   => $tasks->where('status', 'in_progress')->count(),
+                'todo'          => $tasks->where('status', 'todo')->count(),
+                'overdue'       => $tasks->filter(fn($t) =>
+                    $t->due_date && $t->due_date->lt($today) && $t->status !== 'done'
+                )->count(),
+                'avg_realisasi' => $avgRealisasi,
+                'tasks'         => $taskData,
+            ],
+        ]);
+    }
+
+    // ─── Update realisasi % task oleh karyawan ────────────────────────────────
+    public function updateRealisasi(Request $request, $id)
+    {
+        $task = Task::findOrFail($id);
+
+        // Hanya assignee yang boleh update realisasi
+        if ((int) $task->assigned_to !== (int) auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Forbidden: you are not the assignee of this task.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'realisasi_pct' => ['required', 'numeric', 'min:0', 'max:100'],
+        ]);
+
+        $task->realisasi_pct = $validated['realisasi_pct'];
+
+        // Auto-update status berdasarkan realisasi
+        if ((float) $validated['realisasi_pct'] >= 100 && $task->status !== 'done') {
+            $task->status = 'done';
+        } elseif ((float) $validated['realisasi_pct'] > 0 && $task->status === 'todo') {
+            $task->status = 'in_progress';
+        }
+
         $task->save();
 
         return response()->json([

@@ -38,7 +38,22 @@
     </div>
 
     {{-- ── Stats Cards ─────────────────────────────────────────────────────────── --}}
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        {{-- Overall Progress --}}
+        <div class="rounded-2xl border border-primary-200 bg-primary-50 p-4 shadow-card sm:col-span-1">
+            <div class="flex items-center justify-between mb-2">
+                <p class="text-xs font-medium text-primary-600 uppercase tracking-wide">Overall Progress</p>
+                <div class="h-8 w-8 rounded-xl bg-primary-100 flex items-center justify-center">
+                    <i class="bx bx-trophy text-primary-600 text-base"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-black text-primary-700" x-text="overallProgress + '%'"></p>
+            <div class="mt-2 bg-primary-100 rounded-full h-1.5 overflow-hidden">
+                <div class="h-1.5 rounded-full bg-primary-500 transition-all duration-500"
+                     :style="'width:' + overallProgress + '%'"></div>
+            </div>
+            <p class="text-xs text-primary-500 mt-1" x-text="tasks.length + ' task total'"></p>
+        </div>
         {{-- Todo --}}
         <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
             <div class="flex items-center justify-between mb-2">
@@ -151,21 +166,53 @@
                             <span x-text="task.due_date_formatted"></span>
                         </div>
 
+                        {{-- Progress Realisasi --}}
+                        <div class="mb-3">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-slate-500">Realisasi</span>
+                                <span class="text-xs font-bold"
+                                      :class="{
+                                          'text-emerald-600': task.realisasi_pct >= 90,
+                                          'text-blue-600':    task.realisasi_pct >= 60 && task.realisasi_pct < 90,
+                                          'text-amber-600':   task.realisasi_pct >= 30 && task.realisasi_pct < 60,
+                                          'text-red-500':     task.realisasi_pct < 30,
+                                      }"
+                                      x-text="task.realisasi_pct + '%'"></span>
+                            </div>
+                            <div class="bg-slate-100 rounded-full h-2 overflow-hidden">
+                                <div class="h-2 rounded-full transition-all duration-500"
+                                     :class="{
+                                         'bg-emerald-500': task.realisasi_pct >= 90,
+                                         'bg-blue-500':    task.realisasi_pct >= 60 && task.realisasi_pct < 90,
+                                         'bg-amber-500':   task.realisasi_pct >= 30 && task.realisasi_pct < 60,
+                                         'bg-red-400':     task.realisasi_pct < 30,
+                                     }"
+                                     :style="'width:' + task.realisasi_pct + '%'"></div>
+                            </div>
+                        </div>
+
                         {{-- Spacer --}}
                         <div class="flex-1"></div>
 
-                        {{-- Update Status button --}}
-                        <div class="mt-4 pt-3 border-t border-slate-100">
+                        {{-- Actions --}}
+                        <div class="mt-3 pt-3 border-t border-slate-100 flex gap-2">
+                            <button
+                                @click="openRealisasiModal(task)"
+                                class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-medium text-primary-700 hover:bg-primary-100 transition-colors"
+                            >
+                                <i class="bx bx-bar-chart-alt-2 text-sm"></i>
+                                Update %
+                            </button>
                             <button
                                 x-show="task.status !== 'done'"
                                 @click="openUpdateModal(task)"
-                                class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-3 py-2 text-xs font-medium text-white hover:bg-primary-700 transition-colors"
+                                class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary-600 px-3 py-2 text-xs font-medium text-white hover:bg-primary-700 transition-colors"
                             >
                                 <i class="bx bx-edit-alt text-sm"></i>
-                                Update Status
+                                Status
                             </button>
                             <div x-show="task.status === 'done'"
-                                 class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-50 text-emerald-700 px-3 py-2 text-xs font-semibold">
+                                 class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-50 text-emerald-700 px-3 py-2 text-xs font-semibold">
                                 <i class="bx bx-check-circle text-sm"></i>
                                 Selesai
                             </div>
@@ -173,6 +220,60 @@
                     </div>
                 </div>
             </template>
+        </div>
+    </div>
+
+    {{-- ════════════════════════════════════════════════════════════════════════
+         MODAL: Update Realisasi %
+    ════════════════════════════════════════════════════════════════════════ --}}
+    <div x-show="showRealisasiModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4" style="display:none">
+        <div class="absolute inset-0 bg-black/50" @click="showRealisasiModal = false"></div>
+        <div class="relative w-full max-w-sm rounded-2xl bg-white shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                <h3 class="font-semibold text-slate-900">Update Realisasi</h3>
+                <button @click="showRealisasiModal = false" class="text-slate-400 hover:text-slate-600">
+                    <i class="bx bx-x text-2xl"></i>
+                </button>
+            </div>
+            <div class="px-6 py-4 space-y-4">
+                <div class="rounded-xl bg-slate-50 px-4 py-3">
+                    <p class="text-xs text-slate-500 mb-1">Task</p>
+                    <p class="font-semibold text-slate-900 text-sm" x-text="realisasiForm.title"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">
+                        Realisasi (%) <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" x-model="realisasiForm.realisasi_pct"
+                           min="0" max="100" placeholder="0 – 100"
+                           class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                </div>
+                {{-- Live preview --}}
+                <div>
+                    <div class="flex justify-between text-xs text-slate-500 mb-1">
+                        <span>Preview</span>
+                        <span class="font-bold" x-text="(realisasiForm.realisasi_pct || 0) + '%'"></span>
+                    </div>
+                    <div class="bg-slate-100 rounded-full h-3 overflow-hidden">
+                        <div class="h-3 rounded-full transition-all duration-300 bg-primary-500"
+                             :style="'width:' + Math.min(realisasiForm.realisasi_pct || 0, 100) + '%'"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
+                <button @click="showRealisasiModal = false"
+                        class="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+                    Batal
+                </button>
+                <button @click="submitRealisasi()" :disabled="saving"
+                        class="rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    <span x-show="!saving">Simpan</span>
+                    <span x-show="saving" class="flex items-center gap-2">
+                        <div class="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
+                        Menyimpan...
+                    </span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -259,12 +360,27 @@ function myTasksDashboard() {
         tasks: [],
         stats: { todo: 0, in_progress: 0, overdue: 0 },
 
-        showUpdateModal: false,
+        // Overall progress (rata-rata realisasi_pct semua task)
+        get overallProgress() {
+            if (this.tasks.length === 0) return 0;
+            const sum = this.tasks.reduce((a, t) => a + (parseFloat(t.realisasi_pct) || 0), 0);
+            return Math.round(sum / this.tasks.length);
+        },
+
+        showUpdateModal:   false,
+        showRealisasiModal: false,
+
         updateForm: {
             id:               null,
             title:            '',
             status:           'in_progress',
             attachment_notes: '',
+        },
+
+        realisasiForm: {
+            id:            null,
+            title:         '',
+            realisasi_pct: 0,
         },
 
         notification: { show: false, message: '', type: 'success' },
@@ -293,7 +409,7 @@ function myTasksDashboard() {
             }
         },
 
-        // ── Modal ────────────────────────────────────────────────────────────────
+        // ── Modal: Update Status ────────────────────────────────────────────────
         openUpdateModal(task) {
             this.updateForm = {
                 id:               task.id,
@@ -302,6 +418,44 @@ function myTasksDashboard() {
                 attachment_notes: task.attachment_notes ?? '',
             };
             this.showUpdateModal = true;
+        },
+
+        // ── Modal: Update Realisasi % ───────────────────────────────────────────
+        openRealisasiModal(task) {
+            this.realisasiForm = {
+                id:            task.id,
+                title:         task.title,
+                realisasi_pct: task.realisasi_pct ?? 0,
+            };
+            this.showRealisasiModal = true;
+        },
+
+        async submitRealisasi() {
+            const pct = parseFloat(this.realisasiForm.realisasi_pct);
+            if (isNaN(pct) || pct < 0 || pct > 100) {
+                this.showNotification('Realisasi harus antara 0 dan 100', 'error');
+                return;
+            }
+            this.saving = true;
+            try {
+                const res  = await fetch(BASE + '/' + this.realisasiForm.id + '/realisasi', {
+                    method:  'PUT',
+                    headers: HEADERS,
+                    body:    JSON.stringify({ realisasi_pct: pct }),
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    this.showNotification('Realisasi berhasil diperbarui', 'success');
+                    this.showRealisasiModal = false;
+                    await this.loadTasks();
+                } else {
+                    this.handleApiError(data, res.status);
+                }
+            } catch {
+                this.handleApiError(null, 0);
+            } finally {
+                this.saving = false;
+            }
         },
 
         // ── Submit status update ─────────────────────────────────────────────────

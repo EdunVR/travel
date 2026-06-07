@@ -919,10 +919,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
             Route::get('/users',        [\App\Http\Controllers\NewTaskController::class, 'users'])->name('users');
             Route::get('/my-tasks',     [\App\Http\Controllers\NewTaskController::class, 'myTasks'])->name('my-tasks');
             Route::get('/my-tasks/data',[\App\Http\Controllers\NewTaskController::class, 'getMyTasksData'])->name('my-tasks.data');
+            Route::get('/summary',      [\App\Http\Controllers\NewTaskController::class, 'getTasksSummaryForUser'])->name('summary');
             Route::post('/store',       [\App\Http\Controllers\NewTaskController::class, 'store'])->name('store');
             Route::post('/bulk-action', [\App\Http\Controllers\NewTaskController::class, 'bulkAction'])->name('bulk');
             Route::put('/{id}',         [\App\Http\Controllers\NewTaskController::class, 'update'])->name('update');
             Route::put('/{id}/status',  [\App\Http\Controllers\NewTaskController::class, 'updateStatus'])->name('update-status');
+            Route::put('/{id}/realisasi', [\App\Http\Controllers\NewTaskController::class, 'updateRealisasi'])->name('update-realisasi');
             Route::delete('/{id}',      [\App\Http\Controllers\NewTaskController::class, 'destroy'])->name('destroy');
         });
 
@@ -1063,7 +1065,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('travel/report/team-performance/excel', [ReportController::class, 'exportTeamPerformanceExcel'])->name('travel.report.team-performance.excel');
 
         Route::post('travel/tasks/{id}/reassign', [TaskController::class, 'reassign'])->name('travel.tasks.reassign');
-        Route::put('travel/tasks/{id}/status', [TaskController::class, 'updateStatus'])->name('travel.tasks.update-status');
+        Route::put('travel/tasks/{id}/workflow-status', [TaskController::class, 'updateStatus'])->name('travel.tasks.update-status');
         Route::get('travel/tasks/team/{teamCode}/members', [TaskController::class, 'getTeamMembers'])->name('travel.tasks.team-members');
         Route::get('travel/tasks/overdue-count', [TaskController::class, 'overdueCount'])->name('travel.tasks.overdue-count');
         

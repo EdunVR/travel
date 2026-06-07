@@ -249,6 +249,57 @@
                                     </div>
                                 </div>
                             </div>
+
+                            {{-- Task Summary Card (sync dari Task Management) --}}
+                            <div x-show="expandedUserId === user.user_id && taskSummary.total > 0" class="mt-4">
+                                <div class="rounded-xl border border-blue-100 bg-blue-50/30 p-4">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                            <i class="bx bx-task mr-1 text-blue-500"></i>Task Progress (dari Task Management)
+                                        </h4>
+                                        <a :href="'/admin/inventaris/travel/tasks?assigned_to=' + user.user_id"
+                                           class="text-xs text-blue-600 hover:underline" target="_blank">
+                                            Lihat semua →
+                                        </a>
+                                    </div>
+                                    {{-- Overall progress bar --}}
+                                    <div class="mb-3">
+                                        <div class="flex justify-between text-xs text-slate-500 mb-1">
+                                            <span>Rata-rata realisasi</span>
+                                            <span class="font-bold text-slate-700" x-text="taskSummary.avg_realisasi + '%'"></span>
+                                        </div>
+                                        <div class="bg-slate-100 rounded-full h-2 overflow-hidden">
+                                            <div class="h-2 rounded-full transition-all duration-500"
+                                                 :class="{
+                                                     'bg-emerald-500': taskSummary.avg_realisasi >= 80,
+                                                     'bg-blue-500':    taskSummary.avg_realisasi >= 50 && taskSummary.avg_realisasi < 80,
+                                                     'bg-amber-500':   taskSummary.avg_realisasi >= 20 && taskSummary.avg_realisasi < 50,
+                                                     'bg-red-400':     taskSummary.avg_realisasi < 20,
+                                                 }"
+                                                 :style="'width:' + taskSummary.avg_realisasi + '%'"></div>
+                                        </div>
+                                    </div>
+                                    {{-- Task counts --}}
+                                    <div class="grid grid-cols-4 gap-2 text-center text-xs">
+                                        <div class="rounded-lg bg-white border border-slate-100 px-2 py-1.5">
+                                            <p class="font-black text-slate-700" x-text="taskSummary.total"></p>
+                                            <p class="text-slate-400">Total</p>
+                                        </div>
+                                        <div class="rounded-lg bg-white border border-slate-100 px-2 py-1.5">
+                                            <p class="font-black text-blue-600" x-text="taskSummary.in_progress"></p>
+                                            <p class="text-slate-400">Proses</p>
+                                        </div>
+                                        <div class="rounded-lg bg-white border border-slate-100 px-2 py-1.5">
+                                            <p class="font-black text-emerald-600" x-text="taskSummary.done"></p>
+                                            <p class="text-slate-400">Selesai</p>
+                                        </div>
+                                        <div class="rounded-lg bg-white border border-red-100 px-2 py-1.5">
+                                            <p class="font-black text-red-500" x-text="taskSummary.overdue"></p>
+                                            <p class="text-slate-400">Overdue</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -600,6 +651,9 @@ function kinerjaDashboard(config) {
         // Attendance summary state
         attendanceSummary: { present: 0, absent: 0, late: 0 },
 
+        // Task summary state (sync dari Task Management)
+        taskSummary: { total: 0, done: 0, in_progress: 0, todo: 0, overdue: 0, avg_realisasi: 0, tasks: [] },
+
         // User biasa state
         myJobs:    [],
         myOverall: { progress: 0, grade: '-', grade_label: '-', grade_color: 'gray' },
@@ -652,11 +706,17 @@ function kinerjaDashboard(config) {
         },
 
         toggleExpandUser(userId) {
-            if (this.expandedUserId === userId) { this.expandedUserId = null; return; }
+            if (this.expandedUserId === userId) {
+                this.expandedUserId = null;
+                this.taskSummary = { total: 0, done: 0, in_progress: 0, todo: 0, overdue: 0, avg_realisasi: 0, tasks: [] };
+                return;
+            }
             this.expandedUserId = userId;
             if (!this.expandedJobs[userId]) this.loadJobsForUser(userId);
             // Load attendance summary for the selected user (current month)
             this.loadAttendanceSummary(userId, this.currentYearMonth());
+            // Load task summary (sync dari Task Management)
+            this.loadTaskSummary(userId);
         },
 
         async loadJobsForUser(userId) {
@@ -690,6 +750,19 @@ function kinerjaDashboard(config) {
                 const data = await res.json();
                 if (res.ok && data.success) {
                     this.attendanceSummary = data.data;
+                }
+            } catch { /* silently ignore */ }
+        },
+
+        async loadTaskSummary(userId) {
+            if (!userId) return;
+            try {
+                const res  = await fetch('/admin/inventaris/travel/tasks/summary?user_id=' + userId, {
+                    headers: { 'X-CSRF-TOKEN': this.csrfToken, 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    this.taskSummary = data.data;
                 }
             } catch { /* silently ignore */ }
         },
