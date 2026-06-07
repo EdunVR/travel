@@ -913,7 +913,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::post('travel/tasks/{id}/complete', [TaskController::class, 'complete'])->name('travel.tasks.complete');
 
         // ===== Task Management Revamp (NewTaskController) =====
-        Route::prefix('inventaris/travel/tasks')->name('inventaris.tasks.')->group(function () {
+        Route::prefix('travel/tasks')->name('tasks.')->group(function () {
             Route::get('/',             [\App\Http\Controllers\NewTaskController::class, 'index'])->name('index');
             Route::get('/data',         [\App\Http\Controllers\NewTaskController::class, 'getData'])->name('data');
             Route::get('/users',        [\App\Http\Controllers\NewTaskController::class, 'users'])->name('users');

@@ -39,8 +39,8 @@ return [
             ['name' => 'Booking Jamaah', 'route' => 'admin.inventaris.booking.index', 'permissions' => ['travel.booking.view']],
             
             // Task Management
-            ['name' => 'Task Management', 'route' => 'admin.inventaris.travel.tasks.index', 'permissions' => ['travel.task.view']],
-            ['name' => 'My Tasks', 'route' => 'admin.inventaris.travel.tasks.my-tasks', 'permissions' => ['travel.task.view']],
+            ['name' => 'Task Management', 'route' => 'admin.inventaris.tasks.index', 'permissions' => ['travel.task.view']],
+            ['name' => 'My Tasks', 'route' => 'admin.inventaris.tasks.my-tasks', 'permissions' => ['travel.task.view']],
             
             // Communication & Reporting
             ['name' => 'Komunikasi', 'route' => 'admin.inventaris.travel.communication.index', 'permissions' => ['travel.communication.view']],
