@@ -402,7 +402,44 @@ class PerformanceAppraisalController extends Controller
         // Hitung attendance summary (menggunakan private helper)
         $attendanceSummary = $this->computeAttendanceSummary($user, $startDate, $endDate);
 
-        $data = compact('user', 'targets', 'attendanceSummary', 'grade', 'overall', 'period', 'startDate', 'endDate');
+        // Ambil company setting untuk kop surat
+        $company = \App\Models\CompanySetting::where('is_active', true)->first()
+            ?? new \App\Models\CompanySetting([
+                'company_name'    => config('app.name', 'Perusahaan'),
+                'company_address' => '',
+                'company_phone'   => '',
+                'company_email'   => '',
+            ]);
+
+        // Siapkan logo sebagai base64 agar bisa dirender DomPDF
+        $logoBase64 = null;
+        if ($company->company_logo) {
+            $logoPath = storage_path('app/public/' . ltrim($company->company_logo, '/'));
+            if (file_exists($logoPath) && filesize($logoPath) > 100) {
+                $mime = mime_content_type($logoPath);
+                $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($logoPath));
+            }
+        }
+        // Fallback: cari logo di public/img
+        if (!$logoBase64) {
+            $candidates = [
+                public_path('img/logo-20250616163221.png'),
+                public_path('img/logo_2.png'),
+                public_path('img/logo.png'),
+            ];
+            foreach ($candidates as $c) {
+                if (file_exists($c) && filesize($c) > 500) {
+                    $mime = mime_content_type($c);
+                    $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($c));
+                    break;
+                }
+            }
+        }
+
+        $data = compact(
+            'user', 'targets', 'attendanceSummary', 'grade', 'overall',
+            'period', 'startDate', 'endDate', 'company', 'logoBase64'
+        );
 
         $pdf = Pdf::loadView('admin.inventaris.tasks.pdf.performance', $data);
 

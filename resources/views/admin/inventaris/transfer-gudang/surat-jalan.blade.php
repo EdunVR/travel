@@ -74,21 +74,9 @@
   {{-- Header / Kop Surat --}}
   <div class="header">
     <div style="display:flex; align-items:center; gap:12px;">
-      {{-- Logo perusahaan --}}
-      @php
-        $logoFile = null;
-        $candidates = [
-            public_path('img/logo-20250616163221.png'),
-            public_path('img/logo_2.png'),
-            public_path('img/logo.png'),
-            public_path('favicon.png'),
-        ];
-        foreach ($candidates as $c) {
-            if (file_exists($c) && filesize($c) > 500) { $logoFile = $c; break; }
-        }
-      @endphp
-      @if($logoFile)
-        <img src="{{ 'data:image/png;base64,' . base64_encode(file_get_contents($logoFile)) }}"
+      {{-- Logo perusahaan dari CompanySetting --}}
+      @if(!empty($logoBase64))
+        <img src="{{ $logoBase64 }}"
              alt="Logo"
              style="height:60px; width:auto; object-fit:contain;">
       @else
@@ -98,6 +86,18 @@
           {{ strtoupper(substr($companyName ?? 'H', 0, 1)) }}
         </div>
       @endif
+      <div>
+        <div style="font-size:15px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px;">
+          {{ $companyName }}
+        </div>
+        @if(!empty($company))
+        <div style="font-size:10px; color:#555; margin-top:2px; line-height:1.5;">
+          @if($company->company_address){{ $company->company_address }}<br>@endif
+          @if($company->company_phone)Telp: {{ $company->company_phone }}@endif
+          @if($company->company_email) &bull; {{ $company->company_email }}@endif
+        </div>
+        @endif
+      </div>
     </div>
     <div class="doc-title">
       <h2>Surat Jalan</h2>

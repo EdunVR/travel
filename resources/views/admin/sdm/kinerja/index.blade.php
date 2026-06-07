@@ -69,12 +69,11 @@
                         Atur Grade
                     </button>
                     {{-- Export PDF --}}
-                    <a x-show="expandedUserId"
-                       :href="routes.exportPdf + '?user_id=' + expandedUserId + '&period=' + currentYearMonth()"
-                       class="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700 transition-colors"
-                       target="_blank">
+                    <button x-show="expandedUserId"
+                       @click="window.open(routes.exportPdf + '?user_id=' + expandedUserId + '&period=' + currentYearMonth(), '_blank', 'noopener,noreferrer')"
+                       class="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700 transition-colors">
                         <i class="bx bx-file-pdf text-base"></i>Export PDF
-                    </a>
+                    </button>
                 </div>
             </div>
         </div>

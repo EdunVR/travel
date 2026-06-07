@@ -307,9 +307,38 @@ class TransferGudangController extends Controller
                 $permintaan->save();
             }
 
-            $companyName = config('app.name', 'HM Tour & Travel');
+            // Ambil company setting untuk kop surat
+            $company = \App\Models\CompanySetting::where('is_active', true)->first();
+            $companyName = $company?->company_name ?? config('app.name', 'HM Tour & Travel');
 
-            return view('admin.inventaris.transfer-gudang.surat-jalan', compact('permintaan', 'companyName'));
+            // Siapkan logo sebagai base64 agar bisa dirender di PDF/print
+            $logoBase64 = null;
+            if ($company?->company_logo) {
+                $logoPath = storage_path('app/public/' . ltrim($company->company_logo, '/'));
+                if (file_exists($logoPath) && filesize($logoPath) > 100) {
+                    $mime = mime_content_type($logoPath);
+                    $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($logoPath));
+                }
+            }
+            // Fallback: cari logo di public/img
+            if (!$logoBase64) {
+                $candidates = [
+                    public_path('img/logo-20250616163221.png'),
+                    public_path('img/logo_2.png'),
+                    public_path('img/logo.png'),
+                ];
+                foreach ($candidates as $c) {
+                    if (file_exists($c) && filesize($c) > 500) {
+                        $mime = mime_content_type($c);
+                        $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($c));
+                        break;
+                    }
+                }
+            }
+
+            return view('admin.inventaris.transfer-gudang.surat-jalan', compact(
+                'permintaan', 'company', 'companyName', 'logoBase64'
+            ));
 
         } catch (\Exception $e) {
             Log::error('Error showing surat jalan: ' . $e->getMessage());
