@@ -52,13 +52,13 @@
                     <p class="text-sm text-slate-500 mt-0.5">Kelola job target dan pantau progress kinerja seluruh tim</p>
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
-                    {{-- Tambah Job untuk User --}}
+                    {{-- Tambah Task untuk User --}}
                     <button
-                        @click="openAddJobModal(null, '')"
+                        @click="openAddTaskFromKinerja(null, '')"
                         class="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition-colors"
                     >
                         <i class="bx bx-plus-circle text-base"></i>
-                        Tambah Job
+                        Tambah Task
                     </button>
                     {{-- Grade Settings --}}
                     <button
@@ -130,18 +130,18 @@
                         </div>
                         {{-- Stats --}}
                         <div class="shrink-0 text-center hidden sm:block">
-                            <p class="text-xl font-black text-slate-800" x-text="user.job_count"></p>
-                            <p class="text-xs text-slate-400">Job</p>
+                            <p class="text-xl font-black text-slate-800" x-text="user.task_count"></p>
+                            <p class="text-xs text-slate-400">Task</p>
                         </div>
                         {{-- Actions --}}
                         <div class="shrink-0 flex items-center gap-2">
                             <button
-                                @click.stop="openAddJobModal(user.user_id, user.name)"
+                                @click.stop="openAddTaskFromKinerja(user.user_id, user.name)"
                                 class="inline-flex items-center gap-1 rounded-lg border border-primary-200 bg-primary-50 px-2.5 py-1.5 text-xs font-medium text-primary-700 hover:bg-primary-100 transition-colors"
-                                title="Tambah job untuk user ini"
+                                title="Tambah task untuk user ini"
                             >
                                 <i class="bx bx-plus text-sm"></i>
-                                <span class="hidden sm:inline">Tambah Job</span>
+                                <span class="hidden sm:inline">Tambah Task</span>
                             </button>
                             <button
                                 @click="toggleExpandUser(user.user_id)"
@@ -501,6 +501,90 @@
     </div>
 
     {{-- ════════════════════════════════════════════════════════════════════════
+         MODAL: Tambah Task dari Kinerja
+    ════════════════════════════════════════════════════════════════════════ --}}
+    <div x-show="showKinerjaTambahTaskModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4" style="display:none">
+        <div class="absolute inset-0 bg-black/50" @click="showKinerjaTambahTaskModal = false"></div>
+        <div class="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                <div>
+                    <h3 class="font-semibold text-slate-900">Tambah Task</h3>
+                    <p class="text-xs text-slate-500 mt-0.5" x-show="kinerjaTaskTargetUserName">
+                        untuk: <span class="font-medium text-primary-700" x-text="kinerjaTaskTargetUserName"></span>
+                    </p>
+                </div>
+                <button @click="showKinerjaTambahTaskModal = false" class="text-slate-400 hover:text-slate-600">
+                    <i class="bx bx-x text-2xl"></i>
+                </button>
+            </div>
+            <div class="px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Judul Task <span class="text-red-500">*</span></label>
+                    <input type="text" x-model="kinerjaTambahTaskForm.title" placeholder="Masukkan judul task"
+                           class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Deskripsi</label>
+                    <textarea x-model="kinerjaTambahTaskForm.description" rows="3" placeholder="Deskripsi task (opsional)"
+                              class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Tenggat Waktu</label>
+                    <input type="date" x-model="kinerjaTambahTaskForm.due_date"
+                           class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Priority</label>
+                        <select x-model="kinerjaTambahTaskForm.priority"
+                                class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                        <select x-model="kinerjaTambahTaskForm.status"
+                                class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
+                            <option value="todo">Todo</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="review">Review</option>
+                            <option value="done">Done</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Kategori</label>
+                    <input type="text" x-model="kinerjaTambahTaskForm.category" placeholder="Contoh: Laporan, Marketing..."
+                           class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Catatan / Attachment</label>
+                    <textarea x-model="kinerjaTambahTaskForm.attachment_notes" rows="2"
+                              placeholder="Catatan tambahan (opsional)"
+                              class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
+                <button @click="showKinerjaTambahTaskModal = false"
+                        class="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+                    Batal
+                </button>
+                <button @click="saveKinerjaTambahTask()" :disabled="saving"
+                        class="rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    <span x-show="!saving">Simpan Task</span>
+                    <span x-show="saving" class="flex items-center gap-2">
+                        <div class="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
+                        Menyimpan...
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {{-- ════════════════════════════════════════════════════════════════════════
          MODAL: Tambah / Edit Job  (Super Admin)
     ════════════════════════════════════════════════════════════════════════ --}}
     <div x-show="showJobModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4" style="display:none">
@@ -718,6 +802,20 @@ function kinerjaDashboard(config) {
         showUpdateModal: false,
         showGradeModal:  false,
 
+        // Task creation from kinerja page
+        showKinerjaTambahTaskModal: false,
+        kinerjaTaskTargetUserId: null,
+        kinerjaTaskTargetUserName: '',
+        kinerjaTambahTaskForm: {
+            title: '',
+            description: '',
+            due_date: '',
+            priority: 'medium',
+            status: 'todo',
+            category: '',
+            attachment_notes: '',
+        },
+
         modalJobForm: {
             user_id: null, user_name: '',
             id: null, title: '', description: '',
@@ -836,6 +934,58 @@ function kinerjaDashboard(config) {
                 due_date:          '',
             };
             this.showJobModal = true;
+        },
+
+        openAddTaskFromKinerja(userId, userName) {
+            this.kinerjaTaskTargetUserId = userId;
+            this.kinerjaTaskTargetUserName = userName;
+            this.kinerjaTambahTaskForm = {
+                title: '', description: '', due_date: '',
+                priority: 'medium', status: 'todo', category: '', attachment_notes: '',
+            };
+            this.showKinerjaTambahTaskModal = true;
+        },
+
+        async saveKinerjaTambahTask() {
+            if (!this.kinerjaTambahTaskForm.title.trim()) {
+                this.showNotification('Judul task wajib diisi', 'error');
+                return;
+            }
+            if (!this.kinerjaTaskTargetUserId) {
+                this.showNotification('User belum dipilih', 'error');
+                return;
+            }
+            this.saving = true;
+            try {
+                const res = await fetch('/admin/inventaris/travel/tasks/store', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': this.csrfToken,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ...this.kinerjaTambahTaskForm,
+                        assigned_to: this.kinerjaTaskTargetUserId,
+                    }),
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    this.showNotification('Task berhasil ditambahkan', 'success');
+                    this.showKinerjaTambahTaskModal = false;
+                    // Reload task summary for this user
+                    if (this.expandedUserId === this.kinerjaTaskTargetUserId) {
+                        await this.loadTaskSummary(this.kinerjaTaskTargetUserId);
+                    }
+                    await this.loadAllUsersProgress();
+                } else if (res.status === 422) {
+                    const msg = data.errors ? Object.values(data.errors)[0][0] : (data.message || 'Validasi gagal');
+                    this.showNotification(msg, 'error');
+                } else {
+                    this.handleApiError(data, res.status);
+                }
+            } catch { this.handleApiError(null, 0); }
+            finally { this.saving = false; }
         },
 
         openEditJobModal(job, userId) {

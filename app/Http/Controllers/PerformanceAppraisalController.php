@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\JobTarget;
 use App\Models\JobGradeSetting;
 use App\Models\Recruitment;
+use App\Models\Task;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -129,22 +130,25 @@ class PerformanceAppraisalController extends Controller
             $targets = JobTarget::where('user_id', $user->id)->get();
             $jobCount = $targets->count();
 
-            $overall = 0;
-            if ($jobCount > 0) {
-                $overall = round($targets->avg(fn($t) => $t->getProgressPercent()), 1);
-            }
-
-            $grade = JobGradeSetting::resolveGrade($overall);
+            // Task-based metrics
+            $tasks = Task::where('assigned_to', $user->id)->get();
+            $taskCount = $tasks->count();
+            $taskAvgRealisasi = $taskCount > 0
+                ? round($tasks->avg(fn($t) => (float)($t->realisasi_pct ?? 0)), 1)
+                : 0.0;
+            $taskGrade = JobGradeSetting::resolveGrade($taskAvgRealisasi);
 
             return [
-                'user_id'      => $user->id,
-                'name'         => $user->name,
-                'email'        => $user->email,
-                'job_count'    => $jobCount,
-                'overall'      => $overall,
-                'grade'        => $grade?->grade ?? '-',
-                'grade_label'  => $grade?->label ?? '-',
-                'grade_color'  => $grade?->color ?? 'gray',
+                'user_id'            => $user->id,
+                'name'               => $user->name,
+                'email'              => $user->email,
+                'job_count'          => $jobCount,
+                'task_count'         => $taskCount,
+                'task_avg_realisasi' => $taskAvgRealisasi,
+                'overall'            => $taskAvgRealisasi,
+                'grade'              => $taskGrade?->grade ?? '-',
+                'grade_label'        => $taskGrade?->label ?? '-',
+                'grade_color'        => $taskGrade?->color ?? 'gray',
             ];
         });
 
