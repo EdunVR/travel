@@ -26,10 +26,17 @@ return new class extends Migration
             $extra = strtolower($columns[0]->EXTRA ?? '');
             
             if (strpos($extra, 'auto_increment') === false) {
-                // Belum AUTO_INCREMENT — fix sekarang
+                // Belum AUTO_INCREMENT — fix dengan dua langkah:
+                // 1. Drop PK dulu (karena MODIFY butuh PK dideklarasikan ulang bersama AUTO_INCREMENT)
+                // 2. Re-add sebagai AUTO_INCREMENT PRIMARY KEY
+                try {
+                    DB::statement("ALTER TABLE `personal_access_tokens` DROP PRIMARY KEY");
+                } catch (\Throwable $e) {
+                    // PK mungkin belum ada, lanjutkan
+                }
                 DB::statement("
-                    ALTER TABLE `personal_access_tokens` 
-                    MODIFY COLUMN `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
+                    ALTER TABLE `personal_access_tokens`
+                    MODIFY COLUMN `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY
                 ");
             }
             // Kalau sudah AUTO_INCREMENT, skip

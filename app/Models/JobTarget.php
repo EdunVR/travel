@@ -9,12 +9,13 @@ class JobTarget extends Model
     protected $fillable = [
         'user_id', 'title', 'description',
         'target_percent', 'realisasi_percent',
-        'period', 'created_by',
+        'period', 'due_date', 'created_by',
     ];
 
     protected $casts = [
         'target_percent'     => 'float',
         'realisasi_percent'  => 'float',
+        'due_date'           => 'date',
     ];
 
     public function user()

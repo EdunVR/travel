@@ -906,11 +906,25 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('travel/keberangkatan/{id}/manifest-pdf', [KeberangkatanController::class, 'manifestPdf'])->name('travel.keberangkatan.manifest-pdf');
         Route::get('travel/keberangkatan/{id}/manifest-excel', [KeberangkatanController::class, 'manifestExcel'])->name('travel.keberangkatan.manifest-excel');
         
-        // Task Management
+        // Task Management (legacy TaskController — workflow travel)
         Route::get('travel/tasks', [TaskController::class, 'index'])->name('travel.tasks.index');
         Route::get('travel/tasks/data', [TaskController::class, 'getData'])->name('travel.tasks.data');
         Route::get('travel/tasks/my-tasks', [TaskController::class, 'myTasks'])->name('travel.tasks.my-tasks');
         Route::post('travel/tasks/{id}/complete', [TaskController::class, 'complete'])->name('travel.tasks.complete');
+
+        // ===== Task Management Revamp (NewTaskController) =====
+        Route::prefix('inventaris/travel/tasks')->name('inventaris.tasks.')->group(function () {
+            Route::get('/',             [\App\Http\Controllers\NewTaskController::class, 'index'])->name('index');
+            Route::get('/data',         [\App\Http\Controllers\NewTaskController::class, 'getData'])->name('data');
+            Route::get('/users',        [\App\Http\Controllers\NewTaskController::class, 'users'])->name('users');
+            Route::get('/my-tasks',     [\App\Http\Controllers\NewTaskController::class, 'myTasks'])->name('my-tasks');
+            Route::get('/my-tasks/data',[\App\Http\Controllers\NewTaskController::class, 'getMyTasksData'])->name('my-tasks.data');
+            Route::post('/store',       [\App\Http\Controllers\NewTaskController::class, 'store'])->name('store');
+            Route::post('/bulk-action', [\App\Http\Controllers\NewTaskController::class, 'bulkAction'])->name('bulk');
+            Route::put('/{id}',         [\App\Http\Controllers\NewTaskController::class, 'update'])->name('update');
+            Route::put('/{id}/status',  [\App\Http\Controllers\NewTaskController::class, 'updateStatus'])->name('update-status');
+            Route::delete('/{id}',      [\App\Http\Controllers\NewTaskController::class, 'destroy'])->name('destroy');
+        });
 
         // Jamaah Booking
         Route::get('travel/booking', [BookingController::class, 'index'])->name('booking.index');
@@ -2634,6 +2648,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/statistics', [\App\Http\Controllers\PerformanceAppraisalController::class, 'getStatistics'])->name('statistics');
             Route::get('/employees', [\App\Http\Controllers\PerformanceAppraisalController::class, 'getEmployees'])->name('employees');
             Route::get('/export/pdf', [\App\Http\Controllers\PerformanceAppraisalController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('/attendance-summary', [\App\Http\Controllers\PerformanceAppraisalController::class, 'getAttendanceSummary'])->name('attendance.summary');
 
             Route::post('/store', [\App\Http\Controllers\PerformanceAppraisalController::class, 'store'])->name('store');
             Route::get('/{id}', [\App\Http\Controllers\PerformanceAppraisalController::class, 'show'])->name('show');

@@ -11,6 +11,8 @@
             'destroy'           => url('sdm/kinerja'),
             'gradeSettings'     => route('sdm.kinerja.grade-settings.get'),
             'saveGradeSettings' => route('sdm.kinerja.grade-settings.save'),
+            'attendanceSummary' => route('sdm.kinerja.attendance.summary'),
+            'exportPdf'         => route('sdm.kinerja.export.pdf'),
         ],
     ];
 @endphp
@@ -66,6 +68,13 @@
                         <i class="bx bx-cog text-base"></i>
                         Atur Grade
                     </button>
+                    {{-- Export PDF --}}
+                    <a x-show="expandedUserId"
+                       :href="routes.exportPdf + '?user_id=' + expandedUserId + '&period=' + currentYearMonth()"
+                       class="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700 transition-colors"
+                       target="_blank">
+                        <i class="bx bx-file-pdf text-base"></i>Export PDF
+                    </a>
                 </div>
             </div>
         </div>
@@ -183,11 +192,15 @@
                                         <div class="flex items-start justify-between gap-3">
                                             <div class="flex-1 min-w-0">
                                                 <p class="font-semibold text-slate-800 text-sm leading-tight" x-text="job.title"></p>
+                                                <span x-show="job.is_overdue" class="inline-flex items-center gap-1 rounded-md bg-red-100 text-red-700 border border-red-200 px-1.5 py-0.5 text-xs font-semibold ml-1">
+                                                    <i class="bx bx-error text-xs"></i>Overdue
+                                                </span>
                                                 <p x-show="job.description" class="text-xs text-slate-400 mt-0.5 line-clamp-2" x-text="job.description"></p>
                                                 <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
                                                     <span>Target <b class="text-slate-700" x-text="job.target_percent+'%'"></b></span>
                                                     <span>Realisasi <b class="text-slate-700" x-text="job.realisasi_percent+'%'"></b></span>
                                                     <span x-show="job.period" x-text="job.period"></span>
+                                                    <span x-show="job.due_date" class="text-xs text-slate-500" x-text="'Due: ' + job.due_date_formatted"></span>
                                                 </div>
                                                 <div class="mt-2 flex items-center gap-2">
                                                     <div class="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -212,6 +225,29 @@
                                         </div>
                                     </div>
                                 </template>
+                            </div>
+
+                            {{-- Attendance Summary Card --}}
+                            <div x-show="expandedUserId === user.user_id" class="mt-4">
+                                <div class="rounded-xl border border-slate-200 bg-white p-4">
+                                    <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                                        <i class="bx bx-calendar-check mr-1"></i>Ringkasan Kehadiran (Bulan Ini)
+                                    </h4>
+                                    <div class="grid grid-cols-3 gap-3 text-center">
+                                        <div class="rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2">
+                                            <p class="text-xl font-black text-emerald-700" x-text="attendanceSummary.present"></p>
+                                            <p class="text-xs text-emerald-600 mt-0.5">Hadir</p>
+                                        </div>
+                                        <div class="rounded-lg bg-red-50 border border-red-100 px-3 py-2">
+                                            <p class="text-xl font-black text-red-600" x-text="attendanceSummary.absent"></p>
+                                            <p class="text-xs text-red-500 mt-0.5">Absen</p>
+                                        </div>
+                                        <div class="rounded-lg bg-amber-50 border border-amber-100 px-3 py-2">
+                                            <p class="text-xl font-black text-amber-600" x-text="attendanceSummary.late"></p>
+                                            <p class="text-xs text-amber-500 mt-0.5">Terlambat</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -410,6 +446,11 @@
                     </div>
                 </div>
 
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Tenggat (Due Date)</label>
+                    <input type="date" x-model="modalJobForm.due_date" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                </div>
+
                 <div x-show="modalJobForm.id">
                     <label class="block text-sm font-medium text-slate-700 mb-1">Realisasi %</label>
                     <input type="number" x-model="modalJobForm.realisasi_percent" min="0" max="100" placeholder="0–100"
@@ -556,6 +597,9 @@ function kinerjaDashboard(config) {
         expandedJobs:    {},
         loadingExpanded: {},
 
+        // Attendance summary state
+        attendanceSummary: { present: 0, absent: 0, late: 0 },
+
         // User biasa state
         myJobs:    [],
         myOverall: { progress: 0, grade: '-', grade_label: '-', grade_color: 'gray' },
@@ -568,7 +612,7 @@ function kinerjaDashboard(config) {
         modalJobForm: {
             user_id: null, user_name: '',
             id: null, title: '', description: '',
-            target_percent: '', realisasi_percent: '', period: '',
+            target_percent: '', realisasi_percent: '', period: '', due_date: '',
         },
         modalUpdateForm: { id: null, title: '', target_percent: 0, realisasi_percent: 0 },
         gradeSettingsForm: [],
@@ -611,6 +655,8 @@ function kinerjaDashboard(config) {
             if (this.expandedUserId === userId) { this.expandedUserId = null; return; }
             this.expandedUserId = userId;
             if (!this.expandedJobs[userId]) this.loadJobsForUser(userId);
+            // Load attendance summary for the selected user (current month)
+            this.loadAttendanceSummary(userId, this.currentYearMonth());
         },
 
         async loadJobsForUser(userId) {
@@ -634,6 +680,20 @@ function kinerjaDashboard(config) {
             }
         },
 
+        async loadAttendanceSummary(userId, period) {
+            if (!userId) return;
+            try {
+                const url  = this.routes.attendanceSummary + '?user_id=' + userId + '&period=' + (period || '');
+                const res  = await fetch(url, {
+                    headers: { 'X-CSRF-TOKEN': this.csrfToken, 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    this.attendanceSummary = data.data;
+                }
+            } catch { /* silently ignore */ }
+        },
+
         // Buka modal tambah job — userId boleh null (user dipilih via dropdown)
         openAddJobModal(userId, userName) {
             this.modalJobForm = {
@@ -645,6 +705,7 @@ function kinerjaDashboard(config) {
                 target_percent:    '',
                 realisasi_percent: '',
                 period:            this.currentYearMonth(),
+                due_date:          '',
             };
             this.showJobModal = true;
         },
@@ -659,6 +720,7 @@ function kinerjaDashboard(config) {
                 target_percent:    job.target_percent,
                 realisasi_percent: job.realisasi_percent,
                 period:            job.period ?? '',
+                due_date:          job.due_date ?? '',
             };
             this.showJobModal = true;
         },

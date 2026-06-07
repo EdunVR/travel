@@ -18,20 +18,21 @@ return new class extends Migration
     {
         Schema::table('attendances', function (Blueprint $table) {
             if (!Schema::hasColumn('attendances', 'source')) {
-                $table->string('source', 20)->default('fingerprint')->after('notes')
+                // Tidak pakai ->after() agar tidak bergantung kolom 'notes' yang mungkin tidak ada
+                $table->string('source', 20)->default('fingerprint')->nullable()
                       ->comment('fingerprint | rfid | online | manual');
             }
             if (!Schema::hasColumn('attendances', 'latitude')) {
-                $table->decimal('latitude', 10, 7)->nullable()->after('source');
+                $table->decimal('latitude', 10, 7)->nullable();
             }
             if (!Schema::hasColumn('attendances', 'longitude')) {
-                $table->decimal('longitude', 10, 7)->nullable()->after('latitude');
+                $table->decimal('longitude', 10, 7)->nullable();
             }
             if (!Schema::hasColumn('attendances', 'location_address')) {
-                $table->string('location_address')->nullable()->after('longitude');
+                $table->string('location_address')->nullable();
             }
             if (!Schema::hasColumn('attendances', 'device_info')) {
-                $table->string('device_info')->nullable()->after('location_address');
+                $table->string('device_info')->nullable();
             }
         });
     }

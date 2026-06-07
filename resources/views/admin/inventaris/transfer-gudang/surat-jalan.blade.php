@@ -9,8 +9,7 @@
     .page { max-width: 800px; margin: 0 auto; padding: 20px; }
 
     /* Header */
-    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 16px; }
-    .company-name { font-size: 18px; font-weight: bold; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 16px; }
     .doc-title { text-align: right; }
     .doc-title h2 { font-size: 16px; font-weight: bold; text-transform: uppercase; }
     .doc-title .nomor { font-size: 13px; color: #555; margin-top: 3px; }
@@ -72,11 +71,33 @@
     </button>
   </div>
 
-  {{-- Header --}}
+  {{-- Header / Kop Surat --}}
   <div class="header">
-    <div>
-      <div class="company-name">{{ $companyName ?? config('app.name', 'HM Tour & Travel') }}</div>
-      <div style="font-size:11px; color:#666; margin-top:3px;">Sistem Manajemen Stok</div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      {{-- Logo perusahaan --}}
+      @php
+        $logoFile = null;
+        $candidates = [
+            public_path('img/logo-20250616163221.png'),
+            public_path('img/logo_2.png'),
+            public_path('img/logo.png'),
+            public_path('favicon.png'),
+        ];
+        foreach ($candidates as $c) {
+            if (file_exists($c) && filesize($c) > 500) { $logoFile = $c; break; }
+        }
+      @endphp
+      @if($logoFile)
+        <img src="{{ 'data:image/png;base64,' . base64_encode(file_get_contents($logoFile)) }}"
+             alt="Logo"
+             style="height:60px; width:auto; object-fit:contain;">
+      @else
+        <div style="width:60px; height:60px; background:#2563EB; border-radius:8px;
+                    display:flex; align-items:center; justify-content:center;
+                    color:#fff; font-weight:bold; font-size:20px;">
+          {{ strtoupper(substr($companyName ?? 'H', 0, 1)) }}
+        </div>
+      @endif
     </div>
     <div class="doc-title">
       <h2>Surat Jalan</h2>

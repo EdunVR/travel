@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attendance;
 use App\Models\JobTarget;
 use App\Models\JobGradeSetting;
+use App\Models\Recruitment;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -64,15 +68,32 @@ class PerformanceAppraisalController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $items = $targets->map(fn($t) => [
-            'id'                => $t->id,
-            'title'             => $t->title,
-            'description'       => $t->description,
-            'target_percent'    => $t->target_percent,
-            'realisasi_percent' => $t->realisasi_percent,
-            'progress'          => $t->getProgressPercent(),
-            'period'            => $t->period,
-        ]);
+        $today = Carbon::today();
+
+        $items = $targets->map(function ($t) use ($today) {
+            $dueDate = $t->due_date; // Carbon instance or null (cast: 'date')
+
+            $dueDateFormatted = $dueDate
+                ? $dueDate->format('d M Y')
+                : null;
+
+            $isOverdue = $dueDate !== null
+                && $dueDate->lt($today)
+                && $t->realisasi_percent < $t->target_percent;
+
+            return [
+                'id'                => $t->id,
+                'title'             => $t->title,
+                'description'       => $t->description,
+                'target_percent'    => $t->target_percent,
+                'realisasi_percent' => $t->realisasi_percent,
+                'progress'          => $t->getProgressPercent(),
+                'period'            => $t->period,
+                'due_date'          => $dueDate ? $dueDate->toDateString() : null,
+                'due_date_formatted'=> $dueDateFormatted,
+                'is_overdue'        => $isOverdue,
+            ];
+        });
 
         // Overall: rata-rata progress dari semua job
         $overall = $items->count() > 0
@@ -143,6 +164,7 @@ class PerformanceAppraisalController extends Controller
             'description'    => 'nullable|string',
             'target_percent' => 'required|numeric|min:0|max:100',
             'period'         => 'nullable|string|max:100',
+            'due_date'       => 'nullable|date',
         ]);
 
         $target = JobTarget::create(array_merge($validated, [
@@ -175,6 +197,7 @@ class PerformanceAppraisalController extends Controller
                 'target_percent'    => 'required|numeric|min:0|max:100',
                 'realisasi_percent' => 'sometimes|numeric|min:0|max:100',
                 'period'            => 'nullable|string|max:100',
+                'due_date'          => 'nullable|date',
             ]);
         } else {
             $validated = $request->validate([
@@ -269,9 +292,165 @@ class PerformanceAppraisalController extends Controller
         return response()->json(['success' => true, 'message' => 'Pengaturan nilai berhasil disimpan']);
     }
 
+    // ─── API: ringkasan kehadiran per user per periode ────────────────────────
+    public function getAttendanceSummary(Request $request)
+    {
+        $userId = $request->get('user_id');
+        $period = $request->get('period'); // format: "YYYY-MM" atau "YYYY-MM-DD:YYYY-MM-DD"
+
+        // Resolve date range from period param
+        [$startDate, $endDate] = $this->resolvePeriodRange($period);
+
+        // Fallback jika tidak ada user_id, gunakan auth user
+        if (!$userId) {
+            $userId = auth()->id();
+        }
+
+        // Cari user
+        $user = User::find($userId);
+        if (!$user) {
+            return response()->json([
+                'success' => true,
+                'data'    => ['present' => 0, 'absent' => 0, 'late' => 0],
+            ]);
+        }
+
+        $summary = $this->computeAttendanceSummary($user, $startDate, $endDate);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $summary,
+        ]);
+    }
+
+    /**
+     * Parse period string ke pasangan [startDate, endDate].
+     * Mendukung:
+     *   - "YYYY-MM"              → awal–akhir bulan tersebut
+     *   - "YYYY-MM-DD:YYYY-MM-DD" → rentang eksplisit
+     *   - null / kosong          → bulan berjalan
+     */
+    private function resolvePeriodRange(?string $period): array
+    {
+        if (!$period) {
+            $now = Carbon::now();
+            return [
+                $now->copy()->startOfMonth()->toDateString(),
+                $now->copy()->endOfMonth()->toDateString(),
+            ];
+        }
+
+        // Rentang eksplisit: "2025-07-01:2025-07-31"
+        if (str_contains($period, ':')) {
+            [$start, $end] = explode(':', $period, 2);
+            return [
+                Carbon::parse(trim($start))->toDateString(),
+                Carbon::parse(trim($end))->toDateString(),
+            ];
+        }
+
+        // Format bulan-tahun: "2025-07"
+        if (preg_match('/^\d{4}-\d{2}$/', trim($period))) {
+            $date = Carbon::createFromFormat('Y-m', trim($period));
+            return [
+                $date->copy()->startOfMonth()->toDateString(),
+                $date->copy()->endOfMonth()->toDateString(),
+            ];
+        }
+
+        // Fallback: parse sebagai tanggal single → hari itu saja
+        try {
+            $date = Carbon::parse($period);
+            return [$date->toDateString(), $date->toDateString()];
+        } catch (\Throwable $e) {
+            $now = Carbon::now();
+            return [
+                $now->copy()->startOfMonth()->toDateString(),
+                $now->copy()->endOfMonth()->toDateString(),
+            ];
+        }
+    }
+
+    // ─── Export PDF per karyawan ──────────────────────────────────────────────
+    public function exportPdf(Request $request)
+    {
+        $userId = $request->get('user_id');
+        $period = $request->get('period');
+
+        // Temukan user; 404 jika tidak ditemukan
+        $user = User::find($userId);
+        if (!$user) {
+            abort(404, 'User tidak ditemukan.');
+        }
+
+        // Resolve date range dari period param
+        [$startDate, $endDate] = $this->resolvePeriodRange($period);
+
+        // Ambil job_targets untuk user ini
+        $targets = JobTarget::where('user_id', $user->id)
+            ->orderBy('created_at')
+            ->get();
+
+        // Hitung overall progress
+        $overall = $targets->count() > 0
+            ? round($targets->avg(fn($t) => $t->getProgressPercent()), 1)
+            : 0.0;
+
+        // Hitung grade overall
+        $grade = JobGradeSetting::resolveGrade($overall);
+
+        // Hitung attendance summary (menggunakan private helper)
+        $attendanceSummary = $this->computeAttendanceSummary($user, $startDate, $endDate);
+
+        $data = compact('user', 'targets', 'attendanceSummary', 'grade', 'overall', 'period', 'startDate', 'endDate');
+
+        $pdf = Pdf::loadView('admin.inventaris.tasks.pdf.performance', $data);
+
+        $filename = 'kinerja-' . str_replace(' ', '-', strtolower($user->name)) . '-' . ($period ?? date('Y-m')) . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
+    /**
+     * Helper: hitung attendance summary untuk user + date range tertentu.
+     * Dapat digunakan oleh getAttendanceSummary() dan exportPdf().
+     *
+     * @param  User   $user
+     * @param  string $startDate  Format: Y-m-d
+     * @param  string $endDate    Format: Y-m-d
+     * @return array{present: int, absent: int, late: int}
+     */
+    private function computeAttendanceSummary(User $user, string $startDate, string $endDate): array
+    {
+        $recruitment = Recruitment::where('email', $user->email)->first();
+
+        if (!$recruitment) {
+            return ['present' => 0, 'absent' => 0, 'late' => 0];
+        }
+
+        $baseQuery = Attendance::where('recruitment_id', $recruitment->id)
+            ->whereBetween('date', [$startDate, $endDate]);
+
+        $present = (clone $baseQuery)
+            ->whereIn('status', ['present', 'late'])
+            ->count();
+
+        $late = (clone $baseQuery)
+            ->where(function ($q) {
+                $q->where('status', 'late')
+                  ->orWhere('late_minutes', '>', 0);
+            })
+            ->count();
+
+        $absent = (clone $baseQuery)
+            ->where('status', 'absent')
+            ->count();
+
+        return compact('present', 'absent', 'late');
+    }
+
     // ─── Kept for route compatibility (unused) ────────────────────────────────
     public function show($id) { return response()->json(['success' => false], 404); }
-    public function exportPdf(Request $request) { abort(404); }
     public function getData_legacy(Request $request) { return $this->getData($request); }
     public function getStatistics(Request $request) { return response()->json(['success' => true, 'data' => []]); }
     public function getEmployees(Request $request) { return response()->json(['success' => true, 'data' => []]); }
