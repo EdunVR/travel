@@ -4,7 +4,14 @@
     <!-- Header -->
     <div class="flex items-center justify-between flex-wrap gap-3">
       <div class="flex items-center gap-2">
-        <button onclick="window.history.back()" class="p-2 hover:bg-slate-100 rounded-lg">
+        <button onclick="
+          if (window.self !== window.top) {
+            // Berada di dalam iframe — tutup modal di parent
+            window.parent.postMessage('closeRoomlistModal', '*');
+          } else {
+            window.history.back();
+          }
+        " class="p-2 hover:bg-slate-100 rounded-lg">
           <i class='bx bx-arrow-back text-xl'></i>
         </button>
         <div>

@@ -613,3 +613,40 @@
         </div>
     </div>
 </div>
+
+{{-- Modal Roomlist (iframe — tidak buka tab baru) --}}
+<div x-show="showRoomlistModal" x-transition.opacity
+     class="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-3 pt-4 overflow-y-auto"
+     style="display:none"
+     x-init="
+       window.addEventListener('message', (e) => {
+         if (e.data === 'closeRoomlistModal') {
+           showRoomlistModal = false;
+           roomlistUrl = '';
+         }
+       });
+     ">
+    <div class="w-full max-w-7xl bg-white rounded-2xl shadow-float my-4 flex flex-col"
+         style="height: calc(100vh - 2rem);">
+        {{-- Header --}}
+        <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
+            <div class="font-semibold flex items-center gap-2">
+                <i class='bx bx-hotel text-purple-600 text-xl'></i>
+                Roomlist Setting
+            </div>
+            <button class="p-2 -m-2 hover:bg-slate-100 rounded-lg"
+                    x-on:click="showRoomlistModal = false; roomlistUrl = ''">
+                <i class='bx bx-x text-xl'></i>
+            </button>
+        </div>
+        {{-- iframe --}}
+        <div class="flex-1 overflow-hidden rounded-b-2xl">
+            <iframe
+                :src="roomlistUrl"
+                style="width:100%; height:100%; border:0; display:block;"
+                loading="lazy"
+                allowfullscreen>
+            </iframe>
+        </div>
+    </div>
+</div>

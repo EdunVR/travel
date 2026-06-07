@@ -1298,6 +1298,9 @@
             rabData: null,
             rabKb: null,
             updatingRab: false,
+            // Roomlist Modal
+            showRoomlistModal: false,
+            roomlistUrl: '',
             kbForm: {
                 id: null, keberangkatan_name: '', departure_date: '', return_date: '',
                 total_jamaah: 0, status: 'planning'
@@ -1478,8 +1481,9 @@
             },
 
             openRoomlistSetting(kb) {
-                // Buka halaman manage room position (stream PDF dengan live preview)
-                window.open(`{{ url('') }}/admin/inventaris/travel/document/${kb.id}/manage-room-position`, '_blank');
+                // Tampilkan halaman manage room position dalam modal iframe
+                this.roomlistUrl = `{{ url('') }}/admin/inventaris/travel/document/${kb.id}/manage-room-position`;
+                this.showRoomlistModal = true;
             },
 
             async openFinancialReport(kb) {

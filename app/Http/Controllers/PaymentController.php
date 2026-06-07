@@ -177,6 +177,9 @@ class PaymentController extends Controller
                 }
             }
 
+            // Kurangi stok produk perlengkapan dari booking addons saat DP pertama
+            $this->deductAddonStock($booking, $payment);
+
             // Sync piutang
             $this->syncPiutang($booking);
 
@@ -464,6 +467,66 @@ class PaymentController extends Controller
     /**
      * Generate unique receipt number
      */
+    /**
+     * Kurangi stok produk perlengkapan dari booking addons.
+     * Hanya dijalankan saat pembayaran PERTAMA (DP) agar tidak double-deduct.
+     */
+    private function deductAddonStock(JamaahBooking $booking, \App\Models\JamaahPayment $payment): void
+    {
+        try {
+            // Hanya jalankan jika ini adalah pembayaran pertama
+            $paymentCount = $booking->payments()->count();
+            if ($paymentCount > 1) {
+                return; // Sudah ada pembayaran sebelumnya — skip
+            }
+
+            $addons = \App\Models\BookingAddon::where('id_jamaah_booking', $booking->id)
+                ->whereNotNull('id_produk')
+                ->where('qty', '>', 0)
+                ->get();
+
+            if ($addons->isEmpty()) {
+                return;
+            }
+
+            foreach ($addons as $addon) {
+                $produk = \App\Models\Produk::find($addon->id_produk);
+                if (!$produk) {
+                    Log::warning("BookingAddon id={$addon->id}: produk id={$addon->id_produk} tidak ditemukan, skip.");
+                    continue;
+                }
+
+                // Gunakan method reduceStock (FIFO) yang sudah ada di model
+                try {
+                    $produk->reduceStock($addon->qty);
+
+                    Log::info("✅ Stok produk perlengkapan berkurang saat DP booking", [
+                        'booking_id'   => $booking->id,
+                        'booking_code' => $booking->booking_code,
+                        'addon_id'     => $addon->id,
+                        'produk'       => $produk->nama_produk,
+                        'qty'          => $addon->qty,
+                    ]);
+                } catch (\Exception $stockErr) {
+                    // Stok kurang — log warning tapi jangan gagalkan payment
+                    Log::warning("⚠️ Stok tidak cukup untuk perlengkapan: " . $stockErr->getMessage(), [
+                        'booking_id' => $booking->id,
+                        'addon_id'   => $addon->id,
+                        'produk'     => $produk->nama_produk,
+                        'qty_needed' => $addon->qty,
+                        'stok_sisa'  => $produk->stok,
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            // Jangan gagalkan payment jika ada error stok
+            Log::error("deductAddonStock error: " . $e->getMessage(), [
+                'booking_id' => $booking->id,
+                'payment_id' => $payment->id,
+            ]);
+        }
+    }
+
     private function generateReceiptNumber(): string
     {
         $prefix = 'KWIT-JMH';

@@ -1193,6 +1193,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('transfer-gudang/data', [TransferGudangController::class, 'data'])->name('transfer-gudang.data');
         Route::post('transfer-gudang/{id}/approve', [TransferGudangController::class, 'approve'])->name('transfer-gudang.approve');
         Route::post('transfer-gudang/{id}/reject', [TransferGudangController::class, 'reject'])->name('transfer-gudang.reject');
+        Route::get('transfer-gudang/{id}/surat-jalan', [TransferGudangController::class, 'suratJalan'])->name('transfer-gudang.surat-jalan');
         Route::get('transfer-gudang/export/pdf', [TransferGudangController::class, 'exportPdf'])->name('transfer-gudang.export.pdf');
         Route::get('transfer-gudang/export/excel', [TransferGudangController::class, 'exportExcel'])->name('transfer-gudang.export.excel');
         Route::resource('transfer-gudang', TransferGudangController::class);

@@ -293,6 +293,31 @@ class TransferGudangController extends Controller
     }
 
     /**
+     * Menampilkan surat jalan untuk transfer
+     */
+    public function suratJalan($id)
+    {
+        try {
+            $permintaan = PermintaanPengiriman::with(['outletAsal', 'outletTujuan', 'produk', 'bahan', 'inventori'])
+                ->findOrFail($id);
+
+            // Generate nomor surat jalan jika belum ada
+            if (empty($permintaan->nomor_surat_jalan)) {
+                $permintaan->nomor_surat_jalan = 'SJ-' . $permintaan->no_permintaan;
+                $permintaan->save();
+            }
+
+            $companyName = config('app.name', 'HM Tour & Travel');
+
+            return view('admin.inventaris.transfer-gudang.surat-jalan', compact('permintaan', 'companyName'));
+
+        } catch (\Exception $e) {
+            Log::error('Error showing surat jalan: ' . $e->getMessage());
+            abort(404, 'Transfer tidak ditemukan');
+        }
+    }
+
+    /**
      * Menyetujui permintaan transfer
      */
     public function approve($id)

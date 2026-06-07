@@ -305,6 +305,13 @@
                     </td>
                     <td class="px-4 py-3">
                       <div class="flex flex-wrap gap-1">
+                        {{-- Tombol surat jalan — selalu tampil jika ada ID --}}
+                        <a :href="`{{ route('admin.inventaris.transfer-gudang.surat-jalan', ':id') }}`.replace(':id', request.id)"
+                           target="_blank"
+                           class="inline-flex items-center gap-1 rounded-lg border border-purple-200 text-purple-700 px-2 py-1 hover:bg-purple-50 text-xs"
+                           title="Unduh Surat Jalan">
+                          <i class="bx bx-file-blank"></i> Surat Jalan
+                        </a>
                         <template x-if="request.status_raw === 'menunggu'">
                           <div class="flex gap-1">
                             @hasPermission('inventaris.transfer-gudang.approve')
@@ -320,7 +327,7 @@
                           </div>
                         </template>
                         <template x-if="request.status_raw !== 'menunggu'">
-                          <span class="text-slate-500 text-xs">-</span>
+                          <span class="text-slate-500 text-xs" x-show="false"></span>
                         </template>
                       </div>
                     </td>
