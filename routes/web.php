@@ -844,6 +844,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         
         // Package Catalog (Public)
         Route::get('travel/catalog', [PackageCatalogController::class, 'index'])->name('travel.catalog.index');
+        Route::get('travel/catalog/{id}/analytics', [PackageCatalogController::class, 'analytics'])->name('travel.catalog.analytics');
         Route::get('travel/catalog/{id}', [PackageCatalogController::class, 'show'])->name('travel.catalog.show');
         Route::get('travel/catalog/data/packages', [PackageCatalogController::class, 'getData'])->name('travel.catalog.data');
 

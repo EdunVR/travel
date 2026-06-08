@@ -232,6 +232,14 @@ class TravelPackage extends Model
         return $this->hasMany(TourPlan::class, 'travel_package_id')->orderBy('day_number');
     }
 
+    /**
+     * Relationship to view logs (analytics)
+     */
+    public function viewLogs()
+    {
+        return $this->hasMany(PackageViewLog::class, 'travel_package_id');
+    }
+
 
     /**
      * Get available seats for this package

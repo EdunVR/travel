@@ -66,4 +66,17 @@ return [
         'api_key' => env('GOOGLE_VISION_API_KEY', ''),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Google Analytics 4 (GA4) Data API
+    |--------------------------------------------------------------------------
+    | credentials_path: path ke file JSON service account
+    | property_id    : GA4 Property ID (angka, bukan G-xxx)
+    |--------------------------------------------------------------------------
+    */
+    'google_analytics' => [
+        'credentials_path' => env('GA4_CREDENTIALS_PATH', storage_path('app/google-analytics-credentials.json')),
+        'property_id'      => env('GA4_PROPERTY_ID', ''),
+    ],
+
 ];

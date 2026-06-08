@@ -70,7 +70,7 @@
     <!-- Package Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @forelse($packages as $package)
-        <x-package-card :package="$package" />
+        <x-package-card :package="$package" :href="route('admin.inventaris.travel.catalog.analytics', $package->id)" />
         @empty
         <div class="col-span-full">
             <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">

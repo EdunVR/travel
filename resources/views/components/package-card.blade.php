@@ -1,6 +1,7 @@
-@props(['package'])
+@props(['package', 'href' => null])
 
-<a href="{{ url('/paket/' . $package->id) }}" class="block">
+@php $cardUrl = $href ?? url('/paket/' . $package->id); @endphp
+<a href="{{ $cardUrl }}" class="block">
 <div class="card-hover bg-white rounded-2xl overflow-hidden border border-green-100 shadow-sm group cursor-pointer hover:shadow-xl transition-all duration-300">
     <!-- Image Section with Fixed Aspect Ratio + Lazy Loading + Blur Placeholder -->
     <div class="relative overflow-hidden bg-gray-100" style="aspect-ratio: 16/9;">
