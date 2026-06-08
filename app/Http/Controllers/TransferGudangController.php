@@ -6,6 +6,7 @@ use App\Traits\HasOutletFilter;
 
 use Illuminate\Http\Request;
 use App\Models\PermintaanPengiriman;
+use App\Models\TransferRequestItem;
 use App\Models\Outlet;
 use App\Models\Produk;
 use App\Models\Bahan;
@@ -131,79 +132,65 @@ class TransferGudangController extends Controller
     }
 
     /**
-     * Menyimpan permintaan transfer
+     * Menyimpan permintaan transfer (satu request, banyak item)
      */
     public function store(Request $request)
     {
         try {
             $validated = $request->validate([
-                'outlet_asal_id' => 'required|exists:outlets,id_outlet',
-                'outlet_tujuan_id' => 'required|exists:outlets,id_outlet',
-                'items' => 'required|array|min:1',
-                'items.*.id' => 'required',
-                'items.*.type' => 'required|in:produk,bahan,inventori',
-                'items.*.quantity' => 'required|integer|min:1',
-                'items.*.original_id' => 'required'
+                'outlet_asal_id'          => 'required|exists:outlets,id_outlet',
+                'outlet_tujuan_id'        => 'required|exists:outlets,id_outlet',
+                'items'                   => 'required|array|min:1',
+                'items.*.id'              => 'required',
+                'items.*.type'            => 'required|in:produk,bahan,inventori',
+                'items.*.quantity'        => 'required|integer|min:1',
+                'items.*.original_id'     => 'required',
+                'items.*.name'            => 'required|string',
+                'items.*.unit'            => 'nullable|string',
             ]);
 
-            // Cek apakah outlet asal dan tujuan berbeda
             if ($validated['outlet_asal_id'] === $validated['outlet_tujuan_id']) {
                 return response()->json([
                     'error' => 'Outlet pengirim dan penerima tidak boleh sama'
                 ], 422);
             }
 
-            $createdRequests = [];
-
+            // Cek stok semua item dulu sebelum simpan
             foreach ($validated['items'] as $item) {
-                // Cek stok tersedia
                 if (!$this->checkStockAvailability($item['type'], $item['original_id'], $item['quantity'])) {
                     return response()->json([
                         'error' => "Stok tidak mencukupi untuk item: {$item['name']}"
                     ], 422);
                 }
+            }
 
-                // Buat permintaan pengiriman
-                $permintaanData = [
-                    'id_outlet_asal' => $validated['outlet_asal_id'],
-                    'id_outlet_tujuan' => $validated['outlet_tujuan_id'],
-                    'jumlah' => $item['quantity'],
-                    'status' => 'menunggu'
-                ];
+            // Buat satu permintaan pengiriman (header)
+            $permintaan = PermintaanPengiriman::create([
+                'id_outlet_asal'  => $validated['outlet_asal_id'],
+                'id_outlet_tujuan'=> $validated['outlet_tujuan_id'],
+                'jumlah'          => collect($validated['items'])->sum('quantity'), // total
+                'status'          => 'menunggu',
+            ]);
 
-                // Set ID berdasarkan jenis item
-                switch ($item['type']) {
-                    case 'produk':
-                        $permintaanData['id_produk'] = $item['original_id'];
-                        $produk = Produk::find($item['original_id']);
-                        $permintaanData['nama_produk'] = $produk->nama_produk ?? '';
-                        break;
-                    case 'bahan':
-                        $permintaanData['id_bahan'] = $item['original_id'];
-                        $bahan = Bahan::find($item['original_id']);
-                        $permintaanData['nama_bahan'] = $bahan->nama_bahan ?? '';
-                        break;
-                    case 'inventori':
-                        $permintaanData['id_inventori'] = $item['original_id'];
-                        $inventori = Inventori::find($item['original_id']);
-                        $permintaanData['nama_barang'] = $inventori->nama_barang ?? '';
-                        break;
-                }
-
-                $permintaan = PermintaanPengiriman::create($permintaanData);
-                $createdRequests[] = $permintaan;
+            // Simpan detail item
+            foreach ($validated['items'] as $item) {
+                TransferRequestItem::create([
+                    'transfer_request_id' => $permintaan->id,
+                    'item_type'           => $item['type'],
+                    'item_id'             => $item['original_id'],
+                    'item_name'           => $item['name'],
+                    'jumlah'              => $item['quantity'],
+                    'unit'                => $item['unit'] ?? null,
+                ]);
             }
 
             return response()->json([
                 'message' => 'Permintaan transfer berhasil dibuat',
-                'data' => $createdRequests
+                'data'    => $permintaan->load('items'),
             ], 201);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'error' => 'Validasi gagal',
-                'errors' => $e->errors()
-            ], 422);
+            return response()->json(['error' => 'Validasi gagal', 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
             Log::error('Error storing transfer request: ' . $e->getMessage());
             return response()->json(['error' => 'Gagal membuat permintaan transfer'], 500);
@@ -234,53 +221,56 @@ class TransferGudangController extends Controller
     }
 
     /**
-     * Mengambil data permintaan untuk Alpine.js (bukan DataTables)
+     * Mengambil data permintaan untuk Alpine.js — dikelompokkan per request
      */
     public function data(Request $request)
     {
         try {
-            $query = PermintaanPengiriman::with(['outletAsal', 'outletTujuan', 'produk', 'bahan', 'inventori']);
+            $query = PermintaanPengiriman::with(['outletAsal', 'outletTujuan', 'items']);
 
-            // Filter berdasarkan status jika ada
             if ($request->has('status') && $request->status !== 'ALL') {
                 $query->where('status', $request->status);
             }
 
             $permintaan = $query->latest()->get();
 
-            // Format data untuk Alpine.js
-            $data = $permintaan->map(function ($item) {
+            $data = $permintaan->map(function ($req) {
                 $badgeClass = [
-                    'menunggu' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                    'menunggu'  => 'bg-yellow-100 text-yellow-800 border-yellow-200',
                     'disetujui' => 'bg-green-100 text-green-800 border-green-200',
-                    'ditolak' => 'bg-red-100 text-red-800 border-red-200'
-                ][$item->status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
+                    'ditolak'   => 'bg-red-100 text-red-800 border-red-200',
+                ][$req->status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
 
-                $itemName = '-';
-                $itemType = '-';
-                
-                if ($item->id_produk) {
-                    $itemName = $item->produk->nama_produk ?? $item->nama_produk;
-                    $itemType = 'Produk';
-                } elseif ($item->id_bahan) {
-                    $itemName = $item->bahan->nama_bahan ?? $item->nama_bahan;
-                    $itemType = 'Bahan';
-                } elseif ($item->id_inventori) {
-                    $itemName = $item->inventori->nama_barang ?? $item->nama_barang;
-                    $itemType = 'Inventori';
+                // Kumpulkan nama item (bisa dari tabel baru atau fallback ke kolom lama)
+                $items = $req->items;
+                if ($items->isNotEmpty()) {
+                    $itemsData = $items->map(fn($i) => [
+                        'name'   => $i->item_name,
+                        'type'   => $i->item_type,
+                        'jumlah' => $i->jumlah,
+                        'unit'   => $i->unit,
+                    ])->toArray();
+                } else {
+                    // Fallback: data lama (single item per record)
+                    $itemName = '-';
+                    $itemType = '-';
+                    if ($req->id_produk)    { $itemName = $req->produk->nama_produk  ?? '-'; $itemType = 'produk'; }
+                    elseif ($req->id_bahan) { $itemName = $req->bahan->nama_bahan    ?? '-'; $itemType = 'bahan'; }
+                    elseif ($req->id_inventori) { $itemName = $req->inventori->nama_barang ?? '-'; $itemType = 'inventori'; }
+                    $itemsData = [['name' => $itemName, 'type' => $itemType, 'jumlah' => $req->jumlah, 'unit' => null]];
                 }
 
                 return [
-                    'id' => $item->id,
-                    'created_at' => $item->created_at,
-                    'outlet_asal' => $item->outletAsal->nama_outlet ?? '-',
-                    'outlet_tujuan' => $item->outletTujuan->nama_outlet ?? '-',
-                    'item_name' => $itemName,
-                    'item_type' => $itemType,
-                    'quantity' => $item->jumlah,
-                    'status' => '<span class="px-2 py-1 rounded-full text-xs border ' . $badgeClass . '">' . 
-                               ucfirst($item->status) . '</span>',
-                    'status_raw' => $item->status, // Raw status for Alpine.js conditionals
+                    'id'            => $req->id,
+                    'no_permintaan' => $req->no_permintaan,
+                    'created_at'    => $req->created_at,
+                    'outlet_asal'   => $req->outletAsal->nama_outlet  ?? '-',
+                    'outlet_tujuan' => $req->outletTujuan->nama_outlet ?? '-',
+                    'items'         => $itemsData,
+                    'item_count'    => count($itemsData),
+                    'total_qty'     => collect($itemsData)->sum('jumlah'),
+                    'status'        => '<span class="px-2 py-1 rounded-full text-xs border ' . $badgeClass . '">' . ucfirst($req->status) . '</span>',
+                    'status_raw'    => $req->status,
                 ];
             });
 
@@ -293,13 +283,16 @@ class TransferGudangController extends Controller
     }
 
     /**
-     * Menampilkan surat jalan untuk transfer
+     * Menampilkan surat jalan untuk transfer (mendukung multi-item per request)
      */
     public function suratJalan($id)
     {
         try {
-            $permintaan = PermintaanPengiriman::with(['outletAsal', 'outletTujuan', 'produk', 'bahan', 'inventori'])
-                ->findOrFail($id);
+            $permintaan = PermintaanPengiriman::with([
+                'outletAsal', 'outletTujuan',
+                'items',
+                'produk', 'bahan', 'inventori',
+            ])->findOrFail($id);
 
             // Generate nomor surat jalan jika belum ada
             if (empty($permintaan->nomor_surat_jalan)) {
@@ -307,11 +300,27 @@ class TransferGudangController extends Controller
                 $permintaan->save();
             }
 
+            // Kumpulkan daftar item untuk ditampilkan
+            if ($permintaan->items->isNotEmpty()) {
+                $itemList = $permintaan->items->map(fn($i) => [
+                    'name'   => $i->item_name,
+                    'type'   => $i->item_type,
+                    'jumlah' => $i->jumlah,
+                    'unit'   => $i->unit,
+                ])->toArray();
+            } else {
+                // Fallback: arsitektur lama
+                $itemName = '-'; $itemType = '-';
+                if ($permintaan->id_produk)         { $itemName = $permintaan->produk->nama_produk ?? '-'; $itemType = 'produk'; }
+                elseif ($permintaan->id_bahan)      { $itemName = $permintaan->bahan->nama_bahan   ?? '-'; $itemType = 'bahan'; }
+                elseif ($permintaan->id_inventori)  { $itemName = $permintaan->inventori->nama_barang ?? '-'; $itemType = 'inventori'; }
+                $itemList = [['name' => $itemName, 'type' => $itemType, 'jumlah' => $permintaan->jumlah, 'unit' => null]];
+            }
+
             // Ambil company setting untuk kop surat
-            $company = \App\Models\CompanySetting::where('is_active', true)->first();
+            $company     = \App\Models\CompanySetting::where('is_active', true)->first();
             $companyName = $company?->company_name ?? config('app.name', 'HM Tour & Travel');
 
-            // Siapkan logo sebagai base64 agar bisa dirender di PDF/print
             $logoBase64 = null;
             if ($company?->company_logo) {
                 $logoPath = storage_path('app/public/' . ltrim($company->company_logo, '/'));
@@ -320,24 +329,17 @@ class TransferGudangController extends Controller
                     $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($logoPath));
                 }
             }
-            // Fallback: cari logo di public/img
             if (!$logoBase64) {
-                $candidates = [
-                    public_path('img/logo-20250616163221.png'),
-                    public_path('img/logo_2.png'),
-                    public_path('img/logo.png'),
-                ];
-                foreach ($candidates as $c) {
+                foreach ([public_path('img/logo-20250616163221.png'), public_path('img/logo_2.png'), public_path('img/logo.png')] as $c) {
                     if (file_exists($c) && filesize($c) > 500) {
-                        $mime = mime_content_type($c);
-                        $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($c));
+                        $logoBase64 = 'data:' . mime_content_type($c) . ';base64,' . base64_encode(file_get_contents($c));
                         break;
                     }
                 }
             }
 
             return view('admin.inventaris.transfer-gudang.surat-jalan', compact(
-                'permintaan', 'company', 'companyName', 'logoBase64'
+                'permintaan', 'itemList', 'company', 'companyName', 'logoBase64'
             ));
 
         } catch (\Exception $e) {
@@ -347,20 +349,41 @@ class TransferGudangController extends Controller
     }
 
     /**
-     * Menyetujui permintaan transfer
+     * Menyetujui permintaan transfer (semua item dalam satu request)
      */
     public function approve($id)
     {
         try {
-            $permintaan = PermintaanPengiriman::findOrFail($id);
+            $permintaan = PermintaanPengiriman::with('items')->findOrFail($id);
 
-            // Pindahkan stok berdasarkan jenis item
-            if ($permintaan->id_produk) {
-                $this->pindahkanStokProduk($permintaan);
-            } elseif ($permintaan->id_bahan) {
-                $this->pindahkanStokBahan($permintaan);
-            } elseif ($permintaan->id_inventori) {
-                $this->pindahkanStokInventori($permintaan);
+            if ($permintaan->items->isNotEmpty()) {
+                // Arsitektur baru: multi-item
+                foreach ($permintaan->items as $item) {
+                    // Buat objek sementara yang kompatibel dengan method lama
+                    $tempPermintaan = new PermintaanPengiriman();
+                    $tempPermintaan->id_outlet_asal  = $permintaan->id_outlet_asal;
+                    $tempPermintaan->id_outlet_tujuan = $permintaan->id_outlet_tujuan;
+                    $tempPermintaan->jumlah           = $item->jumlah;
+
+                    if ($item->item_type === 'produk') {
+                        $tempPermintaan->id_produk = $item->item_id;
+                        $tempPermintaan->setRelation('produk', Produk::find($item->item_id));
+                        $this->pindahkanStokProduk($tempPermintaan);
+                    } elseif ($item->item_type === 'bahan') {
+                        $tempPermintaan->id_bahan = $item->item_id;
+                        $tempPermintaan->setRelation('bahan', Bahan::find($item->item_id));
+                        $this->pindahkanStokBahan($tempPermintaan);
+                    } elseif ($item->item_type === 'inventori') {
+                        $tempPermintaan->id_inventori = $item->item_id;
+                        $tempPermintaan->setRelation('inventori', Inventori::find($item->item_id));
+                        $this->pindahkanStokInventori($tempPermintaan);
+                    }
+                }
+            } else {
+                // Fallback: arsitektur lama (single item)
+                if ($permintaan->id_produk)      $this->pindahkanStokProduk($permintaan);
+                elseif ($permintaan->id_bahan)   $this->pindahkanStokBahan($permintaan);
+                elseif ($permintaan->id_inventori) $this->pindahkanStokInventori($permintaan);
             }
 
             $permintaan->update(['status' => 'disetujui']);

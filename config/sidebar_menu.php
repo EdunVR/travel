@@ -38,8 +38,8 @@ return [
             // Operations
             ['name' => 'Booking Jamaah', 'route' => 'admin.inventaris.booking.index', 'permissions' => ['travel.booking.view']],
             
-            // Task Management
-            ['name' => 'Task Management', 'route' => 'admin.inventaris.tasks.index', 'permissions' => ['travel.task.view']],
+            // Task Management — Task Management hanya untuk superadmin, My Tasks untuk semua role
+            ['name' => 'Task Management', 'route' => 'admin.inventaris.tasks.index', 'permissions' => ['travel.task.view'], 'superadmin_only' => true],
             ['name' => 'My Tasks', 'route' => 'admin.inventaris.tasks.my-tasks', 'permissions' => ['travel.task.view']],
             
             // Communication & Reporting

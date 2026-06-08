@@ -95,6 +95,7 @@
                                     // Extract menu identifier from route or name
                                     $menuIdentifier = str_replace(['.index', 'admin.', 'finance.', 'sdm.', 'pembelian.', 'admin.penjualan.', 'admin.crm.', 'admin.inventaris.', 'admin.service.', 'admin.investor.', 'admin.produksi.produksi.'], '', $item['route']);
                                     $menuIdentifier = str_replace('.', '-', $menuIdentifier);
+                                    $skipItem = false;
                                     
                                     // Special handling for specific routes
                                     if ($item['route'] === 'admin.penjualan.pos.index') {
@@ -161,8 +162,7 @@
                                     }
                                     if ($item['route'] === 'admin.inventaris.tasks.my-tasks') {
                                         // My Tasks uses same permission as Task Management — skip rendering
-                                        // to avoid duplicate checkbox entries in the permission modal
-                                        continue;
+                                        $skipItem = true;
                                     }
                                     if ($item['route'] === 'admin.inventaris.travel.communication.index') {
                                         $menuIdentifier = 'communication';
@@ -207,7 +207,7 @@
                                     }
                                 @endphp
                                 
-                                @if(count($submenuPerms) > 0)
+                                @if(!$skipItem && count($submenuPerms) > 0)
                                 <div class="ml-6 mb-3">
                                     <div class="flex items-center mb-2">
                                         <input type="checkbox" 

@@ -21,6 +21,7 @@ class PermintaanPengiriman extends Model
         'id_inventori',
         'jumlah',
         'status',
+        'nomor_surat_jalan',
     ];
 
     protected $casts = [
@@ -84,5 +85,13 @@ class PermintaanPengiriman extends Model
     public function inventori()
     {
         return $this->belongsTo(Inventori::class, 'id_inventori');
+    }
+
+    /**
+     * Detail item (multi-item per request)
+     */
+    public function items()
+    {
+        return $this->hasMany(TransferRequestItem::class, 'transfer_request_id');
     }
 }

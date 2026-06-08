@@ -21,6 +21,11 @@
         foreach ($menuData['items'] as $item) {
             $permissions = $item['permissions'] ?? [];
             $routeUrl = $item['route'] === '#' ? '#' : route($item['route']);
+
+            // superadmin_only items are hidden for non-superadmin users
+            if (!empty($item['superadmin_only']) && !$user->hasRole('super_admin')) {
+                continue;
+            }
             
             // Check if user has any of the required permissions
             $hasPermission = $user->hasRole('super_admin') || empty($permissions);

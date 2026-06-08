@@ -87,9 +87,11 @@
                   </div>
                   <button @click="addToCart(it)"
                           class="shrink-0 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm"
-                          :class="it.stock>0 ? 'bg-primary-600 text-white hover:bg-primary-700' : 'bg-slate-200 text-slate-500 cursor-not-allowed'"
-                          :disabled="it.stock<=0">
-                    <i class='bx bx-check-circle'></i>Pilih
+                          :class="it.stock > 0 && !isInCart(it.id) ? 'bg-primary-600 text-white hover:bg-primary-700' : 'bg-slate-200 text-slate-500 cursor-not-allowed'"
+                          :disabled="it.stock <= 0 || isInCart(it.id)"
+                          :title="isInCart(it.id) ? 'Sudah ada di daftar transfer' : (it.stock <= 0 ? 'Stok habis' : 'Tambahkan ke daftar transfer')">
+                    <i class='bx' :class="isInCart(it.id) ? 'bx-check' : 'bx-check-circle'"></i>
+                    <span x-text="isInCart(it.id) ? 'Dipilih' : 'Pilih'"></span>
                   </button>
                 </div>
               </div>
@@ -278,38 +280,59 @@
               <thead class="bg-slate-50 text-slate-700">
                 <tr>
                   <th class="text-left px-4 py-3">Tanggal</th>
+                  <th class="text-left px-4 py-3">No. Request</th>
                   <th class="text-left px-4 py-3">Outlet Asal</th>
                   <th class="text-left px-4 py-3">Outlet Tujuan</th>
                   <th class="text-left px-4 py-3">Item</th>
-                  <th class="text-left px-4 py-3">Jumlah</th>
                   <th class="text-left px-4 py-3">Status</th>
                   <th class="text-left px-4 py-3">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 <template x-for="(request, index) in requests" :key="request.id || index">
-                  <tr class="border-t border-slate-100">
+                  <tr class="border-t border-slate-100 hover:bg-slate-50">
                     <td class="px-4 py-3">
                       <div x-text="request.created_at ? new Date(request.created_at).toLocaleDateString('id-ID') : '-'"></div>
                       <div class="text-xs text-slate-500" x-text="request.created_at ? new Date(request.created_at).toLocaleTimeString('id-ID') : ''"></div>
                     </td>
+                    <td class="px-4 py-3 font-mono text-xs" x-text="request.no_permintaan || ('#' + request.id)"></td>
                     <td class="px-4 py-3" x-text="request.outlet_asal || '-'"></td>
                     <td class="px-4 py-3" x-text="request.outlet_tujuan || '-'"></td>
                     <td class="px-4 py-3">
-                      <div class="font-medium" x-text="request.item_name || '-'"></div>
-                      <div class="text-xs text-slate-500 capitalize" x-text="request.item_type || ''"></div>
+                      {{-- Summary jumlah item --}}
+                      <div class="text-xs font-semibold text-slate-700"
+                           x-text="(request.item_count || 1) + ' jenis item, total ' + (request.total_qty || 0) + ' unit'"></div>
+                      {{-- Expand toggle --}}
+                      <button @click="request._expanded = !request._expanded"
+                              class="text-xs text-primary-600 hover:underline mt-0.5 flex items-center gap-1">
+                        <i class='bx' :class="request._expanded ? 'bx-chevron-up' : 'bx-chevron-down'"></i>
+                        <span x-text="request._expanded ? 'Sembunyikan' : 'Lihat detail'"></span>
+                      </button>
+                      {{-- Detail items --}}
+                      <template x-if="request._expanded">
+                        <ul class="mt-1 space-y-0.5">
+                          <template x-for="(item, i) in (request.items || [])" :key="i">
+                            <li class="text-xs text-slate-600 flex gap-2">
+                              <span class="text-slate-400" x-text="(i+1) + '.'"></span>
+                              <span x-text="item.name"></span>
+                              <span class="text-slate-400">—</span>
+                              <span x-text="item.jumlah + (item.unit ? ' ' + item.unit : '')"></span>
+                              <span class="capitalize text-slate-400" x-text="'(' + item.type + ')'"></span>
+                            </li>
+                          </template>
+                        </ul>
+                      </template>
                     </td>
-                    <td class="px-4 py-3" x-text="request.quantity || 0"></td>
                     <td class="px-4 py-3">
                       <span x-html="request.status || '-'"></span>
                     </td>
                     <td class="px-4 py-3">
                       <div class="flex flex-wrap gap-1">
-                        {{-- Tombol surat jalan — selalu tampil jika ada ID --}}
+                        {{-- Tombol surat jalan --}}
                         <a :href="`{{ route('admin.inventaris.transfer-gudang.surat-jalan', ':id') }}`.replace(':id', request.id)"
                            target="_blank"
                            class="inline-flex items-center gap-1 rounded-lg border border-purple-200 text-purple-700 px-2 py-1 hover:bg-purple-50 text-xs"
-                           title="Unduh Surat Jalan">
+                           title="Surat Jalan">
                           <i class="bx bx-file-blank"></i> Surat Jalan
                         </a>
                         <template x-if="request.status_raw === 'menunggu'">
@@ -325,9 +348,6 @@
                             </button>
                             @endhasPermission
                           </div>
-                        </template>
-                        <template x-if="request.status_raw !== 'menunggu'">
-                          <span class="text-slate-500 text-xs" x-show="false"></span>
                         </template>
                       </div>
                     </td>
@@ -548,6 +568,12 @@
         getOutletName(outletId){
           const outlet = this.outlets.find(o => o.id == outletId);
           return outlet ? outlet.name : '-';
+        },
+
+        // Cek apakah item sudah ada di cart
+        isInCart(itemId){
+          const cid = `${itemId}::${this.sender}->${this.receiver}`;
+          return this.cart.some(c => c.cid === cid);
         },
 
         addToCart(it){

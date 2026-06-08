@@ -158,27 +158,20 @@
       </tr>
     </thead>
     <tbody>
-      @php
-        $itemName = '-';
-        $itemType = '-';
-        if ($permintaan->id_produk) {
-            $itemName = $permintaan->produk->nama_produk ?? $permintaan->nama_produk ?? '-';
-            $itemType = 'Produk';
-        } elseif ($permintaan->id_bahan) {
-            $itemName = $permintaan->bahan->nama_bahan ?? $permintaan->nama_bahan ?? '-';
-            $itemType = 'Bahan';
-        } elseif ($permintaan->id_inventori) {
-            $itemName = $permintaan->inventori->nama_barang ?? $permintaan->nama_barang ?? '-';
-            $itemType = 'Inventori';
-        }
-      @endphp
+      @php $statusNote = $permintaan->status === 'disetujui' ? 'Sudah diterima' : ($permintaan->status === 'ditolak' ? 'Ditolak' : 'Dalam pengiriman'); @endphp
+      @forelse($itemList as $index => $item)
       <tr>
-        <td class="text-center">1</td>
-        <td style="font-weight:bold;">{{ $itemName }}</td>
-        <td class="text-center">{{ $itemType }}</td>
-        <td class="text-center">{{ $permintaan->jumlah }}</td>
-        <td>{{ $permintaan->status === 'disetujui' ? 'Sudah diterima' : ($permintaan->status === 'ditolak' ? 'Ditolak' : 'Dalam pengiriman') }}</td>
+        <td class="text-center">{{ $index + 1 }}</td>
+        <td style="font-weight:bold;">{{ $item['name'] }}</td>
+        <td class="text-center" style="text-transform:capitalize;">{{ $item['type'] }}</td>
+        <td class="text-center">{{ $item['jumlah'] }}{{ $item['unit'] ? ' ' . $item['unit'] : '' }}</td>
+        <td>{{ $statusNote }}</td>
       </tr>
+      @empty
+      <tr>
+        <td colspan="5" class="text-center" style="color:#888;">Tidak ada item</td>
+      </tr>
+      @endforelse
     </tbody>
   </table>
 
