@@ -67,10 +67,64 @@
         </form>
     </div>
 
+    <!-- Leaderboard Views Terbanyak -->
+    @if($leaderboard->isNotEmpty())
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+            <i class="bx bx-trophy text-amber-500"></i>
+            Top 5 Paket Terbanyak Dilihat
+        </h2>
+        <div class="space-y-2">
+            @foreach($leaderboard as $i => $pkg)
+            @php
+                $medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+                $maxViews = $leaderboard->first()->view_count ?: 1;
+                $barPct = round(($pkg->view_count / $maxViews) * 100);
+            @endphp
+            <a href="{{ route('admin.inventaris.travel.catalog.analytics', $pkg->id) }}"
+               class="flex items-center gap-3 rounded-xl border border-slate-100 p-2.5 hover:bg-slate-50 transition-colors group">
+                <span class="text-lg w-6 text-center shrink-0">{{ $medals[$i] ?? ($i+1) }}</span>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                        <p class="text-sm font-medium text-slate-900 truncate group-hover:text-primary-600">{{ $pkg->package_name }}</p>
+                        <span class="text-xs font-bold text-slate-700 shrink-0 flex items-center gap-1">
+                            <i class="bx bx-show text-slate-400"></i>{{ number_format($pkg->view_count) }}
+                        </span>
+                    </div>
+                    <div class="bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                        <div class="h-1.5 rounded-full bg-amber-400 transition-all"
+                             style="width: {{ $barPct }}%"></div>
+                    </div>
+                    <div class="flex items-center gap-3 mt-1 text-xs text-slate-400">
+                        <span class="capitalize">{{ $pkg->package_type }}</span>
+                        <span><i class="bx bx-user text-xs"></i> {{ $pkg->booking_count }} booking</span>
+                        @if($pkg->departure_date)
+                        <span><i class="bx bx-calendar text-xs"></i> {{ $pkg->departure_date->format('d M Y') }}</span>
+                        @endif
+                    </div>
+                </div>
+                <i class="bx bx-bar-chart-alt-2 text-slate-300 group-hover:text-primary-400 shrink-0"></i>
+            </a>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
     <!-- Package Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @forelse($packages as $package)
-        <x-package-card :package="$package" :href="route('admin.inventaris.travel.catalog.analytics', $package->id)" />
+        {{-- Wrap card dengan link ke halaman analytics --}}
+        <div class="relative">
+            <a href="{{ route('admin.inventaris.travel.catalog.analytics', $package->id) }}"
+               class="absolute inset-0 z-10" title="Lihat Analytics {{ $package->package_name }}"></a>
+            <x-package-card :package="$package" />
+            {{-- Badge view count --}}
+            <div class="absolute top-2 left-2 z-20 pointer-events-none">
+                <span class="inline-flex items-center gap-1 rounded-lg bg-black/60 backdrop-blur-sm text-white text-xs font-semibold px-2 py-1">
+                    <i class="bx bx-show text-xs"></i> {{ number_format($package->view_count) }}
+                </span>
+            </div>
+        </div>
         @empty
         <div class="col-span-full">
             <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">

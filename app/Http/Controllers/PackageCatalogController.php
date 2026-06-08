@@ -57,7 +57,13 @@ class PackageCatalogController extends Controller
 
         $packages = $query->paginate(12);
 
-        return view('admin.travel.catalog.index', compact('packages'));
+        // Leaderboard — top 5 paket terbanyak dilihat (semua status kecuali draft)
+        $leaderboard = TravelPackage::whereNotIn('status', ['draft', 'cancelled'])
+            ->orderByDesc('view_count')
+            ->limit(5)
+            ->get(['id', 'package_name', 'package_type', 'view_count', 'booking_count', 'departure_date']);
+
+        return view('admin.travel.catalog.index', compact('packages', 'leaderboard'));
     }
 
     /**

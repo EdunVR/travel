@@ -42,9 +42,9 @@ return [
             ['name' => 'Task Management', 'route' => 'admin.inventaris.tasks.index', 'permissions' => ['travel.task.view'], 'superadmin_only' => true],
             ['name' => 'My Tasks', 'route' => 'admin.inventaris.tasks.my-tasks', 'permissions' => ['travel.task.view']],
             
-            // Communication & Reporting
-            ['name' => 'Komunikasi', 'route' => 'admin.inventaris.travel.communication.index', 'permissions' => ['travel.communication.view']],
-            ['name' => 'Laporan', 'route' => 'admin.inventaris.travel.report.index', 'permissions' => ['travel.report.view']],
+            // Communication & Reporting — Komunikasi dan Laporan disembunyikan
+            // ['name' => 'Komunikasi', 'route' => 'admin.inventaris.travel.communication.index', 'permissions' => ['travel.communication.view']],
+            // ['name' => 'Laporan', 'route' => 'admin.inventaris.travel.report.index', 'permissions' => ['travel.report.view']],
             ['name' => 'Pengingat Pembayaran', 'route' => 'admin.inventaris.travel.payment-reminder.index', 'permissions' => ['travel.payment-reminder.view']],
 
             // Affiliate
