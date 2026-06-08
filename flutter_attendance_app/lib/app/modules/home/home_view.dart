@@ -185,26 +185,43 @@ class HomeView extends GetView<HomeController> {
 
                 const SizedBox(height: 16),
 
-                // Location Info
+                // Info selfie + GPS
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.amber[50],
+                    color: Colors.blue[50],
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.amber[200]!),
+                    border: Border.all(color: Colors.blue[200]!),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.location_on, color: Colors.amber[900], size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Lokasi GPS akan direkam secara otomatis saat absensi',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.amber[900],
+                      Row(
+                        children: [
+                          Icon(Icons.camera_alt, color: Colors.blue[800], size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Selfie & GPS wajib saat absensi',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue[900],
+                            ),
                           ),
-                        ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.blue[600], size: 14),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Kamera depan akan terbuka otomatis. Pastikan wajah terlihat jelas.',
+                              style: TextStyle(fontSize: 12, color: Colors.blue[700]),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

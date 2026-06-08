@@ -97,10 +97,11 @@ class MobileAttendanceController extends Controller
     public function clockIn(Request $request)
     {
         $request->validate([
-            'latitude'  => 'required|numeric|between:-90,90',
-            'longitude' => 'required|numeric|between:-180,180',
-            'address'   => 'nullable|string|max:500',
+            'latitude'    => 'required|numeric|between:-90,90',
+            'longitude'   => 'required|numeric|between:-180,180',
+            'address'     => 'nullable|string|max:500',
             'device_info' => 'nullable|string|max:255',
+            'selfie_in'   => 'nullable|string', // base64 foto selfie masuk
         ]);
 
         $employee = $this->getEmployee($request->user());
@@ -108,7 +109,7 @@ class MobileAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'Data karyawan tidak ditemukan.'], 404);
         }
 
-        $today = Carbon::today()->toDateString();
+        $today    = Carbon::today()->toDateString();
         $existing = Attendance::where('recruitment_id', $employee->id)
             ->where('date', $today)
             ->first();
@@ -121,33 +122,35 @@ class MobileAttendanceController extends Controller
             ], 409);
         }
 
+        // Simpan foto selfie masuk jika ada
+        $selfieInPath = null;
+        if ($request->filled('selfie_in')) {
+            $selfieInPath = $this->saveSelfie($request->selfie_in, 'in', $employee->id, $today);
+        }
+
         $now = Carbon::now();
 
+        $fields = [
+            'clock_in'         => $now->format('H:i:s'),
+            'status'           => 'present',
+            'source'           => 'online',
+            'latitude'         => $request->latitude,
+            'longitude'        => $request->longitude,
+            'location_address' => $request->address,
+            'device_info'      => $request->device_info,
+        ];
+        if ($selfieInPath) $fields['selfie_in'] = $selfieInPath;
+
         if ($existing) {
-            $existing->update([
-                'clock_in'         => $now->format('H:i:s'),
-                'status'           => 'present',
-                'source'           => 'online',
-                'latitude'         => $request->latitude,
-                'longitude'        => $request->longitude,
-                'location_address' => $request->address,
-                'device_info'      => $request->device_info,
-            ]);
+            $existing->update($fields);
             $attendance = $existing;
         } else {
-            $attendance = Attendance::create([
-                'recruitment_id'   => $employee->id,
-                'employee_name'    => $employee->name,
-                'outlet_id'        => $employee->outlet_id,
-                'date'             => $today,
-                'clock_in'         => $now->format('H:i:s'),
-                'status'           => 'present',
-                'source'           => 'online',
-                'latitude'         => $request->latitude,
-                'longitude'        => $request->longitude,
-                'location_address' => $request->address,
-                'device_info'      => $request->device_info,
-            ]);
+            $attendance = Attendance::create(array_merge($fields, [
+                'recruitment_id' => $employee->id,
+                'employee_name'  => $employee->name,
+                'outlet_id'      => $employee->outlet_id,
+                'date'           => $today,
+            ]));
         }
 
         Log::info('Mobile clock-in', [
@@ -156,6 +159,7 @@ class MobileAttendanceController extends Controller
             'time'        => $now->toDateTimeString(),
             'lat'         => $request->latitude,
             'lng'         => $request->longitude,
+            'has_selfie'  => $selfieInPath !== null,
         ]);
 
         return response()->json([
@@ -169,10 +173,11 @@ class MobileAttendanceController extends Controller
     public function clockOut(Request $request)
     {
         $request->validate([
-            'latitude'  => 'required|numeric|between:-90,90',
-            'longitude' => 'required|numeric|between:-180,180',
-            'address'   => 'nullable|string|max:500',
+            'latitude'    => 'required|numeric|between:-90,90',
+            'longitude'   => 'required|numeric|between:-180,180',
+            'address'     => 'nullable|string|max:500',
             'device_info' => 'nullable|string|max:255',
+            'selfie_out'  => 'nullable|string', // base64 foto selfie keluar
         ]);
 
         $employee = $this->getEmployee($request->user());
@@ -180,7 +185,7 @@ class MobileAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'Data karyawan tidak ditemukan.'], 404);
         }
 
-        $today = Carbon::today()->toDateString();
+        $today      = Carbon::today()->toDateString();
         $attendance = Attendance::where('recruitment_id', $employee->id)
             ->where('date', $today)
             ->first();
@@ -200,19 +205,27 @@ class MobileAttendanceController extends Controller
             ], 409);
         }
 
-        $now   = Carbon::now();
-        $inTime = Carbon::parse($today . ' ' . $attendance->clock_in);
+        // Simpan foto selfie keluar jika ada
+        $selfieOutPath = null;
+        if ($request->filled('selfie_out')) {
+            $selfieOutPath = $this->saveSelfie($request->selfie_out, 'out', $employee->id, $today);
+        }
+
+        $now       = Carbon::now();
+        $inTime    = Carbon::parse($today . ' ' . $attendance->clock_in);
         $workHours = round($inTime->diffInMinutes($now) / 60, 2);
 
-        $attendance->update([
-            'clock_out'    => $now->format('H:i:s'),
-            'hours_worked' => $workHours,
-            'work_hours'   => $workHours,
-            // GPS clock-out disimpan di kolom terpisah
+        $updateFields = [
+            'clock_out'           => $now->format('H:i:s'),
+            'hours_worked'        => $workHours,
+            'work_hours'          => $workHours,
             'clock_out_latitude'  => $request->latitude,
             'clock_out_longitude' => $request->longitude,
             'clock_out_address'   => $request->address,
-        ]);
+        ];
+        if ($selfieOutPath) $updateFields['selfie_out'] = $selfieOutPath;
+
+        $attendance->update($updateFields);
 
         Log::info('Mobile clock-out', [
             'employee_id' => $employee->id,
@@ -221,6 +234,7 @@ class MobileAttendanceController extends Controller
             'lat'         => $request->latitude,
             'lng'         => $request->longitude,
             'work_hours'  => $workHours,
+            'has_selfie'  => $selfieOutPath !== null,
         ]);
 
         return response()->json([
@@ -228,6 +242,29 @@ class MobileAttendanceController extends Controller
             'message' => 'Clock-out berhasil. Total jam kerja: ' . number_format($workHours, 1) . ' jam.',
             'data'    => $this->formatAttendance($attendance),
         ]);
+    }
+
+    // ─── Simpan foto selfie dari base64 ke storage ────────────────────────────
+    private function saveSelfie(string $base64, string $type, int $employeeId, string $date): ?string
+    {
+        try {
+            // Strip data URL header jika ada (data:image/jpeg;base64,...)
+            $imageData = preg_replace('/^data:image\/\w+;base64,/', '', $base64);
+            $decoded   = base64_decode($imageData);
+
+            if (!$decoded) return null;
+
+            $dir      = 'attendance_selfies/' . date('Y/m');
+            $filename = "selfie_{$type}_{$employeeId}_{$date}_" . time() . '.jpg';
+            $path     = $dir . '/' . $filename;
+
+            \Illuminate\Support\Facades\Storage::disk('public')->put($path, $decoded);
+
+            return $path;
+        } catch (\Throwable $e) {
+            Log::warning('Failed to save selfie: ' . $e->getMessage());
+            return null;
+        }
     }
 
     // ─── Riwayat absensi ──────────────────────────────────────────────────────
@@ -311,6 +348,9 @@ class MobileAttendanceController extends Controller
             'clock_out_latitude'  => $a->clock_out_latitude  ? (float)$a->clock_out_latitude  : null,
             'clock_out_longitude' => $a->clock_out_longitude ? (float)$a->clock_out_longitude : null,
             'clock_out_address'   => $a->clock_out_address,
+            // Selfie
+            'selfie_in_url'       => $a->selfie_in  ? \Illuminate\Support\Facades\Storage::disk('public')->url($a->selfie_in)  : null,
+            'selfie_out_url'      => $a->selfie_out ? \Illuminate\Support\Facades\Storage::disk('public')->url($a->selfie_out) : null,
         ];
     }
 }

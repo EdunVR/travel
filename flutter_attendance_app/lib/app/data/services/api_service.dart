@@ -109,6 +109,7 @@ class ApiService {
     required double longitude,
     String? address,
     String? deviceInfo,
+    String? selfieBase64,
   }) async {
     try {
       final response = await http
@@ -120,6 +121,7 @@ class ApiService {
               'longitude':   longitude,
               'address':     address,
               'device_info': deviceInfo,
+              if (selfieBase64 != null) 'selfie_in': selfieBase64,
             }),
           )
           .timeout(_timeout);
@@ -142,6 +144,7 @@ class ApiService {
     required double longitude,
     String? address,
     String? deviceInfo,
+    String? selfieBase64,
   }) async {
     try {
       final response = await http
@@ -153,6 +156,7 @@ class ApiService {
               'longitude':   longitude,
               'address':     address,
               'device_info': deviceInfo,
+              if (selfieBase64 != null) 'selfie_out': selfieBase64,
             }),
           )
           .timeout(_timeout);

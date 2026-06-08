@@ -1,6 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/services/api_service.dart';
@@ -10,15 +13,16 @@ import '../../routes/app_routes.dart';
 class HomeController extends GetxController {
   final ApiService _apiService = ApiService();
   final LocationService _locationService = LocationService();
+  final ImagePicker _imagePicker = ImagePicker();
 
   final RxBool isLoading = false.obs;
   final RxBool isClockingIn = false.obs;
   final RxBool isClockingOut = false.obs;
-  
+
   final RxString userName = ''.obs;
   final RxString currentDate = ''.obs;
   final RxString currentTime = ''.obs;
-  
+
   // Today's attendance status
   final RxMap<String, dynamic> todayStatus = <String, dynamic>{}.obs;
   final RxBool hasClockedIn = false.obs;
@@ -27,14 +31,17 @@ class HomeController extends GetxController {
   final RxString clockOutTime = ''.obs;
   final RxString workDuration = ''.obs;
 
+  // Selfie preview paths (for local display after capture)
+  final Rx<File?> selfieInFile = Rx<File?>(null);
+  final Rx<File?> selfieOutFile = Rx<File?>(null);
+
   @override
   void onInit() {
     super.onInit();
     loadUserInfo();
     updateDateTime();
     fetchTodayStatus();
-    
-    // Update time every second
+
     Stream.periodic(const Duration(seconds: 1)).listen((_) {
       updateDateTime();
     });
@@ -47,7 +54,6 @@ class HomeController extends GetxController {
 
   void updateDateTime() {
     final now = DateTime.now();
-    // Format tanggal: Senin, 05 Juni 2026
     final days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     final months = [
       '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -55,27 +61,24 @@ class HomeController extends GetxController {
     ];
     final dayName = days[now.weekday % 7];
     final monthName = months[now.month];
-    currentDate.value = '$dayName, ${now.day.toString().padLeft(2, '0')} $monthName ${now.year}';
-    currentTime.value = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+    currentDate.value =
+        '$dayName, ${now.day.toString().padLeft(2, '0')} $monthName ${now.year}';
+    currentTime.value =
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
   }
 
   Future<void> fetchTodayStatus() async {
     isLoading.value = true;
-    
     try {
       final response = await _apiService.getTodayStatus();
-      
       if (response['data'] != null) {
         todayStatus.value = response['data'];
-        
         hasClockedIn.value = todayStatus['clock_in'] != null;
         hasClockedOut.value = todayStatus['clock_out'] != null;
-        
         clockInTime.value = todayStatus['clock_in'] ?? '';
         clockOutTime.value = todayStatus['clock_out'] ?? '';
         workDuration.value = todayStatus['work_duration'] ?? '';
       } else {
-        // No attendance today
         hasClockedIn.value = false;
         hasClockedOut.value = false;
         clockInTime.value = '';
@@ -84,8 +87,7 @@ class HomeController extends GetxController {
       }
     } catch (e) {
       Get.snackbar(
-        'Error',
-        e.toString().replaceAll('Exception: ', ''),
+        'Error', e.toString().replaceAll('Exception: ', ''),
         backgroundColor: Colors.red[400],
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
@@ -95,52 +97,64 @@ class HomeController extends GetxController {
     }
   }
 
+  // ── Ambil foto selfie dari kamera depan ─────────────────────────────────
+  Future<String?> _takeSelfie() async {
+    try {
+      final XFile? photo = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.front,
+        imageQuality: 70,     // kompres agar tidak terlalu besar
+        maxWidth: 800,
+        maxHeight: 800,
+      );
+      if (photo == null) return null;
+      final bytes = await File(photo.path).readAsBytes();
+      return base64Encode(bytes);
+    } catch (e) {
+      Get.snackbar(
+        'Error Kamera',
+        'Gagal mengambil foto: ${e.toString().replaceAll('Exception: ', '')}',
+        backgroundColor: Colors.red[400],
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
+      return null;
+    }
+  }
+
+  // ── Clock In ────────────────────────────────────────────────────────────
   Future<void> clockIn() async {
     isClockingIn.value = true;
-    
     try {
-      // Request location permission
-      bool hasPermission = await _locationService.requestLocationPermission();
-      
-      if (!hasPermission) {
-        Get.defaultDialog(
-          title: 'Izin Lokasi',
-          middleText: 'Aplikasi memerlukan izin lokasi untuk absensi. Silakan aktifkan di pengaturan.',
-          confirm: ElevatedButton(
-            onPressed: () {
-              Get.back();
-              _locationService.openLocationSettings();
-            },
-            child: const Text('Buka Pengaturan'),
-          ),
-          cancel: TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Batal'),
-          ),
-        );
+      // 1. Ambil foto selfie
+      final selfieBase64 = await _takeSelfie();
+      if (selfieBase64 == null) {
+        // User membatalkan kamera
         return;
       }
 
-      // Get current position
+      // 2. Izin lokasi
+      bool hasPermission = await _locationService.requestLocationPermission();
+      if (!hasPermission) {
+        _showLocationPermissionDialog();
+        return;
+      }
+
+      // 3. Dapatkan posisi
       Position position = await _locationService.getCurrentPosition();
-      
-      // Get address
       String address = await _locationService.getAddressFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-      
-      // Get device info
+          position.latitude, position.longitude);
       String deviceInfo = _locationService.getDeviceInfo();
-      
-      // Call API
+
+      // 4. Kirim ke API
       final response = await _apiService.clockIn(
         latitude: position.latitude,
         longitude: position.longitude,
         address: address,
         deviceInfo: deviceInfo,
+        selfieBase64: selfieBase64,
       );
-      
+
       Get.snackbar(
         'Berhasil',
         response['message'] ?? 'Clock in berhasil',
@@ -149,14 +163,11 @@ class HomeController extends GetxController {
         snackPosition: SnackPosition.TOP,
         icon: const Icon(Icons.check_circle, color: Colors.white),
       );
-      
-      // Refresh status
+
       await fetchTodayStatus();
-      
     } catch (e) {
       Get.snackbar(
-        'Error',
-        e.toString().replaceAll('Exception: ', ''),
+        'Error', e.toString().replaceAll('Exception: ', ''),
         backgroundColor: Colors.red[400],
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
@@ -167,52 +178,38 @@ class HomeController extends GetxController {
     }
   }
 
+  // ── Clock Out ───────────────────────────────────────────────────────────
   Future<void> clockOut() async {
     isClockingOut.value = true;
-    
     try {
-      // Request location permission
-      bool hasPermission = await _locationService.requestLocationPermission();
-      
-      if (!hasPermission) {
-        Get.defaultDialog(
-          title: 'Izin Lokasi',
-          middleText: 'Aplikasi memerlukan izin lokasi untuk absensi. Silakan aktifkan di pengaturan.',
-          confirm: ElevatedButton(
-            onPressed: () {
-              Get.back();
-              _locationService.openLocationSettings();
-            },
-            child: const Text('Buka Pengaturan'),
-          ),
-          cancel: TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Batal'),
-          ),
-        );
+      // 1. Ambil foto selfie
+      final selfieBase64 = await _takeSelfie();
+      if (selfieBase64 == null) {
         return;
       }
 
-      // Get current position
+      // 2. Izin lokasi
+      bool hasPermission = await _locationService.requestLocationPermission();
+      if (!hasPermission) {
+        _showLocationPermissionDialog();
+        return;
+      }
+
+      // 3. Dapatkan posisi
       Position position = await _locationService.getCurrentPosition();
-      
-      // Get address
       String address = await _locationService.getAddressFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-      
-      // Get device info
+          position.latitude, position.longitude);
       String deviceInfo = _locationService.getDeviceInfo();
-      
-      // Call API
+
+      // 4. Kirim ke API
       final response = await _apiService.clockOut(
         latitude: position.latitude,
         longitude: position.longitude,
         address: address,
         deviceInfo: deviceInfo,
+        selfieBase64: selfieBase64,
       );
-      
+
       Get.snackbar(
         'Berhasil',
         response['message'] ?? 'Clock out berhasil',
@@ -221,14 +218,11 @@ class HomeController extends GetxController {
         snackPosition: SnackPosition.TOP,
         icon: const Icon(Icons.check_circle, color: Colors.white),
       );
-      
-      // Refresh status
+
       await fetchTodayStatus();
-      
     } catch (e) {
       Get.snackbar(
-        'Error',
-        e.toString().replaceAll('Exception: ', ''),
+        'Error', e.toString().replaceAll('Exception: ', ''),
         backgroundColor: Colors.red[400],
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
@@ -237,6 +231,25 @@ class HomeController extends GetxController {
     } finally {
       isClockingOut.value = false;
     }
+  }
+
+  void _showLocationPermissionDialog() {
+    Get.defaultDialog(
+      title: 'Izin Lokasi',
+      middleText:
+          'Aplikasi memerlukan izin lokasi untuk absensi. Silakan aktifkan di pengaturan.',
+      confirm: ElevatedButton(
+        onPressed: () {
+          Get.back();
+          _locationService.openLocationSettings();
+        },
+        child: const Text('Buka Pengaturan'),
+      ),
+      cancel: TextButton(
+        onPressed: () => Get.back(),
+        child: const Text('Batal'),
+      ),
+    );
   }
 
   Future<void> logout() async {

@@ -474,6 +474,13 @@ class AttendanceManagementController extends Controller
                     'clock_out_latitude'  => $attendance->clock_out_latitude  ?? null,
                     'clock_out_longitude' => $attendance->clock_out_longitude ?? null,
                     'clock_out_address'   => $attendance->clock_out_address   ?? null,
+                    // Selfie photos (from mobile attendance)
+                    'selfie_in_url'  => $attendance->selfie_in
+                        ? \Illuminate\Support\Facades\Storage::disk('public')->url($attendance->selfie_in)
+                        : null,
+                    'selfie_out_url' => $attendance->selfie_out
+                        ? \Illuminate\Support\Facades\Storage::disk('public')->url($attendance->selfie_out)
+                        : null,
                 ];
             }
 

@@ -923,6 +923,37 @@
           </div>
 
           <!-- Map embed — di-render dinamis agar tinggi terbaca dengan benar -->
+          <!-- Foto Selfie (jika ada) -->
+          <template x-if="locationData.selfie_in_url || locationData.selfie_out_url">
+            <div class="mb-4">
+              <div class="text-slate-500 text-xs uppercase font-medium mb-2 flex items-center gap-1">
+                <i class='bx bx-camera text-base'></i> Foto Selfie
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <template x-if="locationData.selfie_in_url">
+                  <div>
+                    <div class="text-xs text-slate-500 mb-1 font-medium">📷 Masuk</div>
+                    <img :src="locationData.selfie_in_url"
+                         alt="Selfie Masuk"
+                         class="rounded-xl w-full object-cover border border-slate-200 cursor-pointer hover:opacity-90 transition"
+                         style="max-height:180px"
+                         @click="showPhotoModal(locationData.selfie_in_url, 'Foto Selfie Masuk - ' + locationData.employee_name)">
+                  </div>
+                </template>
+                <template x-if="locationData.selfie_out_url">
+                  <div>
+                    <div class="text-xs text-slate-500 mb-1 font-medium">📷 Keluar</div>
+                    <img :src="locationData.selfie_out_url"
+                         alt="Selfie Keluar"
+                         class="rounded-xl w-full object-cover border border-slate-200 cursor-pointer hover:opacity-90 transition"
+                         style="max-height:180px"
+                         @click="showPhotoModal(locationData.selfie_out_url, 'Foto Selfie Keluar - ' + locationData.employee_name)">
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+
           <div id="map-container" class="rounded-xl overflow-hidden border border-slate-200 bg-slate-100" style="height:450px;">
             <div class="h-full flex items-center justify-center text-slate-400">
               <i class='bx bx-loader-alt bx-spin text-2xl'></i>
@@ -2024,6 +2055,8 @@
             longitude:     lng,
             location_address: addr || null,
             device_info:   item.device_info || null,
+            selfie_in_url:  item.selfie_in_url  || null,
+            selfie_out_url: item.selfie_out_url || null,
           };
           this.showLocationModal = true;
 
