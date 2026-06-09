@@ -1,5 +1,0 @@
-input[type="number"].lw-number-field::-webkit-inner-spin-button,
-input[type="number"].lw-number-field::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
