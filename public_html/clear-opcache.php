@@ -3,6 +3,8 @@
  * Clear PHP OPcache agar kode terbaru digunakan
  * Akses: https://hmtourtravel.com/clear-opcache.php
  * HAPUS SETELAH DIGUNAKAN
+ * 
+ * sadskdsakdksa
  */
 echo "<style>body{font-family:Arial;padding:20px}.ok{color:green;font-weight:bold}.err{color:red;font-weight:bold}</style>";
 echo "<h2>🔄 Clear OPcache & Laravel Cache</h2>";
