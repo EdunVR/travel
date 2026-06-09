@@ -1,3 +1,6 @@
+# WordPress website folder - deploy sekali langsung ke server, jangan di-push ke GitHub
+WEB_HMTour/
+
 /.phpunit.cache
 /node_modules
 /public/build
