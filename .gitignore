@@ -1,9 +1,12 @@
 # WordPress website folder - deploy sekali langsung ke server, jangan di-push ke GitHub
 WEB_HMTour/
 
+# AdminLTE library - sudah ada di server, tidak perlu di-push
+public/AdminLTE-2/
+
 /.phpunit.cache
 /node_modules
-/public/build
+# /public/build — dicommit ke repo agar Hostinger tidak perlu npm build
 /public/hot
 /public/storage
 /storage/*.key
